@@ -1,5 +1,13 @@
 # Market Sizing MCP Server
 
+[![GitHub stars](https://img.shields.io/github/stars/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/network)
+[![GitHub issues](https://img.shields.io/github/issues/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/issues)
+[![GitHub license](https://img.shields.io/github/license/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
+
 A comprehensive **Model Context Protocol (MCP)** server for market sizing analysis, TAM/SAM calculations, and industry research. Built with TypeScript, Express.js, and following the MCP 2024-11-05 specification.
 
 ## 🚀 Features
@@ -37,8 +45,8 @@ A comprehensive **Model Context Protocol (MCP)** server for market sizing analys
 
 ```bash
 # Clone the repository
-git clone https://github.com/tam-mcp-server/market-sizing-mcp.git
-cd market-sizing-mcp
+git clone https://github.com/gvaibhav/TAM-MCP-Server.git
+cd TAM-MCP-Server
 
 # Install dependencies
 npm install
@@ -61,13 +69,13 @@ npm start
 
 ```bash
 # Build Docker image
-docker build -t market-sizing-mcp .
+docker build -t tam-mcp-server .
 
 # Run with Docker Compose
 docker-compose up -d
 
 # Or run standalone
-docker run -p 3000:3000 -e NODE_ENV=production market-sizing-mcp
+docker run -p 3000:3000 -e NODE_ENV=production tam-mcp-server
 ```
 
 ## 📋 Configuration
@@ -319,17 +327,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/tam-mcp-server/market-sizing-mcp/wiki)
-- **Issues**: [GitHub Issues](https://github.com/tam-mcp-server/market-sizing-mcp/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/tam-mcp-server/market-sizing-mcp/discussions)
-- **Email**: support@tam-mcp-server.com
+- **Documentation**: [GitHub Wiki](https://github.com/gvaibhav/TAM-MCP-Server/wiki)
+- **Issues**: [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/gvaibhav/TAM-MCP-Server/discussions)
+- **Author**: [@gvaibhav](https://github.com/gvaibhav)
 
 ## 🙏 Acknowledgments
 
 - **Model Context Protocol** specification by Anthropic
-- **Market Research Community** for methodology guidance
+- **Market Research Community** for methodology guidance  
 - **Open Source Contributors** who made this project possible
 
 ---
 
-**Made with ❤️ for the market research and business intelligence community**
+**Created by [Gvaibhav](https://github.com/gvaibhav) with ❤️ for the market research and business intelligence community**

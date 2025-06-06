@@ -2,11 +2,11 @@ version: '3.8'
 
 services:
   # Main MCP server
-  market-sizing-mcp:
+  tam-mcp-server:
     build: 
       context: .
       target: production
-    container_name: market-sizing-mcp
+    container_name: tam-mcp-server
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:3000"

@@ -1,9 +1,18 @@
 {
-  "name": "market-sizing-mcp",
+  "name": "tam-mcp-server",
   "version": "1.0.0",
-  "description": "Market Sizing MCP Server for TAM/SAM calculations and industry analysis",
+  "description": "Comprehensive Model Context Protocol server for market sizing analysis, TAM/SAM calculations, and business intelligence",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "tam-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -22,18 +31,31 @@
     "tam",
     "sam",
     "industry-analysis",
-    "business-intelligence"
+    "business-intelligence",
+    "market-research",
+    "typescript",
+    "express",
+    "prometheus",
+    "anthropic",
+    "claude",
+    "ai-tools",
+    "business-analysis",
+    "market-data",
+    "forecasting"
   ],
-  "author": "TAM-MCP-Server Team",
+  "author": {
+    "name": "Gvaibhav",
+    "url": "https://github.com/gvaibhav"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tam-mcp-server/market-sizing-mcp.git"
+    "url": "https://github.com/gvaibhav/TAM-MCP-Server.git"
   },
   "bugs": {
-    "url": "https://github.com/tam-mcp-server/market-sizing-mcp/issues"
+    "url": "https://github.com/gvaibhav/TAM-MCP-Server/issues"
   },
-  "homepage": "https://github.com/tam-mcp-server/market-sizing-mcp#readme",
+  "homepage": "https://github.com/gvaibhav/TAM-MCP-Server#readme",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
