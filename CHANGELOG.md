@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+I want you to correctly implement the TAM-MCP-Server as an MCP Server as which strictly adheres to mcp protocol.
+1. Use this general guidelines about mcp server : https://modelcontextprotocol.io/llms-full.txt
+2. MCP sdk ReadMe tells how to use the sdk : https://github.com/modelcontextprotocol/typescript-sdk
+3. You already have requirements.md and other files in project.
+
+Let me know if you have any questions.
 
 ### Added
 - Planned WebSocket support for real-time streaming

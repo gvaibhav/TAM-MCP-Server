@@ -104,37 +104,7 @@ The server supports multiple market data providers:
 - **Bloomberg** - Financial and market data
 - **PitchBook** - Private market data
 
-Add your API keys to the `.env` file to enable real data integration.
 
-## 🚦 API Endpoints
-
-### MCP Protocol Endpoints
-
-- `GET /mcp/discovery` - Server capabilities and tool discovery
-- `POST /mcp/session` - Create and manage MCP sessions
-- `POST /mcp/tools/{tool_name}` - Execute specific market analysis tools
-- `GET /mcp/events` - Server-Sent Events stream for real-time updates
-- `GET /mcp/health` - Health check and server status
-- `GET /mcp/metrics` - Prometheus metrics endpoint
-
-### Tool Execution Examples
-
-```bash
-# Search for industries
-curl -X POST http://localhost:3000/mcp/tools/industry_search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "artificial intelligence", "filters": {"region": "global"}}'
-
-# Calculate TAM
-curl -X POST http://localhost:3000/mcp/tools/calculate_tam \
-  -H "Content-Type: application/json" \
-  -d '{"industry": "SaaS", "geography": "North America", "timeframe": "2024"}'
-
-# Get market forecast
-curl -X POST http://localhost:3000/mcp/tools/forecast_market \
-  -H "Content-Type: application/json" \
-  -d '{"industry": "Cloud Computing", "years": 5, "methodology": "compound_growth"}'
-```
 
 ## 🏗 Architecture
 
@@ -340,4 +310,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Created by [Gvaibhav](https://github.com/gvaibhav) with ❤️ for the market research and business intelligence community**
+**Created by [Vaibhav Gupta](https://github.com/gvaibhav) with ❤️ for the market research and business intelligence community**
