@@ -2,6 +2,8 @@ import NodeCache = require('node-cache');
 import { createLogger, format, transports } from 'winston';
 import { APIResponse } from '../types/index.js';
 
+export * from './envHelper'; // Add this line
+
 // Cache configuration
 const cache = new NodeCache({
   stdTTL: 3600, // 1 hour default TTL
