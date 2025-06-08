@@ -1,326 +1,285 @@
 # Market Sizing MCP Server
 
 [![GitHub stars](https://img.shields.io/github/stars/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/network)
+[![GitHub forks](https://img.shields.io/github/forks/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/network/members)
 [![GitHub issues](https://img.shields.io/github/issues/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/issues)
-[![GitHub license](https://img.shields.io/github/license/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/blob/main/LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![MCP](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
+[![License](https://img.shields.io/github/license/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-4.x-orange.svg)](https://expressjs.com/)
+[![MCP Version](https://img.shields.io/badge/MCP%20Spec-2024--11--05-brightgreen.svg)](https://modelcontextprotocol.org/)
+[![Docker Build](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml)
+[![CodeQL](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql)
 
 A comprehensive **Model Context Protocol (MCP)** server for market sizing analysis, TAM/SAM calculations, and industry research. Built with TypeScript, Express.js, and following the MCP 2024-11-05 specification.
+
+**The server now integrates several free data sources to provide real-time market insights, alongside its existing mock data capabilities and planned support for premium data providers.**
 
 ## 🚀 Features
 
 ### Core Capabilities
 - **10 Specialized Market Analysis Tools** for comprehensive market research
+- **Integration with Free Data Sources** (BLS, Census, FRED, World Bank, OECD, IMF, Alpha Vantage, Nasdaq Data Link)
 - **HTTP Streamable Transport** with Server-Sent Events for real-time updates
 - **MCP Resource Support** with documentation access through protocol
-- **Advanced Caching System** with configurable TTL and performance optimization
+- **Advanced Caching System** with in-memory and persistent (JSON file) layers, configurable TTL, and performance optimization.
 - **Comprehensive Logging** with structured Winston logging and business metrics
 - **Prometheus Metrics** for monitoring and observability
 - **Enterprise Security** with rate limiting, CORS, and input validation
 - **Session Management** for stateful interactions
 
 ### Available Resources
-- **`tam://readme`** - Complete project documentation and setup guide
-- **`tam://contributing`** - Comprehensive contributing guidelines and workflows
-- **`tam://release-notes`** - Chronological change tracking and version history
+- **`/`**: Root endpoint with server information and health check.
+- **`/mcp`**: Main MCP endpoint for tool interactions.
+- **`/docs`**: Serves API documentation (OpenAPI/Swagger).
+- **`/metrics`**: Prometheus metrics endpoint.
 
 ### Market Analysis Tools
-
-1. **🔍 Industry Search** - Find and explore industry sectors and categories
-2. **📊 Industry Data** - Get detailed industry statistics and metrics
-3. **📈 Market Size** - Calculate current market size with multiple methodologies
-4. **🎯 TAM Calculator** - Total Addressable Market analysis and calculations
-5. **🎪 SAM Calculator** - Serviceable Addressable Market segmentation
-6. **🧩 Market Segments** - Detailed market segmentation analysis
-7. **📊 Market Forecasting** - Future market projections and trend analysis
-8. **⚖️ Market Comparison** - Compare multiple markets and industries
-9. **✅ Data Validation** - Validate and verify market data accuracy
-10. **💡 Market Opportunities** - Identify growth opportunities and market gaps
+The server provides the following tools accessible via the `/mcp` endpoint:
+1.  **`industry_search`**: Search for industries.
+2.  **`industry_data`**: Get detailed industry information.
+3.  **`market_size`**: Retrieve market size data.
+4.  **`tam_calculator`**: Calculate Total Addressable Market.
+5.  **`sam_calculator`**: Calculate Serviceable Addressable/Obtainable Market.
+6.  **`market_segments`**: Analyze market segmentation.
+7.  **`market_forecasting`**: Generate market size forecasts.
+8.  **`market_comparison`**: Compare multiple markets.
+9.  **`data_validation`**: Validate market data.
+10. **`market_opportunities`**: Identify market opportunities.
 
 ## 🛠 Installation
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- TypeScript 5+
+- Node.js (v20.x recommended)
+- npm (v10.x recommended) or yarn
+- Docker (optional, for containerized deployment)
 
 ### Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/gvaibhav/TAM-MCP-Server.git
-cd TAM-MCP-Server
-
-# Install dependencies
-npm install
-
-# Copy environment configuration
-cp .env.example .env
-
-# Edit configuration (add your API keys)
-nano .env
-
-# Start development server
-npm run dev
-
-# Or build and run production
-npm run build
-npm start
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/gvaibhav/TAM-MCP-Server.git
+    cd TAM-MCP-Server
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    # yarn install
+    ```
+3.  **Set up environment variables:**
+    Create a `.env` file in the root directory by copying `.env.example`:
+    ```bash
+    cp .env.example .env
+    ```
+    Update the variables in `.env` as needed (see Configuration section).
+4.  **Build the project:**
+    ```bash
+    npm run build
+    ```
+5.  **Run the server:**
+    ```bash
+    npm start
+    ```
+    The server will typically be available at `http://localhost:3000`.
 
 ### Docker Installation
-
-```bash
-# Build Docker image
-docker build -t tam-mcp-server .
-
-# Run with Docker Compose
-docker-compose up -d
-
-# Or run standalone
-docker run -p 3000:3000 -e NODE_ENV=production tam-mcp-server
-```
+1.  **Build the Docker image:**
+    ```bash
+    docker build -t tam-mcp-server .
+    ```
+2.  **Run the Docker container:**
+    ```bash
+    docker run -p 3000:3000 --env-file .env tam-mcp-server
+    ```
+    Ensure your `.env` file is correctly populated before running.
 
 ## 📋 Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `PORT` | Server port | `3000` | No |
-| `HOST` | Server host | `0.0.0.0` | No |
-| `NODE_ENV` | Environment | `development` | No |
-| `CORS_ORIGIN` | CORS origin | `*` | No |
-| `RATE_LIMIT_MAX` | Rate limit per window | `100` | No |
-| `CACHE_TTL` | Cache TTL (seconds) | `300` | No |
-| `SESSION_SECRET` | Session secret key | - | **Yes** |
-| `MARKET_DATA_API_KEY` | Market data provider API key | - | Recommended |
-| `LOG_LEVEL` | Logging level | `info` | No |
+Update your `.env` file with the following variables. API keys are required for some free data sources to function.
 
-### API Keys Configuration
+| Variable                  | Description                                      | Default         | Required                 |
+|---------------------------|--------------------------------------------------|-----------------|--------------------------|
+| `PORT`                    | Server port                                      | `3000`          | No                       |
+| `HOST`                    | Server host                                      | `0.0.0.0`       | No                       |
+| `NODE_ENV`                | Environment                                      | `development`   | No                       |
+| `CORS_ORIGIN`             | CORS origin                                      | `*`             | No                       |
+| `RATE_LIMIT_MAX`          | Rate limit per window                            | `100`           | No                       |
+| `CACHE_TTL`               | Default Cache TTL for in-memory cache (seconds)  | `300`           | No                       |
+| `SESSION_SECRET`          | Session secret key                               | -               | **Yes**                  |
+| `LOG_LEVEL`               | Logging level                                    | `info`          | No                       |
+|                           |                                                  |                 |                          |
+| **Free Data Source API Keys** |                                                  |                 |                          |
+| `BLS_API_KEY`             | API Key for Bureau of Labor Statistics (BLS)     | -               | Recommended for BLS data |
+| `CENSUS_API_KEY`          | API Key for Census Bureau                        | -               | Recommended for Census data|
+| `FRED_API_KEY`            | API Key for Federal Reserve Economic Data (FRED) | -               | **Yes** for FRED data    |
+| `ALPHA_VANTAGE_API_KEY`   | API Key for Alpha Vantage                        | -               | Recommended for Alpha Vantage |
+| `NASDAQ_DATA_LINK_API_KEY`| API Key for Nasdaq Data Link (Quandl)            | -               | Recommended for Nasdaq data|
+|                           | *Note: World Bank, OECD, IMF generally do not require API keys for public data.* |                 |                          |
+|                           |                                                  |                 |                          |
+| **Premium Data Source API Keys (Planned)** |                                  |                 |                          |
+| `MARKET_DATA_API_KEY`     | Generic key for a primary paid data provider     | -               | For future premium sources |
+| `IBISWORLD_API_KEY`       | For IBISWorld                                    | -               | For future premium sources |
+| `STATISTA_API_KEY`        | For Statista                                     | -               | For future premium sources |
 
-The server supports multiple market data providers:
+### Data Sources and API Configuration
 
-- **IBISWorld** - Industry reports and analysis
-- **Statista** - Market statistics and data
-- **Grand View Research** - Market research reports  
-- **Bloomberg** - Financial and market data
-- **PitchBook** - Private market data
+The server now integrates a variety of data sources, prioritizing free APIs for broad accessibility.
 
+#### Integrated Free Data Sources:
+These sources are used by the `DataService` to fetch real-time information. Ensure API keys are set up in your `.env` file for services that require them.
+- **Bureau of Labor Statistics (BLS)**: Employment, wage data, productivity metrics. (Requires `BLS_API_KEY`)
+  - API: `https://www.bls.gov/developers/api_signature_v2.shtml`
+- **Census Bureau**: Demographic and economic census data. (Requires `CENSUS_API_KEY`)
+  - API: `https://www.census.gov/data/developers/data-sets.html`
+- **Federal Reserve Economic Data (FRED)**: Economic indicators. (Requires `FRED_API_KEY`)
+  - API: `https://fred.stlouisfed.org/docs/api/fred/`
+- **World Bank**: Global economic and development data. (No API key generally required)
+  - API: `https://datahelpdesk.worldbank.org/knowledgebase/articles/889392`
+- **OECD**: International economic statistics. (No API key generally required)
+  - API: `https://data.oecd.org/api/`
+- **IMF**: International monetary data. (No API key generally required)
+  - API: `https://datahelp.imf.org/knowledgebase/articles/667681`
+- **Alpha Vantage**: Financial and market data (free tier has limits, e.g., 500 calls/day). (Requires `ALPHA_VANTAGE_API_KEY`)
+  - API: `https://www.alphavantage.co/documentation/`
+- **Nasdaq Data Link (formerly Quandl)**: Economic and financial datasets. (Requires `NASDAQ_DATA_LINK_API_KEY`)
+  - API: `https://docs.data.nasdaq.com/`
 
+The system respects free tier limits and employs caching to optimize API usage.
+
+#### Planned Premium Data Sources:
+Integration with these premium sources is planned for future releases to provide even more in-depth analysis:
+- **IBISWorld**
+- **Statista**
+- **Grand View Research**
+- **Bloomberg**
+- **PitchBook**
 
 ## 🏗 Architecture
 
 ### Project Structure
-
+The project structure has been updated to support multiple data sources and enhanced caching:
 ```
 src/
-├── index.ts              # Main entry point
-├── server.ts             # Express server setup
+├── index.ts                  # Main entry point
+├── server.ts                 # Express server setup
 ├── types/
-│   └── schemas.ts        # Zod schemas and TypeScript types
+│   ├── index.ts              # Zod schemas and core TypeScript types
+│   ├── dataSources.ts        # Data source specific interfaces
+│   └── cache.ts              # Cache-related types
 ├── tools/
-│   └── mcpTools.ts       # MCP tool implementations
+│   └── market-tools.ts       # MCP tool implementations (MarketAnalysisTools class)
 ├── services/
-│   ├── dataService.ts    # Data operations and API integrations
-│   └── cacheService.ts   # Caching service with NodeCache
+│   ├── dataService.ts        # Main data orchestrator service
+│   ├── cache/
+│   │   ├── cacheService.ts     # In-memory caching logic
+│   │   └── persistenceService.ts # File-based persistence for cache
+│   └── dataSources/
+│       ├── blsService.ts       # Bureau of Labor Statistics client
+│       ├── censusService.ts    # Census Bureau client
+│       ├── fredService.ts      # Federal Reserve client
+│       ├── worldBankService.ts # World Bank client
+│       ├── oecdService.ts      # OECD client
+│       ├── imfService.ts       # IMF client
+│       ├── alphaVantageService.ts # Alpha Vantage client
+│       └── nasdaqDataService.ts # Nasdaq Data Link client
 └── utils/
-    └── logger.ts         # Winston logging utility
+    ├── index.ts              # Main export for utility functions
+    ├── dataTransform.ts      # Data transformation utilities (New)
+    ├── rateLimit.ts          # Rate limiting utilities (New)
+    └── logger.ts             # Winston logging utility
 ```
+
+### Data Caching Strategy
+The server employs a two-tier caching strategy to optimize performance and minimize API calls:
+1.  **In-Memory Cache (`CacheService`)**:
+    *   Primary cache using a fast in-memory store (currently a `Map`-based implementation).
+    *   Configurable Time-To-Live (TTL) for each cache entry. Default TTL can be set via `CACHE_TTL` environment variable.
+    *   Tracks cache hits, misses, and size.
+2.  **Persistent Cache (`PersistenceService`)**:
+    *   Secondary cache layer that persists data to the local filesystem.
+    *   Currently uses JSON files stored in the `.cache_data` directory (this directory should be added to `.gitignore`).
+    *   Helps retain cached data across server restarts.
+    *   Data freshness is managed by the TTL set when data is initially cached. Expired data in persistence is not served and is removed.
+
+This strategy ensures that frequently accessed data is served quickly, while less frequent data can still be retrieved from persistence or fetched anew from external APIs if expired.
 
 ### Technology Stack
-
-- **Runtime**: Node.js 18+ with ES modules
-- **Framework**: Express.js with TypeScript
-- **Validation**: Zod for runtime type safety
-- **Caching**: NodeCache with TTL support
-- **Logging**: Winston with structured logging
-- **Metrics**: Prometheus client for monitoring
-- **Security**: Helmet, CORS, rate limiting
-- **Transport**: HTTP with Server-Sent Events
+- **Language**: TypeScript 5.x
+- **Framework**: Express.js 4.x
+- **Protocol**: MCP 2024-11-05 Specification
+- **Validation**: Zod for schema validation
+- **Logging**: Winston for structured logging
+- **Testing**: Jest for unit and integration tests
+- **Containerization**: Docker
+- **CI/CD**: GitHub Actions
 
 ## 🧪 Testing
-
+Run tests with:
 ```bash
-# Run all tests
 npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run specific test suite
-npm test -- --grep "MCPTools"
-
-# Run integration tests
-npm run test:integration
 ```
-
-### Test Structure
-
-- **Unit Tests** - Individual component testing
-- **Integration Tests** - API endpoint testing  
-- **Performance Tests** - Load and stress testing
-- **Security Tests** - Vulnerability scanning
+This will execute unit tests and integration tests. Code coverage reports are generated in the `coverage/` directory.
 
 ## 📊 Monitoring & Observability
-
-### Prometheus Metrics
-
-The server exposes comprehensive metrics at `/mcp/metrics`:
-
-- **Request Metrics** - Request count, duration, status codes
-- **Tool Metrics** - Tool execution time and success rates
-- **Cache Metrics** - Hit/miss ratios and performance
-- **Business Metrics** - Market analysis usage patterns
-- **System Metrics** - Memory, CPU, and resource usage
-
-### Logging
-
-Structured JSON logging with multiple levels:
-
-```typescript
-// Business metrics logging
-logger.business('market_analysis_completed', {
-  tool: 'calculate_tam',
-  industry: 'SaaS',
-  result_size: 1234567890,
-  execution_time: 1250
-});
-
-// Performance profiling
-logger.profile('api_request', requestId);
-// ... operation ...
-logger.profile('api_request', requestId); // Logs duration
-```
+- **Logging**: Structured logs are output to the console and/or configured log files.
+- **Metrics**: Prometheus-compatible metrics are exposed at the `/metrics` endpoint.
+  Key metrics include:
+  - `mcp_requests_total`: Total number of MCP requests.
+  - `mcp_request_duration_seconds`: Duration of MCP requests.
+  - `cache_hits_total`, `cache_misses_total`: Cache performance.
+  - `api_calls_total`: Calls to external data source APIs.
 
 ## 🔒 Security
+- **Input Validation**: All incoming requests are validated using Zod schemas.
+- **Rate Limiting**: Basic rate limiting is implemented to prevent abuse.
+- **CORS**: Configurable Cross-Origin Resource Sharing.
+- **Error Handling**: Standardized error responses.
+- **Session Management**: Secure session handling with HTTP-only cookies.
 
-### Security Features
-
-- **Rate Limiting** - Configurable per-IP request limits
-- **Input Validation** - Zod schema validation for all inputs
-- **CORS Protection** - Configurable cross-origin policies
-- **Security Headers** - Helmet.js security headers
-- **Session Management** - Secure session handling
-- **API Key Management** - Secure API key storage and rotation
-
-### Production Security Checklist
-
-- [ ] Change default `SESSION_SECRET`
-- [ ] Configure specific `CORS_ORIGIN`
-- [ ] Set up HTTPS/TLS certificates
-- [ ] Configure firewall rules
-- [ ] Enable security monitoring
-- [ ] Set up log aggregation
-- [ ] Configure backup and recovery
+### API Key Management
+- API keys for external data sources are configured via environment variables (see "Environment Variables" section).
+- Ensure `.env` file is secured and not committed to version control.
+- The application is designed to function with missing optional API keys, though data availability from those sources will be impacted.
 
 ## 🚀 Deployment
+The server can be deployed using various methods:
+- **Docker**: Recommended for containerized environments.
+- **Node.js process**: Directly run the built application.
+- **Serverless platforms**: Adaptable for serverless functions (may require modifications).
 
-### Docker Deployment
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  market-sizing-mcp:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - SESSION_SECRET=your-secure-secret
-    volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
-```
-
-### Kubernetes Deployment
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: market-sizing-mcp
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: market-sizing-mcp
-  template:
-    metadata:
-      labels:
-        app: market-sizing-mcp
-    spec:
-      containers:
-      - name: market-sizing-mcp
-        image: market-sizing-mcp:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: "production"
-```
-
-### Cloud Deployment
-
-- **AWS**: ECS, Lambda, or EC2 with Application Load Balancer
-- **Google Cloud**: Cloud Run, GKE, or Compute Engine
-- **Azure**: Container Instances, AKS, or App Service
-- **Heroku**: Direct deployment with buildpack
+Refer to platform-specific deployment guides for detailed instructions.
 
 ## 🤝 Contributing
+Contributions are welcome! Please follow these steps:
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/your-feature`).
+3.  Make your changes.
+4.  Write tests for your changes.
+5.  Ensure all tests pass (`npm test`).
+6.  Commit your changes (`git commit -m 'Add some feature'`).
+7.  Push to the branch (`git push origin feature/your-feature`).
+8.  Open a pull request.
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Please adhere to the existing code style and ensure your commits are descriptive.
 
-### Development Workflow
+## 📜 Documentation
+- **API Documentation**: Available at the `/docs` endpoint when the server is running.
+- **MCP Specification**: [MCP 2024-11-05](https://modelcontextprotocol.org/)
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes with tests
-4. Run linting: `npm run lint:fix`
-5. Run tests: `npm test`
-6. Commit with conventional commits: `git commit -m "feat: add amazing feature"`
-7. Push and create a Pull Request
-
-### Code Standards
-
-- **TypeScript** with strict mode enabled
-- **ESLint** for code linting
-- **Prettier** for code formatting
-- **Conventional Commits** for commit messages
-- **100% test coverage** for new features
-
-## 📚 Documentation
-
-- **[Release Notes](doc/RELEASE-NOTES.md)** - Chronological record of all changes and features
-- **[Documentation Index](doc/README.md)** - Complete documentation overview
-- **[Test Documentation](tests/README.md)** - Comprehensive testing guide
-- **[Notifications Guide](doc/NOTIFICATIONS-IMPLEMENTATION.md)** - Notification system details
-- **[Test Organization](doc/TEST-ORGANIZATION.md)** - Professional test structure
-
-## 📝 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+## 🔄 Changelog
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ## 📄 License
-
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🙏 Support
+If you encounter any issues or have questions, please open an issue on the [GitHub repository](https://github.com/gvaibhav/TAM-MCP-Server/issues).
 
-- **Documentation**: [GitHub Wiki](https://github.com/gvaibhav/TAM-MCP-Server/wiki)
-- **Issues**: [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/gvaibhav/TAM-MCP-Server/discussions)
-- **Author**: [@gvaibhav](https://github.com/gvaibhav)
-
-## 🙏 Acknowledgments
-
-- **Model Context Protocol** specification by Anthropic
-- **Market Research Community** for methodology guidance  
-- **Open Source Contributors** who made this project possible
+## ✨ Acknowledgments
+- Thanks to the Model Context Protocol community.
+- Inspired by various market analysis tools and platforms.
 
 ---
 
