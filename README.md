@@ -15,11 +15,17 @@ A comprehensive **Model Context Protocol (MCP)** server for market sizing analys
 ### Core Capabilities
 - **10 Specialized Market Analysis Tools** for comprehensive market research
 - **HTTP Streamable Transport** with Server-Sent Events for real-time updates
+- **MCP Resource Support** with documentation access through protocol
 - **Advanced Caching System** with configurable TTL and performance optimization
 - **Comprehensive Logging** with structured Winston logging and business metrics
 - **Prometheus Metrics** for monitoring and observability
 - **Enterprise Security** with rate limiting, CORS, and input validation
 - **Session Management** for stateful interactions
+
+### Available Resources
+- **`tam://readme`** - Complete project documentation and setup guide
+- **`tam://contributing`** - Comprehensive contributing guidelines and workflows
+- **`tam://release-notes`** - Chronological change tracking and version history
 
 ### Market Analysis Tools
 
@@ -286,6 +292,14 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - **Prettier** for code formatting
 - **Conventional Commits** for commit messages
 - **100% test coverage** for new features
+
+## 📚 Documentation
+
+- **[Release Notes](doc/RELEASE-NOTES.md)** - Chronological record of all changes and features
+- **[Documentation Index](doc/README.md)** - Complete documentation overview
+- **[Test Documentation](tests/README.md)** - Comprehensive testing guide
+- **[Notifications Guide](doc/NOTIFICATIONS-IMPLEMENTATION.md)** - Notification system details
+- **[Test Organization](doc/TEST-ORGANIZATION.md)** - Professional test structure
 
 ## 📝 Changelog
 

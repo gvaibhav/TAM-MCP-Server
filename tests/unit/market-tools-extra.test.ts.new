@@ -1,0 +1,11 @@
+// tests/unit/market-tools-extra.test.ts - Additional tests for market tools
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MarketAnalysisTools } from '../../src/tools/market-tools.js';
+
+describe('MarketAnalysisTools - Extra Tests', () => {
+  // Simple test to verify the module is loaded
+  it('should expose market analysis tools', () => {
+    expect(MarketAnalysisTools).toBeDefined();
+    expect(typeof MarketAnalysisTools.getToolDefinitions).toBe('function');
+  });
+});

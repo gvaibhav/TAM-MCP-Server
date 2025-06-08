@@ -76,17 +76,6 @@ The Market Sizing Model Context Protocol (MCP) service provides AI models with a
 
 ## Technical Requirements
 
-### API Design
-- Implement MCP tools interface for all market sizing functions
-- Use JSON for data interchange
-- Support proper error handling and status codes
-- Follow OpenAPI 3.0 specification for documentation
-- Implement request/response logging for debugging
-- Support batch processing for multiple industry queries
-- **ENHANCED**: GraphQL interface for flexible data querying
-- **ENHANCED**: WebSocket support for real-time updates
-- **ENHANCED**: API versioning strategy with backward compatibility
-
 ### Performance
 - Response time under 2 seconds for most queries
 - Support for concurrent requests
@@ -109,18 +98,6 @@ The Market Sizing Model Context Protocol (MCP) service provides AI models with a
 - **ENHANCED**: Machine learning models for data quality scoring
 - **ENHANCED**: Automated outlier detection and flagging
 - **ENHANCED**: Data lineage tracking and impact analysis
-
-### Security
-- API authentication for access control
-- Rate limiting to prevent abuse
-- Input sanitization and validation
-- JWT-based authentication with refresh tokens
-- Role-based access control (RBAC)
-- Audit logging for all data access
-- HTTPS/TLS 1.3 encryption for all communications
-- **ENHANCED**: OAuth 2.0/OIDC integration
-- **ENHANCED**: API key management with rotation
-- **ENHANCED**: Zero-trust security architecture
 
 ## MCP Tools
 
@@ -218,7 +195,7 @@ The service will expose the following MCP tools:
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (Months 1-2)
-- Core MCP server setup with basic tools
+- Core MCP server setup with basic tools and Readme resource
 - Data model implementation and validation
 - Primary data source integrations
 
@@ -277,29 +254,6 @@ This section defines the Model Context Protocol (MCP) server implementation requ
 ### HTTP Streamable Protocol Requirements
 
 The Market Sizing MCP server must implement HTTP Streamable transport using Server-Sent Events (SSE):
-
-#### HTTP Endpoints
-- **POST /mcp/session**: Initialize new MCP session
-- **GET /mcp/discovery**: Expose server capabilities and tool definitions
-- **POST /mcp/tools/{tool_name}**: Execute specific MCP tools
-- **GET /mcp/health**: Health check endpoint
-- **GET /mcp/metrics**: Prometheus-compatible metrics endpoint
-
-#### Server-Sent Events Stream
-- **Endpoint**: `GET /mcp/events`
-- **Content-Type**: `text/event-stream`
-- **Connection**: Keep-alive with heartbeat every 30 seconds
-- **Events**: Tool execution updates, data refresh notifications, error alerts
-
-#### HTTP Headers
-- **Required Request Headers**:
-  - `Content-Type: application/json`
-  - `Accept: application/json, text/event-stream`
-  - `X-MCP-Version: 2024-11-05`
-- **Required Response Headers**:
-  - `Cache-Control: no-cache`
-  - `Connection: keep-alive`
-  - `Access-Control-Allow-Origin: *` (configurable)
 
 ### MCP Discovery Endpoint
 
@@ -422,35 +376,6 @@ The Market Sizing MCP server must implement the following MCP capabilities:
 - Circuit breaker pattern for external data sources
 - Graceful degradation under high load
 
-### Security and Authentication
-
-#### MCP Transport Security
-- No authentication required at MCP protocol level (handled by client)
-- Input validation and sanitization for all tool parameters
-- Rate limiting: 100 requests per minute per client session
-- Request size limits: 1MB maximum payload
-
-#### HTTP Transport Security
-
-#### TLS/SSL Requirements
-- **Development**: HTTP allowed for localhost only
-- **Production**: HTTPS/TLS 1.3 required
-- **Certificate**: Valid SSL certificate with proper domain validation
-- **HSTS**: HTTP Strict Transport Security headers
-
-#### API Security
-- **API Keys**: Optional API key authentication via `X-API-Key` header
-- **Rate Limiting**: Token bucket algorithm with burst capacity
-- **Request Validation**: JSON schema validation for all payloads
-- **CORS Policy**: Configurable allowed origins and methods
-
-### Session Management
-
-#### HTTP Session Handling
-- **Session ID**: UUID-based session identification
-- **Session Storage**: In-memory session store with configurable TTL
-- **Session Events**: SSE notifications for session state changes
-- **Cleanup**: Automatic session cleanup after 1 hour of inactivity
 
 ### Monitoring and Observability
 
@@ -541,16 +466,6 @@ The project must include comprehensive metadata files for proper documentation a
    - **Format**: Contributor Covenant standard
    - **Maintenance**: Review annually
 
-7. **API.md** - Comprehensive API documentation
-   - **Location**: `/home/gvaibhav/Documents/TAM-MCP-Server/docs/API.md`
-   - **Content Requirements**:
-     - All MCP tools with examples
-     - Request/response schemas
-     - Error codes and handling
-     - Rate limiting information
-     - Authentication details
-   - **Format**: Markdown with OpenAPI references
-   - **Maintenance**: Update with API changes
 
 8. **DEPLOYMENT.md** - Production deployment guide
    - **Location**: `/home/gvaibhav/Documents/TAM-MCP-Server/docs/DEPLOYMENT.md`
@@ -1260,10 +1175,12 @@ The server must expose exactly **10 tools** as defined below:
 
 ### Resources Implementation
 
-The server should implement **0 resources** initially, with future consideration for:
+The server should implement **1 resources** initially, with future consideration for:
 - Market sizing methodology documentation
 - Industry classification mappings
 - Data source reliability guides
+
+The current resource would be rendering the Readme file contents
 
 ### Error Handling Protocol
 
@@ -1276,22 +1193,6 @@ All tools must implement standardized MCP error responses:
 - **RequestTimeout**: Query processing timeouts
 - **DataUnavailable**: Missing or stale data sources
 
-#### Error Response Format
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "<request_id>",
-  "error": {
-    "code": -32602,
-    "message": "Invalid params",
-    "data": {
-      "field": "industry",
-      "reason": "Industry not found in database",
-      "suggestions": ["technology", "healthcare", "finance"]
-    }
-  }
-}
-```
 
 ### Logging Requirements
 
