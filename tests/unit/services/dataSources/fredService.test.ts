@@ -2,35 +2,41 @@ import axios from 'axios';
 import { FredService } from '../../../../src/services/dataSources/fredService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
+// ... other imports
+import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 import * as process from 'process';
+
 
 jest.mock('axios');
 jest.mock('../../../../src/services/cache/cacheService');
-// We don't mock 'process' here because we want to test apiKey retrieval from process.env
+jest.mock('../../../../src/utils/envHelper');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const OLD_ENV = { ...process.env }; // Store original process.env
+
 
 describe('FredService', () => {
   let fredService: FredService;
   let mockCacheServiceInstance: jest.Mocked<CacheService>;
-  const OLD_ENV = process.env;
-
-  beforeEach(() => {
-    jest.resetAllMocks(); // Resets axios and CacheService mocks
-    process.env = { ...OLD_ENV }; // Clone old env
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
-    // API key will be set in individual test context or rely on actual process.env for some tests
-  });
-
-  afterAll(() => {
-    process.env = OLD_ENV; // Restore old env
-  });
-
-  const seriesId = 'GDP';
   const apiKey = 'test_fred_api_key';
+  const seriesId = 'GDP';
   const cacheKey = `fred_marketsize_${seriesId}`;
   const mockApiUrl = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&api_key=${apiKey}&file_type=json&sort_order=desc&limit=1`;
+
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    process.env = { ...OLD_ENV }; // Reset process.env before each test
+    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
+    // fredService instantiated in describe blocks or tests to control API key
+  });
+   afterAll(() => {
+    process.env = OLD_ENV; // Restore original process.env after all tests
+  });
+
 
   describe('constructor and isAvailable', () => {
     it('isAvailable should be true if apiKey is provided via constructor', async () => {
@@ -66,6 +72,38 @@ describe('FredService', () => {
         fredService = new FredService(mockCacheServiceInstance, apiKey);
     });
 
+    it('should use TTL from env var for successful fetch when CACHE_TTL_FRED_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = { observations: [{ date: '2023-01-01', value: '123.45' }] };
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+
+      const customTTL = 700000;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_FRED_MS') return customTTL;
+        return 1000;
+      });
+      fredService = new FredService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await fredService.fetchMarketSize(seriesId);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Array), customTTL);
+    });
+
+    it('should use TTL from env var for no data response when CACHE_TTL_FRED_NODATA_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponseNoData = { observations: [] };
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponseNoData });
+
+      const customNoDataTTL = 80000;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_FRED_NODATA_MS') return customNoDataTTL;
+        return 100000;
+      });
+      fredService = new FredService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await fredService.fetchMarketSize(seriesId);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
+    });
+    // ... (other existing fetchMarketSize tests for FredService)
     it('should return data from cache if available', async () => {
       const cachedData = [{ date: '2023-01-01', value: 25000 }];
       mockCacheServiceInstance.get.mockResolvedValue(cachedData);
@@ -169,4 +207,20 @@ describe('FredService', () => {
       expect(mockCacheServiceInstance.getStats).toHaveBeenCalled();
     });
   });
+
+  describe('fetchIndustryData', () => {
+    it('should throw "not yet implemented" error if API key is available', async () => {
+        fredService = new FredService(mockCacheServiceInstance, apiKey); // API key available
+        await expect(fredService.fetchIndustryData('anySeriesId'))
+            .rejects.toThrow('FredService.fetchIndustryData not yet implemented');
+    });
+
+    it('should throw "API key not configured" error if API key is NOT available', async () => {
+        delete process.env.FRED_API_KEY; // Ensure no key from env
+        fredService = new FredService(mockCacheServiceInstance); // No API key passed directly
+        await expect(fredService.fetchIndustryData('anySeriesId'))
+            .rejects.toThrow('FRED API key is not configured or service is unavailable.');
+    });
+  });
+  // ... (other existing tests for FredService)
 });

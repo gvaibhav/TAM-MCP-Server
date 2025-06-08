@@ -4,12 +4,15 @@ import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { blsApi } from '../../../../src/config/apiConfig';
 import * as process from 'process';
+import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
 jest.mock('axios');
 jest.mock('../../../../src/services/cache/cacheService');
+jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
 
 describe('BlsService', () => {
   let blsService: BlsService;
@@ -23,6 +26,7 @@ describe('BlsService', () => {
     jest.resetAllMocks();
     process.env = { ...OLD_ENV };
     mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service instantiated in tests to control API key presence
   });
 
@@ -54,11 +58,91 @@ describe('BlsService', () => {
     const endYear = '2023';
     const catalog = false;
     const defaultPayloadNoKey = { seriesid: [seriesId1], startyear: startYear, endyear: endYear, catalog, calculations: false, annualaverage: false };
-    const cacheKey = `bls_data_${JSON.stringify(defaultPayloadNoKey)}`;
+    const cacheKey = `bls_data_${JSON.stringify(defaultPayloadNoKey)}`; // This key is based on defaultPayloadNoKey, which is correct as API key is not in cache key
     const mockApiUrl = blsApi.baseUrlV2;
 
-    beforeEach(() => { // Default service without API key
+    beforeEach(() => { // Default service without API key for most tests in this block
         blsService = new BlsService(mockCacheServiceInstance);
+    });
+
+    it('should include optional boolean parameters in POST body when true', async () => {
+      const blsServiceWithKey = new BlsService(mockCacheServiceInstance, apiKey);
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [] } }; // Empty series for simplicity
+      mockedAxios.post.mockResolvedValue({ data: mockApiResponse });
+
+      const seriesIds = ['CES0000000001'];
+      // startYear, endYear are from outer scope
+
+      const expectedPayload = {
+        seriesid: seriesIds,
+        startyear: startYear,
+        endyear: endYear,
+        catalog: true,
+        calculations: true,
+        annualaverage: true,
+        registrationkey: apiKey,
+      };
+      // Cache key won't have registrationkey
+      const cacheKeyPayload = { ...expectedPayload };
+      delete cacheKeyPayload.registrationkey; // remove key before stringify for cache key
+      const expectedCacheKeyForTest = `bls_data_${JSON.stringify(cacheKeyPayload)}`;
+
+
+      await blsServiceWithKey.fetchIndustryData(seriesIds, startYear, endYear, true, true, true);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(blsApi.baseUrlV2, expectedPayload, { headers: { 'Content-Type': 'application/json' } });
+      // The service caches `Results` which is `{ series: [] }` in this mock
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expectedCacheKeyForTest, { series: [] }, expect.any(Number));
+    });
+
+    it('should use TTL from env var for successful fetch when CACHE_TTL_BLS_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [{ seriesID: seriesId1, data: [] }] } };
+      mockedAxios.post.mockResolvedValue({ data: mockApiResponse });
+
+      const customSuccessTTL = 121212;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_BLS_MS') return customSuccessTTL;
+        return 1000;
+      });
+      blsService = new BlsService(mockCacheServiceInstance); // Re-instantiate
+
+      await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, mockApiResponse.Results, customSuccessTTL);
+    });
+
+    it('should use TTL from env var for no data response when CACHE_TTL_BLS_NODATA_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponseNoData = { status: "REQUEST_SUCCEEDED", Results: { series: [] }, message: ["No data"] };
+      mockedAxios.post.mockResolvedValue({ data: mockApiResponseNoData });
+
+      const customNoDataTTL = 343434;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_BLS_NODATA_MS') return customNoDataTTL;
+        return 1000;
+      });
+      blsService = new BlsService(mockCacheServiceInstance); // Re-instantiate
+
+      await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
+    });
+
+    it('should use NoData TTL when API request status is not REQUEST_SUCCEEDED', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const errorStatusResponse = { status: "REQUEST_NOT_PROCESSED", message: ["Invalid SeriesID"], Results: {} };
+      mockedAxios.post.mockResolvedValue({ data: errorStatusResponse });
+
+      const customNoDataTTL = 565656;
+       mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_BLS_NODATA_MS') return customNoDataTTL;
+        return 1000;
+      });
+      blsService = new BlsService(mockCacheServiceInstance); // Re-instantiate
+
+      await expect(blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog))
+        .rejects.toThrow('BLS API Error');
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
     });
 
     it('should throw error if no seriesIds are provided', async () => {

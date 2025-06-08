@@ -22,10 +22,12 @@ jest.mock('../../../../src/config/apiConfig', () => {
 });
 // Re-import after mock
 import { censusApi } from '../../../../src/config/apiConfig';
+import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
 
 
 describe('CensusService', () => {
@@ -38,6 +40,7 @@ describe('CensusService', () => {
     jest.resetAllMocks();
     process.env = { ...OLD_ENV };
     mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // censusService instantiated in describe blocks or tests
   });
 
@@ -91,10 +94,87 @@ describe('CensusService', () => {
         censusService = new CensusService(mockCacheServiceInstance, apiKey);
     });
 
+    it('should correctly parse mixed numeric and string data types in rows', async () => {
+      // censusService instantiated in beforeEach with apiKey
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const headers = ["GEO_ID", "NAME", "EMP_COUNT", "ESTAB_ID", "FLAG_COL"]; // Renamed FLAG to avoid keyword issues
+      const row = ["01000US", "United States", "150000", "00789", "true"];
+      const mockApiResponse = [ headers, row ];
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+
+      // Construct a cache key specific to this test's parameters if they differ from default
+      const currentTestCacheKeyParams = { get: headers.join(','), for: forGeography, ...filterParams };
+      const currentTestCacheKey = `census_${year}_${datasetPath}_${JSON.stringify(currentTestCacheKeyParams)}`;
+
+
+      const result = await censusService.fetchIndustryData(headers.join(','), forGeography, filterParams, year, datasetPath);
+      // Current service logic: parseFloat, if NaN use original string. "00789" -> 789. "true" -> "true".
+      // GEO_ID and NAME are explicitly kept as strings if they match the hardcoded list in the service.
+      // FLAG_COL is not in the hardcoded list, parseFloat("true") is NaN, so it remains "true".
+      // ESTAB_ID "00789" is not in hardcoded string list, parseFloat("00789") is 789.
+      expect(result).toEqual([{ GEO_ID: "01000US", NAME: "United States", EMP_COUNT: 150000, ESTAB_ID: 789, FLAG_COL: "true" }]);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(currentTestCacheKey, expect.any(Array), expect.any(Number));
+    });
+
+    it('should correctly construct API URL with different year and datasetPath', async () => {
+      // censusService instantiated in beforeEach with apiKey
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = [ ["HEADER"], ["data"] ];
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+
+      const customYear = '2020';
+      const customDatasetPath = 'acs/acs1';
+      const acsVariables = "NAME,B01001_001E";
+      const acsForGeo = "state:*";
+      const expectedCustomApiUrl = `${realCensusApiConfig.baseUrl}/${customYear}/${customDatasetPath}`;
+      const expectedCustomQueryBase = { get: acsVariables, for: acsForGeo, key: apiKey };
+       // Construct cache key for this specific call if different from default
+      const currentTestCacheKeyParams = { get: acsVariables, for: acsForGeo }; // No filterParams here
+      const currentTestCacheKey = `census_${customYear}_${customDatasetPath}_${JSON.stringify(currentTestCacheKeyParams)}`;
+
+
+      await censusService.fetchIndustryData(acsVariables, acsForGeo, undefined, customYear, customDatasetPath);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(expectedCustomApiUrl, { params: expectedCustomQueryBase });
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(currentTestCacheKey, expect.any(Array), expect.any(Number));
+    });
+
+    it('should use TTL from env var for successful fetch when CACHE_TTL_CENSUS_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = [ ["EMP", "NAICS2017"], ["100", "23"] ];
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+
+      const customSuccessTTL = 789012;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_CENSUS_MS') return customSuccessTTL;
+        return 1000;
+      });
+      censusService = new CensusService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Array), customSuccessTTL);
+    });
+
+    it('should use TTL from env var for no data response when CACHE_TTL_CENSUS_NODATA_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponseNoData = [ ["EMP", "NAICS2017"] ]; // Only headers
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponseNoData });
+
+      const customNoDataTTL = 901234;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_CENSUS_NODATA_MS') return customNoDataTTL;
+        return 1000;
+      });
+      censusService = new CensusService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
+    });
+
     it('should throw error if API key is not configured', async () => {
       censusService = new CensusService(mockCacheServiceInstance); // No API key
       delete process.env.CENSUS_API_KEY;
-      await expect(censusService.fetchIndustryData(variables, forGeography, filterParams, year, datasetPath))
+      await expect(censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath))
         .rejects.toThrow('Census API key is not configured or service is unavailable.');
     });
 

@@ -3,12 +3,15 @@ import { OecdService } from '../../../../src/services/dataSources/oecdService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { oecdApi } from '../../../../src/config/apiConfig';
+import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
 jest.mock('axios');
 jest.mock('../../../../src/services/cache/cacheService');
+jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
 
 // Simplified Mock SDMX-JSON structure for testing
 const mockSdmxJsonResponseAllDimensions = {
@@ -79,6 +82,14 @@ const mockSdmxJsonResponseSeries = {
   },
 };
 
+// Create a new mock for testing attribute handling
+const mockSdmxMissingAttributes = JSON.parse(JSON.stringify(mockSdmxJsonResponseAllDimensions));
+// Modify an observation to have fewer attributes than defined or null/undefined values
+// Original mock observation: '0:0:0:0:0': [100, 0, 1] (value, STATUS_attr_idx, CONF_attr_idx)
+// Structure defines STATUS (idx 0) and CONF_STATUS (idx 1)
+mockSdmxMissingAttributes.dataSets[0].observations['0:0:0:0:0'] = [100, 0]; // Only STATUS, CONF_STATUS is missing
+mockSdmxMissingAttributes.dataSets[0].observations['0:0:0:1:0'] = [150, null, 0]; // STATUS is null, CONF_STATUS present
+
 
 describe('OecdService', () => {
   let oecdService: OecdService;
@@ -87,6 +98,7 @@ describe('OecdService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     oecdService = new OecdService(mockCacheServiceInstance);
   });
 
@@ -101,9 +113,42 @@ describe('OecdService', () => {
     const filterExpression = 'AUS.TOTAL.AGR.Q';
     const agencyId = oecdApi.defaultAgencyId;
     const dimAtObs = oecdApi.defaultDimensionObservation; // 'AllDimensions'
-    const cacheKeyObj = { datasetId, filterExpression, agencyId, dimensionAtObservation: dimAtObs };
-    const cacheKey = `oecd_${JSON.stringify(cacheKeyObj)}`;
-    const mockApiUrl = `${oecdApi.baseUrl}/${datasetId}/${filterExpression}/${agencyId}`;
+
+    // Default cache key object for most tests, can be overridden locally if params change
+    const defaultCacheKeyObj = { datasetId, filterExpression, agencyId, dimensionAtObservation: dimAtObs };
+    const defaultCacheKey = `oecd_${JSON.stringify(defaultCacheKeyObj)}`;
+    const defaultMockApiUrl = `${oecdApi.baseUrl}/${datasetId}/${filterExpression}/${agencyId}`;
+
+    it('should use TTL from env var for successful fetch when CACHE_TTL_OECD_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      mockedAxios.get.mockResolvedValue({ data: mockSdmxJsonResponseAllDimensions });
+
+      const customSuccessTTL = 400400;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_OECD_MS') return customSuccessTTL;
+        return 1000;
+      });
+      oecdService = new OecdService(mockCacheServiceInstance);
+
+      await oecdService.fetchOecdDataset(datasetId, filterExpression, agencyId, undefined, undefined, dimAtObs);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(defaultCacheKey, expect.any(Array), customSuccessTTL);
+    });
+
+    it('should use TTL from env var for no data response when CACHE_TTL_OECD_NODATA_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const noDataSetsResponse = { ...mockSdmxJsonResponseAllDimensions, dataSets: [] };
+      mockedAxios.get.mockResolvedValue({ data: noDataSetsResponse });
+
+      const customNoDataTTL = 500500;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_OECD_NODATA_MS') return customNoDataTTL;
+        return 1000;
+      });
+      oecdService = new OecdService(mockCacheServiceInstance);
+
+      await oecdService.fetchOecdDataset(datasetId, filterExpression, agencyId, undefined, undefined, dimAtObs);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(defaultCacheKey, null, customNoDataTTL);
+    });
 
     it('should throw error if datasetId or filterExpression is missing', async () => {
         await expect(oecdService.fetchOecdDataset('', filterExpression)).rejects.toThrow("Dataset ID and filter expression must be provided");
@@ -114,9 +159,9 @@ describe('OecdService', () => {
       const cachedData = [{ COUNTRY: 'Australia', value: 100 }];
       mockCacheServiceInstance.get.mockResolvedValue(cachedData);
 
-      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression);
+      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression); // Uses defaults from service constructor for other params
       expect(result).toEqual(cachedData);
-      expect(mockCacheServiceInstance.get).toHaveBeenCalledWith(cacheKey);
+      expect(mockCacheServiceInstance.get).toHaveBeenCalledWith(defaultCacheKey);
       expect(mockedAxios.get).not.toHaveBeenCalled();
     });
 
@@ -126,30 +171,20 @@ describe('OecdService', () => {
 
       const result = await oecdService.fetchOecdDataset(datasetId, filterExpression, agencyId, undefined, undefined, 'AllDimensions');
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(mockApiUrl, { params: { dimensionAtObservation: 'AllDimensions' } });
+      expect(mockedAxios.get).toHaveBeenCalledWith(defaultMockApiUrl, { params: { dimensionAtObservation: 'AllDimensions' } });
       expect(result).toBeInstanceOf(Array);
       expect(result?.length).toBe(2);
 
-      // Check first observation details
       expect(result?.[0]).toEqual(expect.objectContaining({
-        COUNTRY: 'Australia',
-        COUNTRY_ID: 'AUS',
-        SUBJECT: 'Gross Domestic Product',
-        SUBJECT_ID: 'GDP',
-        MEASURE: 'USD per Capita',
-        MEASURE_ID: 'USD_CAP',
-        FREQ: 'Annual', // From key '0' in FREQ.values
-        FREQ_ID: 'A',
-        TIME_PERIOD: '2022', // From key '0' in TIME_PERIOD.values
-        TIME_PERIOD_ID: '2022',
+        COUNTRY: 'Australia', COUNTRY_ID: 'AUS',
+        SUBJECT: 'Gross Domestic Product', SUBJECT_ID: 'GDP',
+        MEASURE: 'USD per Capita', MEASURE_ID: 'USD_CAP',
+        FREQ: 'Annual', FREQ_ID: 'A',
+        TIME_PERIOD: '2022', TIME_PERIOD_ID: '2022',
         value: 100,
-        STATUS: 'Estimated',
-        STATUS_ID: 'E',
-        CONF_STATUS: 'Free',
-        CONF_STATUS_ID: 'F'
+        STATUS: 'Estimated', STATUS_ID: 'E',
+        CONF_STATUS: 'Free', CONF_STATUS_ID: 'F'
       }));
-
-      // Check second observation specific changes
        expect(result?.[1].FREQ).toEqual('Quarterly');
        expect(result?.[1].FREQ_ID).toEqual('Q');
        expect(result?.[1].STATUS).toEqual('Provisional');
@@ -157,13 +192,12 @@ describe('OecdService', () => {
        expect(result?.[1].CONF_STATUS).toEqual('Confidential');
        expect(result?.[1].CONF_STATUS_ID).toEqual('C');
 
-
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, result, expect.any(Number));
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(defaultCacheKey, result, expect.any(Number));
     });
 
     it('should fetch, parse (Series-based), and cache data if not in cache', async () => {
       mockCacheServiceInstance.get.mockResolvedValue(null);
-      const seriesDimAtObs = 'someSeriesDim'; // Example to trigger series parsing path
+      const seriesDimAtObs = 'someSeriesDim';
       const seriesCacheKeyObj = { datasetId, filterExpression, agencyId, dimensionAtObservation: seriesDimAtObs };
       const seriesCacheKey = `oecd_${JSON.stringify(seriesCacheKeyObj)}`;
 
@@ -171,29 +205,69 @@ describe('OecdService', () => {
 
       const result = await oecdService.fetchOecdDataset(datasetId, filterExpression, agencyId, undefined, undefined, seriesDimAtObs);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(mockApiUrl, { params: { dimensionAtObservation: seriesDimAtObs } });
+      expect(mockedAxios.get).toHaveBeenCalledWith(defaultMockApiUrl, { params: { dimensionAtObservation: seriesDimAtObs } });
       expect(result).toBeInstanceOf(Array);
       expect(result?.length).toBe(2);
 
       expect(result?.[0]).toEqual(expect.objectContaining({
-        LOCATION: 'Germany',
-        LOCATION_ID: 'DE',
-        INDICATOR: 'Consumer Price Index',
-        INDICATOR_ID: 'CPI',
-        FREQ: 'Monthly',
-        FREQ_ID: 'M',
-        TIME_PERIOD: '2022-Q1',
-        TIME_PERIOD_ID: '2022-Q1',
+        LOCATION: 'Germany', LOCATION_ID: 'DE',
+        INDICATOR: 'Consumer Price Index', INDICATOR_ID: 'CPI',
+        FREQ: 'Monthly', FREQ_ID: 'M',
+        TIME_PERIOD: '2022-Q1', TIME_PERIOD_ID: '2022-Q1',
         value: 200,
-        OBS_STATUS: 'Actual',
-        OBS_STATUS_ID: 'A'
+        OBS_STATUS: 'Actual', OBS_STATUS_ID: 'A'
       }));
        expect(result?.[1].TIME_PERIOD).toEqual('2022-Q2');
        expect(result?.[1].value).toEqual(210);
        expect(result?.[1].OBS_STATUS).toEqual('Estimated');
 
-
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(seriesCacheKey, result, expect.any(Number));
+    });
+
+    it('should correctly include startTime and endTime in API request and cache key', async () => {
+      // oecdService from top beforeEach is fine
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      mockedAxios.get.mockResolvedValue({ data: mockSdmxJsonResponseAllDimensions });
+
+      const startTime = '2021-Q1';
+      const endTime = '2022-Q4';
+      const expectedParams = { dimensionAtObservation: dimAtObs, startTime, endTime };
+      // Define cache key object locally for this test with all relevant params
+      const currentCacheKeyObj = { datasetId, filterExpression, agencyId, ...expectedParams };
+      const expectedCacheKey = `oecd_${JSON.stringify(currentCacheKeyObj)}`;
+      // const currentMockApiUrl = `${oecdApi.baseUrl}/${datasetId}/${filterExpression}/${agencyId}`; // same as defaultMockApiUrl
+
+      await oecdService.fetchOecdDataset(datasetId, filterExpression, agencyId, startTime, endTime, dimAtObs);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(defaultMockApiUrl, { params: expectedParams });
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expectedCacheKey, expect.any(Array), expect.any(Number));
+    });
+
+    it('should handle observations with missing or null attributes gracefully', async () => {
+      // oecdService from top beforeEach
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      mockedAxios.get.mockResolvedValue({ data: mockSdmxMissingAttributes });
+
+      // Define cache key object locally for this test
+      const currentCacheKeyObj = { datasetId, filterExpression, agencyId, dimensionAtObservation: dimAtObs };
+      const currentCacheKey = `oecd_${JSON.stringify(currentCacheKeyObj)}`;
+
+      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression, agencyId, undefined, undefined, dimAtObs);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(defaultMockApiUrl, { params: { dimensionAtObservation: dimAtObs } });
+      expect(result).toBeInstanceOf(Array);
+      expect(result?.length).toBe(2);
+
+      expect(result?.[0]).toHaveProperty('STATUS', 'Estimated');
+      expect(result?.[0]).not.toHaveProperty('CONF_STATUS');
+      expect(result?.[0]).not.toHaveProperty('CONF_STATUS_ID');
+
+      expect(result?.[1]).not.toHaveProperty('STATUS');
+      expect(result?.[1]).not.toHaveProperty('STATUS_ID');
+      expect(result?.[1]).toHaveProperty('CONF_STATUS', 'Free');
+      expect(result?.[1]).toHaveProperty('CONF_STATUS_ID', 'F');
+
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(currentCacheKey, result, expect.any(Number));
     });
 
 
@@ -202,9 +276,9 @@ describe('OecdService', () => {
       const noDataResponse = { ...mockSdmxJsonResponseAllDimensions, dataSets: [] };
       mockedAxios.get.mockResolvedValue({ data: noDataResponse });
 
-      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression);
+      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression); // Uses default params
       expect(result).toBeNull();
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(defaultCacheKey, null, expect.any(Number));
     });
 
     it('should handle API response with no observations and cache null', async () => {
@@ -213,18 +287,18 @@ describe('OecdService', () => {
       noObsResponse.dataSets[0].observations = {};
       mockedAxios.get.mockResolvedValue({ data: noObsResponse });
 
-      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression);
+      const result = await oecdService.fetchOecdDataset(datasetId, filterExpression); // Uses default params
       expect(result).toBeNull();
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(defaultCacheKey, null, expect.any(Number));
     });
 
     it('should handle API error and cache null', async () => {
       mockCacheServiceInstance.get.mockResolvedValue(null);
       mockedAxios.get.mockRejectedValue(new Error('Network Error'));
 
-      await expect(oecdService.fetchOecdDataset(datasetId, filterExpression))
+      await expect(oecdService.fetchOecdDataset(datasetId, filterExpression)) // Uses default params
         .rejects.toThrow('Network Error');
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(defaultCacheKey, null, expect.any(Number));
     });
 
     it('should handle OECD API error response (e.g. 404 as error object)', async () => {
@@ -239,7 +313,7 @@ describe('OecdService', () => {
         };
         mockedAxios.get.mockRejectedValue(apiError);
 
-        await expect(oecdService.fetchOecdDataset(datasetId, filterExpression))
+        await expect(oecdService.fetchOecdDataset(datasetId, filterExpression)) // Uses default params
             .rejects.toThrow('OECD API Error: 404 - {"code":404,"title":"Not Found","detail":"No matching data found."}');
     });
   });
@@ -298,7 +372,7 @@ describe('OecdService', () => {
       const cacheKey = `oecd_${JSON.stringify(cacheKeyObj)}`;
       (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
 
-      const freshness = await oecdService.getDataFreshness('ID', 'FLT');
+      const freshness = await oecdService.getDataFreshness('ID', 'FLT'); // Uses default agencyId and dimAtObs
       expect(freshness).toEqual(new Date(now));
       expect(mockCacheServiceInstance.getEntry).toHaveBeenCalledWith(cacheKey);
     });

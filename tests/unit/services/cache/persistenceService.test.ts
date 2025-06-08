@@ -10,13 +10,15 @@ const TEST_CACHE_DIR = path.join(process.cwd(), '.cache_data_test');
 
 describe('PersistenceService', () => {
   let persistenceService: PersistenceService;
+  const TEST_CACHE_DIR_BASE = process.cwd(); // Define base path for clarity
 
   beforeEach(() => {
     // Ensure each test starts with a fresh service and mocks
     jest.resetAllMocks();
-    // Configure the service to use a specific test directory
-    persistenceService = new PersistenceService({ filePath: TEST_CACHE_DIR });
-    // Mock mkdir to simulate directory creation/existence
+    // Configure the service to use a specific test directory for most tests
+    // Individual tests (like constructor) might use a different path if needed
+    persistenceService = new PersistenceService({ filePath: path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_default') });
+    // Mock mkdir to simulate directory creation/existence for the default path
     mockFs.mkdir.mockResolvedValue(undefined);
   });
 
@@ -26,16 +28,40 @@ describe('PersistenceService', () => {
 
   describe('constructor', () => {
     it('should create the storage directory if it does not exist', async () => {
-      new PersistenceService({ filePath: TEST_CACHE_DIR });
-      expect(mockFs.mkdir).toHaveBeenCalledWith(TEST_CACHE_DIR, { recursive: true });
+      const specificTestDir = path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_constructor_success');
+      // mockFs.mkdir is global, so this mock will apply.
+      // If it were instance-specific, we'd mock before new PersistenceService.
+      mockFs.mkdir.mockResolvedValue(undefined);
+      new PersistenceService({ filePath: specificTestDir });
+      expect(mockFs.mkdir).toHaveBeenCalledWith(specificTestDir, { recursive: true });
+    });
+
+    it('should log an error if creating storage directory fails', async () => {
+      const specificTestDirFail = path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_constructor_fail');
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const testError = new Error('MKDIR failed');
+      mockFs.mkdir.mockRejectedValue(testError); // Mock this before instantiation
+
+      new PersistenceService({ filePath: specificTestDirFail });
+
+      // The constructor calls initStorage, which is async but not awaited in constructor.
+      // We need to wait a bit for the async mkdir to potentially call console.error
+      await new Promise(resolve => setTimeout(resolve, 0)); // Allow microtask queue to process
+
+      expect(mockFs.mkdir).toHaveBeenCalledWith(specificTestDirFail, { recursive: true });
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to create persistence storage directory:', testError);
+      consoleErrorSpy.mockRestore();
     });
   });
 
   describe('save', () => {
     it('should save data to a file', async () => {
       const key = 'testKey';
+      const key = 'testKey';
       const data: CacheEntry<string> = { data: 'testData', timestamp: Date.now(), ttl: 1000 };
-      const expectedPath = path.join(TEST_CACHE_DIR, `${key}.json`);
+      // Uses the default path from beforeEach's persistenceService instance
+      const currentTestCacheDir = (persistenceService as any).storagePath;
+      const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
 
       mockFs.writeFile.mockResolvedValue(undefined);
 
@@ -48,7 +74,8 @@ describe('PersistenceService', () => {
       const key = 'test/Key::Invalid';
       const safeKey = 'test_Key__Invalid';
       const data: CacheEntry<string> = { data: 'testData', timestamp: Date.now(), ttl: 1000 };
-      const expectedPath = path.join(TEST_CACHE_DIR, `${safeKey}.json`);
+      const currentTestCacheDir = (persistenceService as any).storagePath;
+      const expectedPath = path.join(currentTestCacheDir, `${safeKey}.json`);
 
       mockFs.writeFile.mockResolvedValue(undefined);
       await persistenceService.save(key, data);
@@ -74,7 +101,8 @@ describe('PersistenceService', () => {
       const now = Date.now();
       // Persisted entry should be returned as is by load, CacheService will check TTL
       const entry: CacheEntry<string> = { data: 'testData', timestamp: now - 500, ttl: 1000 };
-      const expectedPath = path.join(TEST_CACHE_DIR, `${key}.json`);
+      const currentTestCacheDir = (persistenceService as any).storagePath;
+      const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
       mockFs.readFile.mockResolvedValue(JSON.stringify(entry));
 
       const result = await persistenceService.load<string>(key);
@@ -105,7 +133,8 @@ describe('PersistenceService', () => {
 
     it('should return null if JSON parsing fails', async () => {
         const key = 'corruptedKey';
-        const expectedPath = path.join(TEST_CACHE_DIR, `${key}.json`);
+        const currentTestCacheDir = (persistenceService as any).storagePath;
+        const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
         mockFs.readFile.mockResolvedValue("this is not json");
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -120,7 +149,8 @@ describe('PersistenceService', () => {
   describe('remove', () => {
     it('should remove a file', async () => {
       const key = 'testKey';
-      const expectedPath = path.join(TEST_CACHE_DIR, `${key}.json`);
+      const currentTestCacheDir = (persistenceService as any).storagePath;
+      const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
       mockFs.unlink.mockResolvedValue(undefined);
 
       await persistenceService.remove(key);
@@ -155,13 +185,14 @@ describe('PersistenceService', () => {
       const files = ['file1.json', 'file2.json'];
       mockFs.readdir.mockResolvedValue(files as any); // Type assertion for simplicity
       mockFs.unlink.mockResolvedValue(undefined);
+      const currentTestCacheDir = (persistenceService as any).storagePath;
 
       await persistenceService.clearAll();
 
-      expect(mockFs.readdir).toHaveBeenCalledWith(TEST_CACHE_DIR);
+      expect(mockFs.readdir).toHaveBeenCalledWith(currentTestCacheDir);
       expect(mockFs.unlink).toHaveBeenCalledTimes(files.length);
-      expect(mockFs.unlink).toHaveBeenCalledWith(path.join(TEST_CACHE_DIR, 'file1.json'));
-      expect(mockFs.unlink).toHaveBeenCalledWith(path.join(TEST_CACHE_DIR, 'file2.json'));
+      expect(mockFs.unlink).toHaveBeenCalledWith(path.join(currentTestCacheDir, 'file1.json'));
+      expect(mockFs.unlink).toHaveBeenCalledWith(path.join(currentTestCacheDir, 'file2.json'));
     });
 
     it('should handle errors during clearAll', async () => {

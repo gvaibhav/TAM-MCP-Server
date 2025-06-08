@@ -4,12 +4,15 @@ import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { alphaVantageApi } from '../../../../src/config/apiConfig'; // For default function names
 import * as process from 'process';
+import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
 jest.mock('axios');
 jest.mock('../../../../src/services/cache/cacheService');
+jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
 
 describe('AlphaVantageService', () => {
   let alphaVantageService: AlphaVantageService;
@@ -21,6 +24,8 @@ describe('AlphaVantageService', () => {
     jest.resetAllMocks();
     process.env = { ...OLD_ENV }; // Reset env for each test
     mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    // Default mock for getEnvAsNumber, can be overridden in specific tests
+    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service will be instantiated in context blocks or tests to control API key presence
   });
 
@@ -61,8 +66,58 @@ describe('AlphaVantageService', () => {
     const mockApiUrl = `${alphaVantageApi.baseUrl}${alphaVantageApi.queryPath}?function=${overviewFunction}&symbol=${symbol}&apikey=${apiKey}`;
 
     beforeEach(() => {
+        // Default instantiation for most tests in this block
         alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey);
     });
+
+    it('should use TTL from env var for successful fetch when CACHE_TTL_ALPHA_VANTAGE_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = { Symbol: 'IBM', MarketCapitalization: '150B' };
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+
+      const customSuccessTTL = 987654;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_ALPHA_VANTAGE_MS') return customSuccessTTL;
+        return 1000; // Default for other TTLs
+      });
+      alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await alphaVantageService.fetchMarketSize(symbol);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Object), customSuccessTTL);
+    });
+
+    it('should use TTL from env var for no data response when CACHE_TTL_ALPHA_VANTAGE_NODATA_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponseNoData = { Symbol: 'IBM', MarketCapitalization: "None" };
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponseNoData });
+
+      const customNoDataTTL = 123456;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_ALPHA_VANTAGE_NODATA_MS') return customNoDataTTL;
+        return 1000;
+      });
+      alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await alphaVantageService.fetchMarketSize(symbol);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
+    });
+
+    it('should use TTL from env var for rate limit response when CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS is set', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const rateLimitResponse = { Note: "Thank you for using Alpha Vantage! API call frequency..." };
+      mockedAxios.get.mockResolvedValue({ data: rateLimitResponse });
+
+      const customRateLimitTTL = 456789;
+       mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS') return customRateLimitTTL;
+        return 1000;
+      });
+      alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey); // Re-instantiate
+
+      await alphaVantageService.fetchMarketSize(symbol);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customRateLimitTTL);
+    });
+
 
     it('should return data from cache if available', async () => {
       const cachedOverview = { marketCapitalization: 50000000000 };
@@ -162,7 +217,97 @@ describe('AlphaVantageService', () => {
     const mockApiUrl = `${alphaVantageApi.baseUrl}${alphaVantageApi.queryPath}?function=${seriesType}&symbol=${symbol}&apikey=${apiKey}`;
 
     beforeEach(() => {
+        // alphaVantageService is instantiated with apiKey here from parent describe or a local one
+        // For this block, ensure it's the one with the API key
         alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey);
+    });
+
+    it('should use TTL from env var for successful time series fetch', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponse = { "Meta Data": {}, "Time Series (Daily)": {} };
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+
+      const customSuccessTTL = 112233;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_ALPHA_VANTAGE_MS') return customSuccessTTL;
+        return 1000;
+      });
+      alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey);
+
+      await alphaVantageService.fetchIndustryData(symbol, seriesType);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Object), customSuccessTTL);
+    });
+
+    it('should use TTL from env var for no data response in time series fetch', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponseNoData = { "Meta Data": {} }; // No time series key
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponseNoData });
+
+      const customNoDataTTL = 445566;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_ALPHA_VANTAGE_NODATA_MS') return customNoDataTTL;
+        return 1000;
+      });
+      alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey);
+
+      await alphaVantageService.fetchIndustryData(symbol, seriesType);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
+    });
+
+    it('should use TTL from env var for rate limit response in time series fetch', async () => {
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const rateLimitResponse = { Note: "Thank you for using Alpha Vantage! API call frequency..." };
+      mockedAxios.get.mockResolvedValue({ data: rateLimitResponse });
+
+      const customRateLimitTTL = 778899;
+      mockedGetEnvAsNumber.mockImplementation((key) => {
+        if (key === 'CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS') return customRateLimitTTL;
+        return 1000;
+      });
+      alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey);
+
+      await alphaVantageService.fetchIndustryData(symbol, seriesType);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customRateLimitTTL);
+    });
+
+    it('should fetch and cache data correctly for a different seriesType (e.g., WEEKLY)', async () => {
+      // apiKey is in scope from the describe block for AlphaVantageService
+      // alphaVantageService instance from the beforeEach will be used.
+      // We need to ensure its TTLs are what we expect or re-initialize if testing custom TTLs.
+
+      const weeklySeriesType = 'TIME_SERIES_WEEKLY_ADJUSTED';
+      const weeklyCacheKey = `alphavantage_timeseries_${weeklySeriesType}_${symbol}`;
+      const weeklyMockApiUrl = `${alphaVantageApi.baseUrl}${alphaVantageApi.queryPath}?function=${weeklySeriesType}&symbol=${symbol}&apikey=${apiKey}`;
+
+      mockCacheServiceInstance.get.mockResolvedValue(null);
+      const mockApiResponseWeekly = {
+        "Meta Data": { "1. Information": "Weekly Adjusted Prices..." },
+        "Weekly Adjusted Time Series": { "2023-01-06": { "1. open": "220" } },
+      };
+      mockedAxios.get.mockResolvedValue({ data: mockApiResponseWeekly });
+
+      const expectedDataWeekly = {
+        metaData: { "1. Information": "Weekly Adjusted Prices..." },
+        timeSeries: { "2023-01-06": { "1. open": "220" } },
+      };
+
+      // Set up getEnvAsNumber for this specific test to ensure the default successful TTL is used
+      // or a specific one if CACHE_TTL_ALPHA_VANTAGE_MS was being tested.
+      // The service instance `alphaVantageService` was created in beforeEach using the default mock for getEnvAsNumber.
+      // So, it will use the default successfulFetchTtl from its constructor.
+      const expectedSuccessfulTTL = 24 * 60 * 60 * 1000; // This is the default from the service
+      // If we wanted to test a *custom* TTL from env for *this* call, we'd do:
+      // mockedGetEnvAsNumber.mockImplementationOnce((key, defVal) => key === 'CACHE_TTL_ALPHA_VANTAGE_MS' ? myCustomTTL : defVal);
+      // alphaVantageService = new AlphaVantageService(mockCacheServiceInstance, apiKey); // then re-init
+      // For this test, we're confirming it works with another series type and uses *a* successful TTL.
+      // The parent `beforeEach` for the service already ensures `mockedGetEnvAsNumber` returns default values,
+      // so `alphaVantageService.successfulFetchTtl` will be the default.
+
+      const result = await alphaVantageService.fetchIndustryData(symbol, weeklySeriesType);
+
+      expect(result).toEqual(expectedDataWeekly);
+      expect(mockedAxios.get).toHaveBeenCalledWith(weeklyMockApiUrl);
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(weeklyCacheKey, expectedDataWeekly, expectedSuccessfulTTL);
     });
 
     it('should return data from cache if available', async () => {
