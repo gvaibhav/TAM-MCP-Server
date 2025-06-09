@@ -1,3 +1,80 @@
+### December 8, 2024 - Free Data Sources Integration (Phase 2 Complete) & Enhancements
+
+**Major Feature: Full Integration of 8 Free Data Sources, Advanced Orchestration, Enhanced Testing, and Tooling**
+
+This significant update completes the integration of all eight targeted free data sources, substantially upgrading the server's ability to provide diverse, real-world market data. It includes a major configuration refactor, advanced `DataService` orchestration, enhanced `MarketAnalysisTools`, and a comprehensive testing overhaul with a focus on high coverage and real API validation for keyless services.
+
+#### 🔧 **Configuration Management Enhancements (User Feedback)**
+- **Centralized API Configuration**: Created `src/config/apiConfig.ts` to store all external API base URLs, specific endpoint paths, and default parameters (e.g., for World Bank, FRED, AlphaVantage, Nasdaq, BLS, Census, OECD, IMF). Existing services updated to use this central config.
+- **Environment-Configurable Cache TTLs**: Implemented per-data-source cache TTLs via environment variables (e.g., `CACHE_TTL_WORLD_BANK_MS`, `CACHE_TTL_ALPHA_VANTAGE_NODATA_MS`). Added `getEnvAsNumber` utility in `src/utils/envHelper.ts` for safe parsing of these variables. All data source services now use these configurable TTLs with sensible defaults.
+
+#### 🔌 **Completed Data Source Service Implementations (All 8 Services)**
+- **`AlphaVantageService`**:
+    - Implemented `fetchMarketSize` (for company market capitalization via `OVERVIEW` endpoint) and `fetchIndustryData` (for stock time series).
+    - Handles API key, caching (including specific TTLs for rate-limit responses), and uses centralized config.
+- **`NasdaqDataService` (Quandl)**:
+    - Implemented `fetchDatasetTimeSeries` (core method), `fetchIndustryData`, and `fetchMarketSize` (extracting latest/specific values from datasets).
+    - Handles API key, caching, centralized config, and transforms Nasdaq's JSON structure.
+- **`BlsService` (Bureau of Labor Statistics)**:
+    - Implemented `fetchIndustryData` for multiple BLS series IDs via V2 POST API. Supports optional API key.
+    - `fetchMarketSize` placeholder guides users to `fetchIndustryData`.
+- **`CensusService`**:
+    - Implemented `fetchIndustryData` (e.g., for County Business Patterns) and `fetchMarketSize` (for specific measures like employment by NAICS).
+    - Handles API key and parses Census's array-of-arrays JSON response.
+- **`OecdService`**:
+    - Implemented `fetchOecdDataset` (core method), `fetchIndustryData`, and `fetchMarketSize` for OECD SDMX-JSON API.
+    - Includes complex parsing logic for SDMX-JSON structure (observation-centric and series-centric).
+- **`ImfService`**:
+    - Implemented `fetchImfDataset` (core method), `fetchIndustryData`, and `fetchMarketSize` for IMF SDMX-JSON API (CompactData format).
+    - Adapted SDMX-JSON parsing for IMF's specific structure (series-based keys, etc.).
+- **(Previously Completed & Refined)**: `WorldBankService`, `FredService`.
+
+#### 🧪 **Comprehensive Testing Overhaul**
+- **Enhanced Unit Test Coverage (>97% Target Focus)**:
+    - Systematically reviewed and significantly enhanced unit tests for all 8 data source services and the core caching services (`CacheService`, `PersistenceService`).
+    - Added tests for configurable TTLs, specific API parameter handling, diverse API response mocking (errors, no data, rate limits), data parsing edge cases (especially for SDMX-JSON in OECD/IMF), and placeholder method behaviors.
+- **Integration Testing**:
+    - **`DataService` Integration Tests**: Implemented tests for `DataService` orchestration logic (in `tests/integration/services/dataService.integration.test.ts`), mocking underlying data source service methods to verify routing (symbol-based, NAICS-based, fallbacks), error handling, and the functionality of `getSpecificDataSourceData`.
+    - **`MarketAnalysisTools` Integration Tests**: Implemented tests for `MarketAnalysisTools` (in `tests/integration/tools/marketAnalysisTools.integration.test.ts`), mocking `DataService` methods to verify tool interaction with the service layer, especially for the updated `industryData` tool and the new `generic_data_query` tool.
+- **Live API Integration Tests (Keyless Services)**:
+    *   Added new integration tests that make **real API calls** for services not requiring API keys:
+        *   `tests/integration/services/live/worldBankService.live.test.ts`
+        *   `tests/integration/services/live/oecdService.live.test.ts`
+        *   `tests/integration/services/live/imfService.live.test.ts`
+    *   These tests validate end-to-end data fetching and parsing against live API responses for representative queries, using a separate test cache and graceful error handling for external API issues.
+
+#### 🔄 **Core Service & Tooling Enhancements**
+- **`DataService` Orchestration**:
+    - Constructor now instantiates and manages all 8 data source services.
+    - `getMarketSize` method significantly enhanced with a multi-source strategy: attempts AlphaVantage (symbols), Census (NAICS codes), then Fred/WorldBank, before falling back to mock data.
+    - Added `getSpecificDataSourceData(sourceName, methodName, params)` method for direct, flexible access to any public method of any data source service, empowering tools to fetch diverse datasets.
+- **`MarketAnalysisTools` Updates**:
+    - `industryData` tool enhanced to optionally use `DataService.getSpecificDataSourceData` for targeted, detailed data queries based on user input.
+    - New `generic_data_query` tool added, providing a direct interface to `DataService.getSpecificDataSourceData` for advanced users to query any configured data source.
+    - Corrected `limit` parameter handling in `industrySearch`.
+
+#### 📁 **Key Files Changed/Added**
+- `src/config/apiConfig.ts`: New.
+- `src/utils/envHelper.ts`: New.
+- `src/services/dataSources/alphaVantageService.ts`, `nasdaqDataService.ts`, `blsService.ts`, `censusService.ts`, `oecdService.ts`, `imfService.ts`: New implementations or major updates.
+- `src/services/dataService.ts`: Major refactor for orchestration and new methods.
+- `src/tools/market-tools.ts`: Updates to `industryData`, new `generic_data_query` tool.
+- `tests/unit/services/dataSources/*`: Added comprehensive unit tests for all new services and enhanced existing ones.
+- `tests/integration/services/dataService.integration.test.ts`: New.
+- `tests/integration/tools/marketAnalysisTools.integration.test.ts`: New.
+- `tests/integration/services/live/*`: New live API tests for WorldBank, OECD, IMF.
+- `doc/RELEASE-NOTES.md`: This entry.
+- `README.md`: (To be updated in next step with new env vars and capabilities summary).
+
+#### 🎯 **Benefits Achieved**
+- **Vastly Expanded Data Access**: Server can now connect to and process data from 8 diverse, free external data sources.
+- **Increased Realism**: Moves significantly away from mock data towards real-world economic and financial information.
+- **Enhanced Flexibility & Configurability**: Centralized API config and environment-driven cache TTLs improve maintainability.
+- **Improved Tooling**: `MarketAnalysisTools` are more powerful with direct data access capabilities.
+- **Higher Code Quality & Reliability**: Comprehensive unit and integration testing, including live API validation, significantly boosts confidence in the system.
+- **Foundation for Advanced Analysis**: The rich, diverse data now accessible paves the way for more sophisticated market analysis tools and features.
+
+---
 ### December 7, 2024 - Free Data Sources Integration (Phase 1)
 
 **Major Feature: Integration of Free Data Sources and Core Service Enhancements**

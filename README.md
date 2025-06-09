@@ -13,20 +13,21 @@
 
 A comprehensive **Model Context Protocol (MCP)** server for market sizing analysis, TAM/SAM calculations, and industry research. Built with TypeScript, Express.js, and following the MCP 2024-11-05 specification.
 
-**The server now integrates several free data sources to provide real-time market insights, alongside its existing mock data capabilities and planned support for premium data providers.**
+**The server now integrates 8 free data sources (World Bank, FRED, Alpha Vantage, Nasdaq Data Link, BLS, Census, OECD, IMF) providing real-time market insights. It features an advanced DataService for orchestration, a flexible generic_data_query tool, and configurable caching.**
 
 ## 🚀 Features
 
 ### Core Capabilities
-- **10 Specialized Market Analysis Tools** for comprehensive market research
-- **Integration with Free Data Sources** (BLS, Census, FRED, World Bank, OECD, IMF, Alpha Vantage, Nasdaq Data Link)
-- **HTTP Streamable Transport** with Server-Sent Events for real-time updates
-- **MCP Resource Support** with documentation access through protocol
-- **Advanced Caching System** with in-memory and persistent (JSON file) layers, configurable TTL, and performance optimization.
-- **Comprehensive Logging** with structured Winston logging and business metrics
-- **Prometheus Metrics** for monitoring and observability
-- **Enterprise Security** with rate limiting, CORS, and input validation
-- **Session Management** for stateful interactions
+- **11 Specialized Market Analysis Tools** (including new `generic_data_query`) for comprehensive market research.
+- **Full Integration with 8 Free Data Sources**: BLS, Census, FRED, World Bank, OECD, IMF, Alpha Vantage, Nasdaq Data Link.
+- **Advanced `DataService` Orchestration**: Intelligent routing for `getMarketSize` (symbol/NAICS detection) and direct data access via `getSpecificDataSourceData`.
+- **HTTP Streamable Transport** with Server-Sent Events for real-time updates.
+- **MCP Resource Support** with documentation access through protocol.
+- **Advanced Caching System**: In-memory and persistent (JSON file) layers, with per-source configurable TTLs via environment variables.
+- **Comprehensive Logging** with structured Winston logging and business metrics.
+- **Prometheus Metrics** for monitoring and observability.
+- **Enterprise Security** with rate limiting, CORS, and input validation.
+- **Session Management** for stateful interactions.
 
 ### Available Resources
 - **`/`**: Root endpoint with server information and health check.
@@ -36,16 +37,17 @@ A comprehensive **Model Context Protocol (MCP)** server for market sizing analys
 
 ### Market Analysis Tools
 The server provides the following tools accessible via the `/mcp` endpoint:
-1.  **`industry_search`**: Search for industries.
-2.  **`industry_data`**: Get detailed industry information.
-3.  **`market_size`**: Retrieve market size data.
-4.  **`tam_calculator`**: Calculate Total Addressable Market.
-5.  **`sam_calculator`**: Calculate Serviceable Addressable/Obtainable Market.
-6.  **`market_segments`**: Analyze market segmentation.
-7.  **`market_forecasting`**: Generate market size forecasts.
-8.  **`market_comparison`**: Compare multiple markets.
-9.  **`data_validation`**: Validate market data.
-10. **`market_opportunities`**: Identify market opportunities.
+1.  `industry_search`: Search for industries.
+2.  `industry_data`: Get detailed industry information (now supports fetching additional data from specific sources).
+3.  `market_size`: Retrieve market size data (now attempts multiple sources).
+4.  `tam_calculator`: Calculate Total Addressable Market.
+5.  `sam_calculator`: Calculate Serviceable Addressable/Obtainable Market.
+6.  `market_segments`: Analyze market segmentation.
+7.  `market_forecasting`: Generate market size forecasts.
+8.  `market_comparison`: Compare multiple markets.
+9.  `data_validation`: Validate market data.
+10. `market_opportunities`: Identify market opportunities.
+11. **`generic_data_query` (New)**: Directly query any integrated data source service and method.
 
 ## 🛠 Installation
 
@@ -96,57 +98,63 @@ The server provides the following tools accessible via the `/mcp` endpoint:
 ## 📋 Configuration
 
 ### Environment Variables
+Update your `.env` file. API keys are needed for some sources. Cache TTLs are in milliseconds.
 
-Update your `.env` file with the following variables. API keys are required for some free data sources to function.
-
-| Variable                  | Description                                      | Default         | Required                 |
-|---------------------------|--------------------------------------------------|-----------------|--------------------------|
-| `PORT`                    | Server port                                      | `3000`          | No                       |
-| `HOST`                    | Server host                                      | `0.0.0.0`       | No                       |
-| `NODE_ENV`                | Environment                                      | `development`   | No                       |
-| `CORS_ORIGIN`             | CORS origin                                      | `*`             | No                       |
-| `RATE_LIMIT_MAX`          | Rate limit per window                            | `100`           | No                       |
-| `CACHE_TTL`               | Default Cache TTL for in-memory cache (seconds)  | `300`           | No                       |
-| `SESSION_SECRET`          | Session secret key                               | -               | **Yes**                  |
-| `LOG_LEVEL`               | Logging level                                    | `info`          | No                       |
-|                           |                                                  |                 |                          |
-| **Free Data Source API Keys** |                                                  |                 |                          |
-| `BLS_API_KEY`             | API Key for Bureau of Labor Statistics (BLS)     | -               | Recommended for BLS data |
-| `CENSUS_API_KEY`          | API Key for Census Bureau                        | -               | Recommended for Census data|
-| `FRED_API_KEY`            | API Key for Federal Reserve Economic Data (FRED) | -               | **Yes** for FRED data    |
-| `ALPHA_VANTAGE_API_KEY`   | API Key for Alpha Vantage                        | -               | Recommended for Alpha Vantage |
-| `NASDAQ_DATA_LINK_API_KEY`| API Key for Nasdaq Data Link (Quandl)            | -               | Recommended for Nasdaq data|
-|                           | *Note: World Bank, OECD, IMF generally do not require API keys for public data.* |                 |                          |
-|                           |                                                  |                 |                          |
-| **Premium Data Source API Keys (Planned)** |                                  |                 |                          |
-| `MARKET_DATA_API_KEY`     | Generic key for a primary paid data provider     | -               | For future premium sources |
-| `IBISWORLD_API_KEY`       | For IBISWorld                                    | -               | For future premium sources |
-| `STATISTA_API_KEY`        | For Statista                                     | -               | For future premium sources |
+| Variable                        | Description                                         | Default             | Required                 |
+|---------------------------------|-----------------------------------------------------|---------------------|--------------------------|
+| `PORT`                          | Server port                                         | `3000`              | No                       |
+| `HOST`                          | Server host                                         | `0.0.0.0`           | No                       |
+| `NODE_ENV`                      | Environment                                         | `development`       | No                       |
+| `CORS_ORIGIN`                   | CORS origin                                         | `*`                 | No                       |
+| `RATE_LIMIT_MAX`                | Rate limit per window                               | `100`               | No                       |
+| `SESSION_SECRET`                | Session secret key                                  | -                   | **Yes**                  |
+| `LOG_LEVEL`                     | Logging level                                       | `info`              | No                       |
+|                                 |                                                     |                     |                          |
+| **API Keys (Free Sources)**     |                                                     |                     |                          |
+| `BLS_API_KEY`                   | Bureau of Labor Statistics (BLS)                    | -                   | Optional for BLS data    |
+| `CENSUS_API_KEY`                | Census Bureau                                       | -                   | **Yes** for Census data  |
+| `FRED_API_KEY`                  | Federal Reserve Economic Data (FRED)                | -                   | **Yes** for FRED data    |
+| `ALPHA_VANTAGE_API_KEY`         | Alpha Vantage                                       | -                   | **Yes** for Alpha Vantage|
+| `NASDAQ_DATA_LINK_API_KEY`      | Nasdaq Data Link (Quandl)                           | -                   | **Yes** for Nasdaq data  |
+|                                 | *World Bank, OECD, IMF: No key needed*              |                     |                          |
+|                                 |                                                     |                     |                          |
+| **Cache TTLs (Milliseconds)**   |                                                     |                     |                          |
+| `CACHE_TTL_DEFAULT_MS`          | Default general cache TTL (used by some services if specific not set) | `86400000` (1d)   | No                       |
+| `CACHE_TTL_WORLD_BANK_MS`       | TTL for World Bank successful fetches               | `86400000` (1d)   | No                       |
+| `CACHE_TTL_WORLD_BANK_NODATA_MS`| TTL for World Bank "no data" responses              | `3600000` (1h)    | No                       |
+| `CACHE_TTL_FRED_MS`             | TTL for FRED successful fetches                     | `86400000` (1d)   | No                       |
+| `CACHE_TTL_FRED_NODATA_MS`      | TTL for FRED "no data" responses                    | `3600000` (1h)    | No                       |
+| `CACHE_TTL_ALPHA_VANTAGE_MS`    | TTL for AlphaVantage successful fetches             | `86400000` (1d)   | No                       |
+| `CACHE_TTL_ALPHA_VANTAGE_NODATA_MS` | TTL for AlphaVantage "no data" responses          | `3600000` (1h)    | No                       |
+| `CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS` | TTL for AlphaVantage rate limit responses      | `300000` (5m)     | No                       |
+| `CACHE_TTL_NASDAQ_MS`           | TTL for Nasdaq Data Link successful fetches         | `86400000` (1d)   | No                       |
+| `CACHE_TTL_NASDAQ_NODATA_MS`    | TTL for Nasdaq Data Link "no data" responses        | `3600000` (1h)    | No                       |
+| `CACHE_TTL_BLS_MS`              | TTL for BLS successful fetches                      | `86400000` (1d)   | No                       |
+| `CACHE_TTL_BLS_NODATA_MS`       | TTL for BLS "no data" responses                     | `3600000` (1h)    | No                       |
+| `CACHE_TTL_CENSUS_MS`           | TTL for Census successful fetches                   | `86400000` (1d)   | No                       |
+| `CACHE_TTL_CENSUS_NODATA_MS`    | TTL for Census "no data" responses                  | `3600000` (1h)    | No                       |
+| `CACHE_TTL_OECD_MS`             | TTL for OECD successful fetches                     | `86400000` (1d)   | No                       |
+| `CACHE_TTL_OECD_NODATA_MS`      | TTL for OECD "no data" responses                    | `3600000` (1h)    | No                       |
+| `CACHE_TTL_IMF_MS`              | TTL for IMF successful fetches                      | `86400000` (1d)   | No                       |
+| `CACHE_TTL_IMF_NODATA_MS`       | TTL for IMF "no data" responses                     | `3600000` (1h)    | No                       |
+|                                 |                                                     |                     |                          |
+| **Premium API Keys (Planned)**  |                                                     |                     |                          |
+| `MARKET_DATA_API_KEY`           | Generic key for a primary paid provider             | -                   | For future use           |
+| `IBISWORLD_API_KEY`             | For IBISWorld                                       | -                   | For future premium sources |
+| `STATISTA_API_KEY`              | For Statista                                        | -                   | For future premium sources |
 
 ### Data Sources and API Configuration
-
-The server now integrates a variety of data sources, prioritizing free APIs for broad accessibility.
+The server now integrates 8 free data sources. The `DataService` attempts to route `getMarketSize` requests intelligently (e.g., using AlphaVantage for stock symbols if `industryId` matches a symbol pattern, Census for NAICS codes) and provides a `getSpecificDataSourceData` method for direct access to any data source's capabilities. This method is exposed via the new `generic_data_query` tool.
 
 #### Integrated Free Data Sources:
-These sources are used by the `DataService` to fetch real-time information. Ensure API keys are set up in your `.env` file for services that require them.
-- **Bureau of Labor Statistics (BLS)**: Employment, wage data, productivity metrics. (Requires `BLS_API_KEY`)
-  - API: `https://www.bls.gov/developers/api_signature_v2.shtml`
-- **Census Bureau**: Demographic and economic census data. (Requires `CENSUS_API_KEY`)
-  - API: `https://www.census.gov/data/developers/data-sets.html`
-- **Federal Reserve Economic Data (FRED)**: Economic indicators. (Requires `FRED_API_KEY`)
-  - API: `https://fred.stlouisfed.org/docs/api/fred/`
-- **World Bank**: Global economic and development data. (No API key generally required)
-  - API: `https://datahelpdesk.worldbank.org/knowledgebase/articles/889392`
-- **OECD**: International economic statistics. (No API key generally required)
-  - API: `https://data.oecd.org/api/`
-- **IMF**: International monetary data. (No API key generally required)
-  - API: `https://datahelp.imf.org/knowledgebase/articles/667681`
-- **Alpha Vantage**: Financial and market data (free tier has limits, e.g., 500 calls/day). (Requires `ALPHA_VANTAGE_API_KEY`)
-  - API: `https://www.alphavantage.co/documentation/`
-- **Nasdaq Data Link (formerly Quandl)**: Economic and financial datasets. (Requires `NASDAQ_DATA_LINK_API_KEY`)
-  - API: `https://docs.data.nasdaq.com/`
-
-The system respects free tier limits and employs caching to optimize API usage.
+- **Alpha Vantage**: Company financials, stock data (market cap via `OVERVIEW`). (Requires `ALPHA_VANTAGE_API_KEY`)
+- **BLS (Bureau of Labor Statistics)**: Employment, wages, economic indicators. (Optional `BLS_API_KEY`)
+- **Census Bureau**: Demographic and economic data (e.g., County Business Patterns). (Requires `CENSUS_API_KEY`)
+- **FRED (Federal Reserve Economic Data)**: Broad economic indicators. (Requires `FRED_API_KEY`)
+- **IMF (International Monetary Fund)**: Global economic and financial data. (Public access)
+- **Nasdaq Data Link (Quandl)**: Diverse financial and economic datasets. (Requires `NASDAQ_DATA_LINK_API_KEY`)
+- **OECD**: International comparative statistics. (Public access)
+- **World Bank**: Global development and economic data. (Public access)
 
 #### Planned Premium Data Sources:
 Integration with these premium sources is planned for future releases to provide even more in-depth analysis:
@@ -159,9 +167,11 @@ Integration with these premium sources is planned for future releases to provide
 ## 🏗 Architecture
 
 ### Project Structure
-The project structure has been updated to support multiple data sources and enhanced caching:
+The project structure includes dedicated services for each data source and a central configuration:
 ```
 src/
+├── config/
+│   └── apiConfig.ts          # Centralized API endpoint configurations (New)
 ├── index.ts                  # Main entry point
 ├── server.ts                 # Express server setup
 ├── types/
@@ -176,32 +186,44 @@ src/
 │   │   ├── cacheService.ts     # In-memory caching logic
 │   │   └── persistenceService.ts # File-based persistence for cache
 │   └── dataSources/
+│       ├── alphaVantageService.ts # Alpha Vantage client
 │       ├── blsService.ts       # Bureau of Labor Statistics client
 │       ├── censusService.ts    # Census Bureau client
 │       ├── fredService.ts      # Federal Reserve client
-│       ├── worldBankService.ts # World Bank client
-│       ├── oecdService.ts      # OECD client
 │       ├── imfService.ts       # IMF client
-│       ├── alphaVantageService.ts # Alpha Vantage client
-│       └── nasdaqDataService.ts # Nasdaq Data Link client
+│       ├── nasdaqDataService.ts # Nasdaq Data Link client
+│       ├── oecdService.ts      # OECD client
+│       └── worldBankService.ts # World Bank client
 └── utils/
     ├── index.ts              # Main export for utility functions
-    ├── dataTransform.ts      # Data transformation utilities (New)
-    ├── rateLimit.ts          # Rate limiting utilities (New)
+    ├── dataTransform.ts      # Data transformation utilities
+    ├── envHelper.ts          # Environment variable parsing (New)
+    ├── rateLimit.ts          # Rate limiting utilities
     └── logger.ts             # Winston logging utility
+
+tests/
+├── integration/
+│   ├── services/
+│   │   ├── dataService.integration.test.ts # (New)
+│   │   └── live/                             # (New directory)
+│   │       ├── worldBankService.live.test.ts # (New)
+│   │       ├── oecdService.live.test.ts      # (New)
+│   │       └── imfService.live.test.ts       # (New)
+│   └── tools/
+│       └── marketAnalysisTools.integration.test.ts # (New)
+# ... (rest of tests structure)
 ```
 
 ### Data Caching Strategy
-The server employs a two-tier caching strategy to optimize performance and minimize API calls:
+The server employs a two-tier caching strategy with per-source configurable TTLs via environment variables (see Configuration section).
 1.  **In-Memory Cache (`CacheService`)**:
-    *   Primary cache using a fast in-memory store (currently a `Map`-based implementation).
-    *   Configurable Time-To-Live (TTL) for each cache entry. Default TTL can be set via `CACHE_TTL` environment variable.
+    *   Primary cache using a fast in-memory store.
+    *   Configurable Time-To-Live (TTL) for each cache entry.
     *   Tracks cache hits, misses, and size.
 2.  **Persistent Cache (`PersistenceService`)**:
-    *   Secondary cache layer that persists data to the local filesystem.
-    *   Currently uses JSON files stored in the `.cache_data` directory (this directory should be added to `.gitignore`).
+    *   Secondary cache layer that persists data to the local filesystem (`.cache_data/` directory).
     *   Helps retain cached data across server restarts.
-    *   Data freshness is managed by the TTL set when data is initially cached. Expired data in persistence is not served and is removed.
+    *   Data freshness is managed by the TTL set when data is initially cached.
 
 This strategy ensures that frequently accessed data is served quickly, while less frequent data can still be retrieved from persistence or fetched anew from external APIs if expired.
 
@@ -211,62 +233,46 @@ This strategy ensures that frequently accessed data is served quickly, while les
 - **Protocol**: MCP 2024-11-05 Specification
 - **Validation**: Zod for schema validation
 - **Logging**: Winston for structured logging
-- **Testing**: Jest for unit and integration tests
+- **Testing**: Jest for unit, integration, and live API tests
 - **Containerization**: Docker
 - **CI/CD**: GitHub Actions
 
 ## 🧪 Testing
 Run tests with:
 ```bash
-npm test
+npm test # Runs all tests (unit, integration)
+npm run test:unit
+npm run test:integration
+npm run test:live # For live API tests (use with caution)
+npm run test:coverage
 ```
-This will execute unit tests and integration tests. Code coverage reports are generated in the `coverage/` directory.
+Code coverage reports are generated in the `coverage/` directory. Live API tests are separate and should be run judiciously.
 
 ## 📊 Monitoring & Observability
-- **Logging**: Structured logs are output to the console and/or configured log files.
-- **Metrics**: Prometheus-compatible metrics are exposed at the `/metrics` endpoint.
-  Key metrics include:
-  - `mcp_requests_total`: Total number of MCP requests.
-  - `mcp_request_duration_seconds`: Duration of MCP requests.
-  - `cache_hits_total`, `cache_misses_total`: Cache performance.
-  - `api_calls_total`: Calls to external data source APIs.
+- **Logging**: Structured logs output to console and/or `logs/` directory.
+- **Metrics**: Prometheus-compatible metrics exposed at `/metrics`.
 
 ## 🔒 Security
-- **Input Validation**: All incoming requests are validated using Zod schemas.
-- **Rate Limiting**: Basic rate limiting is implemented to prevent abuse.
+- **Input Validation**: Zod schemas validate all incoming requests.
+- **Rate Limiting**: Basic rate limiting is implemented.
 - **CORS**: Configurable Cross-Origin Resource Sharing.
-- **Error Handling**: Standardized error responses.
-- **Session Management**: Secure session handling with HTTP-only cookies.
+- **Session Management**: Secure session handling.
 
 ### API Key Management
 - API keys for external data sources are configured via environment variables (see "Environment Variables" section).
-- Ensure `.env` file is secured and not committed to version control.
-- The application is designed to function with missing optional API keys, though data availability from those sources will be impacted.
+- Ensure the `.env` file is secured and not committed to version control.
+- The application is designed to function with missing optional API keys, though data availability from those sources will be impacted or disabled.
 
 ## 🚀 Deployment
-The server can be deployed using various methods:
-- **Docker**: Recommended for containerized environments.
-- **Node.js process**: Directly run the built application.
-- **Serverless platforms**: Adaptable for serverless functions (may require modifications).
-
-Refer to platform-specific deployment guides for detailed instructions.
+The server can be deployed using Docker (recommended) or directly via Node.js. Refer to platform-specific deployment guides.
 
 ## 🤝 Contributing
-Contributions are welcome! Please follow these steps:
-1.  Fork the repository.
-2.  Create a new branch (`git checkout -b feature/your-feature`).
-3.  Make your changes.
-4.  Write tests for your changes.
-5.  Ensure all tests pass (`npm test`).
-6.  Commit your changes (`git commit -m 'Add some feature'`).
-7.  Push to the branch (`git push origin feature/your-feature`).
-8.  Open a pull request.
-
-Please adhere to the existing code style and ensure your commits are descriptive.
+Contributions are welcome! Please see `CONTRIBUTING.md` and adhere to the Code of Conduct.
 
 ## 📜 Documentation
-- **API Documentation**: Available at the `/docs` endpoint when the server is running.
+- **API Documentation**: Available at the `/docs` endpoint when the server is running (if Swagger/OpenAPI is integrated).
 - **MCP Specification**: [MCP 2024-11-05](https://modelcontextprotocol.org/)
+- **Release Notes**: See `doc/RELEASE-NOTES.md`.
 
 ## 🔄 Changelog
 See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
@@ -279,7 +285,7 @@ If you encounter any issues or have questions, please open an issue on the [GitH
 
 ## ✨ Acknowledgments
 - Thanks to the Model Context Protocol community.
-- Inspired by various market analysis tools and platforms.
+- Gratitude to the providers of free data APIs.
 
 ---
 
