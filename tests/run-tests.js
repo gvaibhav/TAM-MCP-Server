@@ -63,7 +63,7 @@ Examples:
 }
 
 function runTests(category, options = []) {
-  const jestArgs = ['--config', 'jest.config.json'];
+  const jestArgs = ['--config', 'config/jest.config.json'];
   
   if (category && category !== 'all') {
     jestArgs.push(testCategories[category]);

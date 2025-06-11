@@ -1,33 +1,124 @@
-# TAM MCP Server Documentation
+# TAM MCP Server Documentation Hub
 
-This directory contains comprehensive documentation for the TAM MCP Server project.
+Welcome to the comprehensive documentation for the TAM MCP Server - a professional Model Context Protocol server for market sizing analysis and business intelligence.
 
-## 📚 Documentation Overview
+## 📚 **Documentation Categories**
 
-### 📋 **Release & Change Management**
-- **[Release Notes](RELEASE-NOTES.md)** - Chronological record of all changes, features, and improvements
-- **[Changelog](../CHANGELOG.md)** - Detailed version history and breaking changes
+### 🚀 **Getting Started**
+- **[Main README](../README.md)** - Project overview, installation, and quick start
+- **[Contributing Guide](guides/CONTRIBUTING.md)** - How to contribute to the project
+- **[Security Policy](guides/SECURITY.md)** - Security guidelines and vulnerability reporting
 
-### 🔧 **Implementation Guides**
-- **[Notifications Implementation](NOTIFICATIONS-IMPLEMENTATION.md)** - Detailed guide for the notification system
-- **[Test Organization](TEST-ORGANIZATION.md)** - Professional test suite structure and organization
+### 📖 **User Guides**
+- **[API Testing Guide](../examples/README.md)** - Postman collection and API testing
+- **[Integration Guide](guides/NOTIFICATIONS-IMPLEMENTATION.md)** - Notification system and integration
+- **[Test Organization](guides/TEST-ORGANIZATION.md)** - Testing structure and practices
 
-### 🏗️ **Architecture & Development**
-- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
-- **[Security Policy](../SECURITY.md)** - Security guidelines and reporting
-- **[Requirements](../requirements.md)** - Project requirements and specifications
+### 📋 **Reference Documentation**
+- **[Release Notes](reference/RELEASE-NOTES.md)** - Version history and changes
+- **[Changelog](reference/CHANGELOG.md)** - Detailed technical changes
+- **[Requirements](reference/requirements.md)** - Technical specifications and requirements
+- **[Contributors](guides/CONTRIBUTORS.md)** - Project contributors
 
-### 🧪 **Testing Documentation**
-- **[Test Suite Documentation](../tests/README.md)** - Comprehensive testing guide
-- **[Test Organization Summary](TEST-ORGANIZATION.md)** - Professional test structure details
+### 📊 **Technical Reports**
+- **[Integration Test Report](reports/INTEGRATION-TEST-FINAL-REPORT.md)** - Backend integration testing results
+- **[HTTP Streaming Report](reports/HTTP-STREAMING-TEST-REPORT.md)** - HTTP transport implementation details
 
-## 📖 **Quick Navigation**
+### 🗃️ **Archive**
+- **[Historical Documents](archive/)** - Outdated summaries and development history
 
-### For Developers
-1. **Getting Started**: Read [README.md](../README.md) and [Contributing Guide](../CONTRIBUTING.md)
-2. **Understanding Changes**: Check [Release Notes](RELEASE-NOTES.md) for recent updates
-3. **Testing**: Review [Test Documentation](../tests/README.md)
+---
+
+## 🎯 **Quick Navigation by Role**
+
+### **👩‍💻 For Developers**
+1. Start with [Main README](../README.md) for project overview
+2. Follow [Contributing Guide](guides/CONTRIBUTING.md) for development setup
+3. Review [Test Organization](guides/TEST-ORGANIZATION.md) for testing practices
+4. Check [Release Notes](reference/RELEASE-NOTES.md) for recent changes
+
+### **🔧 For Integrators**
+1. Review [API Testing Guide](../examples/README.md) for Postman collection
+2. Read [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
+3. Check [Technical Reports](reports/) for implementation details
+4. Reference [Requirements](reference/requirements.md) for specifications
+
+### **📈 For Project Managers**
+1. Review [Release Notes](reference/RELEASE-NOTES.md) for project status
+2. Check [Contributors](guides/CONTRIBUTORS.md) for team information
+3. Review [Technical Reports](reports/) for project metrics
+4. Reference [Security Policy](guides/SECURITY.md) for compliance
+
+### **🧪 For QA Engineers**
+1. Start with [Test Organization](guides/TEST-ORGANIZATION.md) for test structure
+2. Use [API Testing Guide](../examples/README.md) for Postman collection
+3. Review [Integration Test Report](reports/INTEGRATION-TEST-FINAL-REPORT.md) for test results
+4. Check [HTTP Streaming Report](reports/HTTP-STREAMING-TEST-REPORT.md) for transport testing
+
+---
+
+## 📂 **Documentation Structure**
+
+```
+doc/
+├── README.md                          # This documentation hub
+├── guides/                           # User and developer guides
+│   ├── CONTRIBUTING.md               # Development guidelines
+│   ├── SECURITY.md                   # Security policy
+│   ├── CONTRIBUTORS.md               # Project contributors
+│   ├── NOTIFICATIONS-IMPLEMENTATION.md # Integration guide
+│   └── TEST-ORGANIZATION.md          # Testing practices
+├── reference/                        # Reference documentation
+│   ├── RELEASE-NOTES.md              # Version history
+│   ├── CHANGELOG.md                  # Technical changes
+│   └── requirements.md               # Technical specifications
+├── reports/                          # Technical reports
+│   ├── INTEGRATION-TEST-FINAL-REPORT.md # Backend testing
+│   └── HTTP-STREAMING-TEST-REPORT.md    # Transport testing
+└── archive/                          # Historical documents
+    ├── DOCUMENTATION-UPDATE-SUMMARY.md  # Outdated summaries
+    ├── PROJECT-UPDATE-COMPLETE.md       # Historical completions
+    └── [other archived files]           # Development history
+```
+
+---
+
+## 🔄 **Document Maintenance**
+
+### **Active Documents** (regularly updated)
+- Release Notes, Contributing Guide, Test Organization, API Testing Guide
+
+### **Reference Documents** (updated as needed)
+- Requirements, Changelog, Security Policy
+
+### **Static Documents** (rarely changed)
+- Technical Reports, Historical Archives
+
+---
+
+## 📞 **Support & Contact**
+
+- **Issues**: [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/gvaibhav/TAM-MCP-Server/discussions)
+- **Security**: See [Security Policy](guides/SECURITY.md)
+
+---
+
+**Last Updated**: June 11, 2025  
+**Documentation Version**: 2.0
 4. **Implementation Details**: Browse implementation guides above
+
+### For Testers
+1. **Test Structure**: Read [Test Organization](TEST-ORGANIZATION.md)
+2. **Integration Testing**: Check [Integration Test Reports](INTEGRATION-TEST-FINAL-REPORT.md)
+3. **HTTP Testing**: Review [HTTP Streaming Report](HTTP-STREAMING-TEST-REPORT.md)
+4. **API Testing**: Use the Postman collection [TAM-MCP-Server-Postman-Collection.json](../examples/TAM-MCP-Server-Postman-Collection.json)
+
+### For Project Management
+1. **Recent Updates**: Review [Documentation Update Summary](DOCUMENTATION-UPDATE-SUMMARY.md)
+2. **Iteration Results**: Check [Final Integration Summary](FINAL-ITERATION-SUMMARY.md)
+3. **Release History**: Browse [Release Notes](RELEASE-NOTES.md)
+4. **Requirements**: Review [Integration Requirements](INTEGRATION_PROMPT.md)
 
 ### For Users
 1. **Installation & Usage**: See main [README.md](../README.md)

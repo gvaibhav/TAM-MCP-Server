@@ -73,27 +73,47 @@ doc/
 
 ```
 tests/
-├── unit/              # Fast, isolated component tests (< 100ms)
-├── integration/       # Component interaction tests (100ms - 1s)
-├── e2e/              # Full workflow tests (1s+)
+├── unit/              # Fast, isolated component tests (< 100ms) - Vitest
+├── integration/       # Component interaction tests (100ms - 1s) - Vitest
+├── e2e/              # Full workflow tests (1s+) - Vitest
+├── scripts/          # Integration test scripts (Node.js)
+│   ├── test-comprehensive-integration.mjs
+│   ├── test-http-streaming.mjs
+│   ├── test-simple-mcp.mjs
+│   └── test-mcp-tool-calls.mjs
 ├── fixtures/         # Centralized test data
 ├── utils/            # Test utilities and helpers
+├── setup.ts          # Vitest global configuration
 └── archive/          # Legacy tests (reference only)
 ```
 
 #### 🏃‍♂️ Running Tests
 
 ```bash
-# Quick test commands
+# Quick test commands (Vitest)
 npm run test:unit           # Fast unit tests only
 npm run test:integration    # Integration tests only  
 npm run test:e2e           # End-to-end tests only
 npm run test:coverage      # Full coverage report
+npm run test:watch         # Watch mode for development
+npm run test:ui            # Vitest UI mode
 
-# Using test runner
-node tests/run-tests.js unit --watch    # Watch mode for development
-node tests/run-tests.js e2e --debug     # Debug end-to-end issues
-node tests/run-tests.js all --coverage  # Complete test run
+# Integration test scripts
+npm run test:scripts              # Comprehensive backend integration  
+npm run test:scripts:http         # HTTP streaming transport
+npm run test:scripts:simple       # Basic MCP functionality
+npm run test:scripts:tools        # Individual tool validation
+npm run test:scripts:inspector    # MCP Inspector compatibility
+
+# Or run directly
+node tests/scripts/test-comprehensive-integration.mjs  # Full backend integration
+node tests/scripts/test-http-streaming.mjs            # HTTP transport testing
+node tests/scripts/test-simple-mcp.mjs                # Basic MCP functionality
+
+# API testing with Postman
+# Import TAM-MCP-Server-Postman-Collection.json
+# Set environment: serverUrl=http://localhost:3000
+# Run collection or individual requests
 
 # CI/CD testing
 npm run test:ci            # Optimized for continuous integration

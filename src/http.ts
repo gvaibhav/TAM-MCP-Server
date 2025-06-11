@@ -9,7 +9,6 @@ import { randomUUID } from 'node:crypto';
 console.error('Starting TAM MCP Server (Streamable HTTP transport)...');
 
 const app = express();
-app.use(express.json());
 
 const transports: Map<string, StreamableHTTPServerTransport> = new Map<string, StreamableHTTPServerTransport>();
 

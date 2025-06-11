@@ -653,7 +653,7 @@ export class MarketAnalysisTools {
           growthPotential: opp.growthPotential ? formatPercentage(opp.growthPotential) : 'N/A',
           competitiveIntensity: opp.competitiveIntensity,
           // ... (rest of mapping)
-          attractivenessScore: (this as any).calculateAttractivenessScore(opp), // Corrected `this` context
+          attractivenessScore: MarketAnalysisTools.calculateAttractivenessScore(opp),
         })).sort((a: any, b: any) => b.attractivenessScore - a.attractivenessScore),
         // ... (recommendations)
       };
@@ -662,6 +662,49 @@ export class MarketAnalysisTools {
     } catch (error) {
       return handleToolError(error, 'market_opportunities');
     }
+  }
+
+  /**
+   * Calculate attractiveness score for market opportunities
+   */
+  static calculateAttractivenessScore(opportunity: any): number {
+    let score = 0;
+    
+    // Market size factor (0-30 points)
+    if (opportunity.marketSize) {
+      const marketSizeB = opportunity.marketSize / 1000000000; // Convert to billions
+      score += Math.min(30, marketSizeB * 0.5);
+    }
+    
+    // Growth potential factor (0-25 points)
+    if (opportunity.growthPotential) {
+      score += opportunity.growthPotential * 25;
+    }
+    
+    // Competitive intensity factor (0-20 points, inverse)
+    if (opportunity.competitiveIntensity) {
+      const competitionScores: Record<string, number> = {
+        'low': 20,
+        'medium': 10,
+        'high': 5
+      };
+      const competitionScore = competitionScores[opportunity.competitiveIntensity] || 10;
+      score += competitionScore;
+    }
+    
+    // Time to opportunity factor (0-15 points, inverse)
+    if (opportunity.timeToOpportunity) {
+      score += Math.max(0, 15 - (opportunity.timeToOpportunity * 3));
+    }
+    
+    // Risk factors penalty (0-10 points)
+    if (opportunity.riskFactors && Array.isArray(opportunity.riskFactors)) {
+      score += Math.max(0, 10 - (opportunity.riskFactors.length * 2));
+    } else {
+      score += 10; // No risk factors identified
+    }
+    
+    return Math.round(Math.min(100, Math.max(0, score)));
   }
 
   // New Tool Implementation

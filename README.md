@@ -18,36 +18,42 @@ A comprehensive **Model Context Protocol (MCP)** server for market sizing analys
 ## 🚀 Features
 
 ### Core Capabilities
-- **11 Specialized Market Analysis Tools** (including new `generic_data_query`) for comprehensive market research.
-- **Full Integration with 8 Free Data Sources**: BLS, Census, FRED, World Bank, OECD, IMF, Alpha Vantage, Nasdaq Data Link.
-- **Advanced `DataService` Orchestration**: Intelligent routing for `getMarketSize` (symbol/NAICS detection) and direct data access via `getSpecificDataSourceData`.
-- **HTTP Streamable Transport** with Server-Sent Events for real-time updates.
-- **MCP Resource Support** with documentation access through protocol.
-- **Advanced Caching System**: In-memory and persistent (JSON file) layers, with per-source configurable TTLs via environment variables.
-- **Comprehensive Logging** with structured Winston logging and business metrics.
-- **Prometheus Metrics** for monitoring and observability.
-- **Enterprise Security** with rate limiting, CORS, and input validation.
-- **Session Management** for stateful interactions.
+- **11 Specialized Market Analysis Tools** (including `generic_data_query`) for comprehensive market research
+- **Full Integration with 8 Data Sources**: BLS, Census, FRED, World Bank, OECD, IMF, Alpha Vantage, Nasdaq Data Link
+- **Dual Transport Support**: STDIO and HTTP Streamable with Server-Sent Events
+- **Advanced DataService Orchestration**: Intelligent routing and direct data access capabilities
+- **MCP Resource Support** with documentation access through protocol
+- **Advanced Caching System**: In-memory and persistent layers with configurable TTLs
+- **Comprehensive Testing**: Vitest-based test suite with Postman collection for API testing
+- **Professional Logging**: Structured Winston logging with business metrics
+- **Enterprise Security**: Rate limiting, CORS, input validation, and session management
+- **Production Ready**: Complete CI/CD support with health monitoring
 
-### Available Resources
-- **`/`**: Root endpoint with server information and health check.
-- **`/mcp`**: Main MCP endpoint for tool interactions.
-- **`/docs`**: Serves API documentation (OpenAPI/Swagger).
-- **`/metrics`**: Prometheus metrics endpoint.
+### Available Endpoints
+- **`/health`**: Server health check and status information
+- **`/mcp`**: Main MCP endpoint for tool interactions (HTTP Streamable)
+- **`/docs`**: API documentation (OpenAPI/Swagger)
+- **`/metrics`**: Prometheus metrics endpoint
+
+### Transport Support
+- **STDIO Transport**: Compatible with Claude Desktop and MCP Inspector
+- **HTTP Streamable Transport**: Modern web-based transport with Server-Sent Events
+- **Session Management**: Persistent sessions with proper cleanup and resource management
 
 ### Market Analysis Tools
-The server provides the following tools accessible via the `/mcp` endpoint:
-1.  `industry_search`: Search for industries.
-2.  `industry_data`: Get detailed industry information (now supports fetching additional data from specific sources).
-3.  `market_size`: Retrieve market size data (now attempts multiple sources).
-4.  `tam_calculator`: Calculate Total Addressable Market.
-5.  `sam_calculator`: Calculate Serviceable Addressable/Obtainable Market.
-6.  `market_segments`: Analyze market segmentation.
-7.  `market_forecasting`: Generate market size forecasts.
-8.  `market_comparison`: Compare multiple markets.
-9.  `data_validation`: Validate market data.
-10. `market_opportunities`: Identify market opportunities.
-11. **`generic_data_query` (New)**: Directly query any integrated data source service and method.
+Access 11 comprehensive market analysis tools via the MCP protocol:
+
+1. **`industry_search`**: Search for industries by keywords and criteria
+2. **`industry_data`**: Get detailed industry information with multi-source data
+3. **`market_size`**: Retrieve market size data with intelligent source routing
+4. **`tam_calculator`**: Calculate Total Addressable Market with multiple methodologies
+5. **`sam_calculator`**: Calculate Serviceable Addressable/Obtainable Market
+6. **`market_segments`**: Analyze market segmentation (demographic, geographic, behavioral)
+7. **`market_forecasting`**: Generate market size forecasts with scenario analysis
+8. **`market_comparison`**: Compare multiple markets across various metrics
+9. **`data_validation`**: Validate market data quality and completeness
+10. **`market_opportunities`**: Identify market opportunities and growth potential
+11. **`generic_data_query`**: Direct access to any integrated data source service and method
 
 ## 🛠 Installation
 
@@ -62,23 +68,36 @@ The server provides the following tools accessible via the `/mcp` endpoint:
     git clone https://github.com/gvaibhav/TAM-MCP-Server.git
     cd TAM-MCP-Server
     ```
-2.  **Install dependencies:**
+2.  **Quick setup (recommended):**
+    ```bash
+    # Automated development setup
+    chmod +x scripts/dev-setup.sh
+    ./scripts/dev-setup.sh
+    
+    # Or use the development helper
+    chmod +x scripts/dev.sh
+    ./scripts/dev.sh setup
+    ```
+    
+    Or manual setup:
+    
+3.  **Install dependencies:**
     ```bash
     npm install
-    # or
-    # yarn install
     ```
-3.  **Set up environment variables:**
+4.  **Set up environment variables:**
     Create a `.env` file in the root directory by copying `.env.example`:
     ```bash
     cp .env.example .env
     ```
     Update the variables in `.env` as needed (see Configuration section).
-4.  **Build the project:**
+5.  **Build the project:**
     ```bash
     npm run build
+    # or use the build script
+    ./scripts/build.sh
     ```
-5.  **Run the server:**
+6.  **Run the server:**
     ```bash
     npm start
     ```
@@ -88,6 +107,26 @@ The server provides the following tools accessible via the `/mcp` endpoint:
     ```bash
     npx @modelcontextprotocol/inspector node dist/stdio-simple.js
     ```
+
+### Development Helper Script
+
+For common development tasks, use the helper script:
+
+```bash
+# Make executable (first time only)
+chmod +x scripts/dev.sh
+
+# Show available commands
+./scripts/dev.sh help
+
+# Common commands
+./scripts/dev.sh setup      # Setup development environment
+./scripts/dev.sh build      # Build the project
+./scripts/dev.sh test       # Run all tests
+./scripts/dev.sh start      # Start STDIO server
+./scripts/dev.sh start:http # Start HTTP server
+```
+
 ### Docker Installation
 1.  **Build the Docker image:**
     ```bash
@@ -98,6 +137,61 @@ The server provides the following tools accessible via the `/mcp` endpoint:
     docker run -p 3000:3000 --env-file .env tam-mcp-server
     ```
     Ensure your `.env` file is correctly populated before running.
+
+## 📁 Project Structure
+
+```
+TAM-MCP-Server/
+├── config/                     # Configuration files
+│   ├── jest.config.json       # Jest test configuration  
+│   ├── vitest.config.ts       # Vitest test configuration
+│   └── .eslintrc.json         # ESLint configuration
+├── doc/                       # Documentation
+│   ├── README.md              # Documentation hub
+├── doc/                       # Documentation
+│   ├── README.md              # Documentation hub
+│   ├── guides/                # User and developer guides
+│   │   ├── CONTRIBUTING.md    # Contribution guidelines
+│   │   ├── SECURITY.md        # Security policy
+│   │   └── *.md               # Implementation guides
+│   ├── reference/             # Reference documentation
+│   │   ├── RELEASE-NOTES.md   # Version history
+│   │   ├── CHANGELOG.md       # Technical changes
+│   │   └── requirements.md    # Technical specifications
+│   ├── reports/               # Technical reports
+│   │   └── *.md               # Testing and analysis reports
+│   └── archive/               # Historical documents
+├── examples/                  # Examples and API resources
+│   ├── README.md              # Examples documentation
+│   └── TAM-MCP-Server-Postman-Collection.json
+├── scripts/                   # Build and development scripts
+│   ├── build.sh               # Production build script
+│   ├── dev-setup.sh          # Development environment setup
+│   └── dev.sh                # Development helper script
+├── src/                       # Source code
+│   ├── index.ts               # Main entry point
+│   ├── server.ts              # Core MCP server
+│   ├── http.ts                # HTTP transport
+│   ├── sse-new.ts            # SSE transport
+│   ├── stdio-simple.ts       # STDIO transport
+│   ├── config/               # Configuration modules
+│   ├── services/             # Data source services
+│   ├── tools/                # MCP tool implementations
+│   ├── notifications/        # Notification system
+│   └── utils/                # Utility functions
+├── tests/                     # Test suite
+│   ├── unit/                 # Unit tests
+│   ├── integration/          # Integration tests
+│   ├── e2e/                  # End-to-end tests
+│   ├── scripts/              # Integration test scripts
+│   └── setup.ts              # Test configuration
+├── logs/                      # Application logs
+├── dist/                      # Compiled JavaScript (built)
+├── .env.example              # Environment template
+├── package.json              # Node.js dependencies
+├── tsconfig.json             # TypeScript configuration
+└── README.md                 # Main documentation
+```
 
 ## 📋 Configuration
 
@@ -239,19 +333,82 @@ This strategy ensures that frequently accessed data is served quickly, while les
 - **Protocol**: MCP 2024-11-05 Specification
 - **Validation**: Zod for schema validation
 - **Logging**: Winston for structured logging
-- **Testing**: Jest for unit, integration, and live API tests
+- **Testing**: Vitest for modern ES module testing
+- **API Testing**: Postman collection for comprehensive endpoint testing
 - **Containerization**: Docker
 - **CI/CD**: GitHub Actions
 
 ## 🧪 Testing
-Run tests with:
-```bash
-npm test # Runs all tests (unit, integration)
-npm run test:unit
-npm run test:integration
-npm run test:live # For live API tests (use with caution)
-npm run test:coverage
+
+### Test Organization
+The project uses a professional test structure with Vitest as the primary testing framework:
+
 ```
+tests/
+├── unit/                    # Fast, isolated component tests
+├── integration/            # Component interaction tests
+├── e2e/                   # End-to-end workflow tests
+├── scripts/               # Integration test scripts
+│   ├── test-comprehensive-integration.mjs
+│   ├── test-http-streaming.mjs
+│   ├── test-simple-mcp.mjs
+│   └── test-mcp-tool-calls.mjs
+├── fixtures/              # Test data and mock objects
+├── utils/                 # Test utilities and helpers
+└── setup.ts              # Vitest global configuration
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run by category
+npm run test:unit          # Fast unit tests
+npm run test:integration   # Integration tests
+npm run test:e2e          # End-to-end tests
+
+# Advanced options
+npm run test:coverage     # With coverage report
+npm run test:watch       # Watch mode for development
+npm run test:ui          # Vitest UI mode
+npm run test:ci          # CI-optimized test run
+
+# Run integration scripts
+npm run test:scripts              # Comprehensive backend integration
+npm run test:scripts:http         # HTTP streaming transport  
+npm run test:scripts:simple       # Basic MCP functionality
+npm run test:scripts:tools        # Individual tool validation
+npm run test:scripts:inspector    # MCP Inspector compatibility
+
+# Or run directly
+node tests/scripts/test-comprehensive-integration.mjs
+node tests/scripts/test-http-streaming.mjs
+```
+
+### API Testing with Postman
+
+Import the included Postman collection for comprehensive API testing:
+
+1. **Import Collection**: `examples/TAM-MCP-Server-Postman-Collection.json`
+2. **Set Environment Variables**:
+   - `serverUrl`: http://localhost:3000
+   - `sessionId`: (automatically set after initialization)
+3. **Run Tests**:
+   - Health check and server status
+   - MCP session initialization
+   - All 11 market analysis tools
+   - Resource access endpoints
+   - Session management and cleanup
+
+### Test Coverage
+- **Unit Level**: Individual tool functionality and business logic
+- **Integration Level**: MCP protocol compliance and server behavior
+- **System Level**: Complete workflows through real transports
+- **API Level**: REST endpoints and session management
+- **Performance**: Response time and resource usage monitoring
+
 Code coverage reports are generated in the `coverage/` directory. Live API tests are separate and should be run judiciously.
 
 ## 📊 Monitoring & Observability
@@ -354,21 +511,43 @@ If you encounter issues not covered here:
    - Configuration (without sensitive API keys)
 
 ## 🤝 Contributing
-Contributions are welcome! Please see `CONTRIBUTING.md` and adhere to the Code of Conduct.
+Contributions are welcome! Please see [Contributing Guide](doc/guides/CONTRIBUTING.md) and adhere to the Code of Conduct.
 
 ## 📜 Documentation
 - **API Documentation**: Available at the `/docs` endpoint when the server is running (if Swagger/OpenAPI is integrated).
 - **MCP Specification**: [MCP 2024-11-05](https://modelcontextprotocol.org/)
-- **Release Notes**: See `doc/RELEASE-NOTES.md`.
+- **Release Notes**: See [Release Notes](doc/reference/RELEASE-NOTES.md).
 
 ## 🔄 Changelog
-See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
+See [Changelog](doc/reference/CHANGELOG.md) for a detailed history of changes.
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Support
 If you encounter any issues or have questions, please open an issue on the [GitHub repository](https://github.com/gvaibhav/TAM-MCP-Server/issues).
+
+## 📚 Documentation
+
+### Complete Documentation
+- **[Documentation Hub](doc/README.md)** - Complete guide to all project documentation
+- **[Release Notes](doc/reference/RELEASE-NOTES.md)** - Detailed change history and version information
+- **[Contributing Guide](doc/guides/CONTRIBUTING.md)** - Guidelines for contributors and developers
+- **[API Testing](examples/TAM-MCP-Server-Postman-Collection.json)** - Postman collection for comprehensive API testing
+
+### Testing Documentation
+- **[Test Organization](doc/guides/TEST-ORGANIZATION.md)** - Professional test suite structure
+- **[Integration Tests](tests/scripts/README.md)** - Integration test scripts documentation
+- **[Test Reports](doc/reports/INTEGRATION-TEST-FINAL-REPORT.md)** - Comprehensive testing results
+
+### Examples & Scripts
+- **[Examples Directory](examples/README.md)** - API examples and integration resources
+- **[Development Scripts](scripts/)** - Build and setup automation scripts
+
+### Implementation Guides
+- **[HTTP Streaming Report](doc/reports/HTTP-STREAMING-TEST-REPORT.md)** - HTTP transport implementation details
+- **[Notifications Guide](doc/guides/NOTIFICATIONS-IMPLEMENTATION.md)** - Real-time notification system
+- **[Security Policy](doc/guides/SECURITY.md)** - Security guidelines and vulnerability reporting
 
 ## ✨ Acknowledgments
 - Thanks to the Model Context Protocol community.
