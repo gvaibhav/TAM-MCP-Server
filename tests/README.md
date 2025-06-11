@@ -2,23 +2,53 @@
 
 This directory contains the complete test suite for the TAM MCP Server, organized in a professional structure following industry best practices.
 
+**Status:** Recently cleaned and organized (June 11, 2025)  
+**Total Test Files:** 37 (reduced from ~49 after removing duplicates and broken tests)  
+**Working Integration Scripts:** 3/3 (100% functional)
+
+## Quick Test Status
+
+### ✅ Verified Working
+- **Basic MCP Protocol:** STDIO transport and JSON-RPC interface
+- **Tool Functionality:** All 11 tools verified through MCP interface
+- **Integration Scripts:** 3 working scripts for core functionality testing
+
+### 📋 Available Documentation
+- `FUNCTIONAL-TEST-COVERAGE-BIBLE.md` - Comprehensive test scenario documentation
+- `TEST-CLEANUP-STATUS.md` - Cleanup results and current status
+
 ## Test Structure
 
 ```
 tests/
-├── unit/              # Unit tests - Test individual components in isolation
-│   └── tools.test.js  # Tests for market analysis tools
-├── integration/       # Integration tests - Test component interactions
-│   └── server.test.js # Tests for MCP server initialization and protocol compliance
-├── e2e/              # End-to-end tests - Test complete workflows
-│   ├── transports.test.js     # Tests for SSE/HTTP transport connections
-│   └── notifications.test.js  # Tests for notification delivery and timing
-├── fixtures/         # Test data and mock objects
-│   └── sample-data.js # Sample data for industries, markets, and calculations
-├── utils/            # Test utilities and helpers
-│   ├── test-helpers.js # Common testing utilities and mock handlers
-│   └── jest-setup.js   # Jest configuration and global setup
-└── run-tests.js      # Test runner script for organized execution
+├── FUNCTIONAL-TEST-COVERAGE-BIBLE.md  # Comprehensive test documentation
+├── TEST-CLEANUP-STATUS.md             # Cleanup results and status
+├── README.md                          # This file
+├── setup.ts                          # Test setup configuration
+├── run-tests.js                      # Test runner script
+├── scripts/                          # Integration test scripts (3 files)
+│   ├── test-simple-mcp.mjs          # ✅ Basic MCP protocol verification
+│   ├── test-inspector-fix.mjs       # ✅ STDIO transport verification
+│   └── test-mcp-tool-calls.mjs      # ✅ Tool call verification (100% success)
+├── unit/                            # Unit tests (26 files)
+│   ├── Core functionality tests
+│   ├── Transport layer tests (HTTP, SSE, STDIO)
+│   ├── Market analysis tools tests
+│   ├── Notification service tests
+│   ├── Resource management tests
+│   └── services/                    # Service-specific tests
+│       ├── cache/                   # Cache and persistence tests
+│       └── dataSources/             # External API integration tests
+├── integration/                     # Integration tests (8 files)
+│   ├── resources.test.ts           # Resource integration
+│   ├── server.test.js              # Server integration
+│   ├── services/                   # Service integration tests
+│   └── tools/                      # Tool integration tests
+├── e2e/                            # End-to-end tests (2 files)
+│   ├── notifications.test.js       # Notification workflows
+│   └── transports.test.js          # Transport workflows
+├── fixtures/                       # Test data and mock objects
+└── utils/                          # Test utilities and helpers
 ```
 
 ## Test Categories
