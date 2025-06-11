@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import axios from 'axios';
 import { BlsService } from '../../../../src/services/dataSources/blsService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -6,32 +7,34 @@ import { blsApi } from '../../../../src/config/apiConfig';
 import * as process from 'process';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 describe('BlsService', () => {
   let blsService: BlsService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
   const OLD_ENV = { ...process.env };
   const apiKey = 'test_bls_api_key';
   const seriesId1 = 'CES0000000001';
   const seriesId2 = 'LNS14000000'; // Unemployment rate
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    process.env = { ...OLD_ENV };
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    Object.keys(process.env).forEach(key => delete process.env[key]);
+    Object.assign(process.env, OLD_ENV);
+    mockCacheServiceInstance = new MockedCacheService() as any;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service instantiated in tests to control API key presence
   });
 
   afterAll(() => {
-    process.env = OLD_ENV;
+    Object.keys(process.env).forEach(key => delete (process.env as any)[key]);
+    Object.assign(process.env, OLD_ENV);
   });
 
   describe('constructor and isAvailable', () => {
@@ -40,13 +43,13 @@ describe('BlsService', () => {
       expect(await blsService.isAvailable()).toBe(true);
     });
     it('constructor should log if API key is present', () => {
-        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         new BlsService(mockCacheServiceInstance, apiKey);
         expect(consoleLogSpy).toHaveBeenCalledWith("BLS Service: API key configured.");
         consoleLogSpy.mockRestore();
     });
     it('constructor should log if API key is NOT present', () => {
-        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         new BlsService(mockCacheServiceInstance); // No key
         expect(consoleLogSpy).toHaveBeenCalledWith("BLS Service: API key not configured. Using anonymous access (lower limits).");
         consoleLogSpy.mockRestore();
@@ -192,7 +195,7 @@ describe('BlsService', () => {
       mockCacheServiceInstance.get.mockResolvedValue(null);
       const noDataResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [] }, message: ["No data"] };
       mockedAxios.post.mockResolvedValue({ data: noDataResponse });
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const result = await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
       expect(result).toBeNull();
@@ -205,7 +208,7 @@ describe('BlsService', () => {
       mockCacheServiceInstance.get.mockResolvedValue(null);
       const errorStatusResponse = { status: "REQUEST_NOT_PROCESSED", message: ["Invalid SeriesID"], Results: {} };
       mockedAxios.post.mockResolvedValue({ data: errorStatusResponse }); // API returns 200 but with error status
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await expect(blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog))
         .rejects.toThrow('BLS API Error: Invalid SeriesID (Status: REQUEST_NOT_PROCESSED)');
@@ -238,7 +241,7 @@ describe('BlsService', () => {
 
     it('should warn if too many series IDs are requested (anonymous)', async () => {
         const manySeries = Array.from({ length: 30 }, (_, i) => `CES${i.toString().padStart(10, '0')}`);
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockCacheServiceInstance.get.mockResolvedValue(null);
         mockedAxios.post.mockResolvedValue({ data: { status: "REQUEST_SUCCEEDED", Results: { series: [] } } });
 
@@ -250,7 +253,7 @@ describe('BlsService', () => {
     it('should warn if too many series IDs are requested (with API key)', async () => {
         blsService = new BlsService(mockCacheServiceInstance, apiKey);
         const manySeries = Array.from({ length: 55 }, (_, i) => `CES${i.toString().padStart(10, '0')}`);
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockCacheServiceInstance.get.mockResolvedValue(null);
         mockedAxios.post.mockResolvedValue({ data: { status: "REQUEST_SUCCEEDED", Results: { series: [] } } });
 
@@ -265,7 +268,7 @@ describe('BlsService', () => {
         blsService = new BlsService(mockCacheServiceInstance);
     });
     it('should log a warning and return null', async () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const result = await blsService.fetchMarketSize('anyIndustry', 'anyRegion');
       expect(result).toBeNull();
       expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("BLS Service: fetchMarketSize is not directly applicable. Use fetchIndustryData with specific series IDs"));
@@ -282,7 +285,7 @@ describe('BlsService', () => {
       const cacheEntry: CacheEntry<any> = { data: {}, timestamp: now, ttl: 1000 };
       const payload = { seriesid: [seriesId1], catalog: false, calculations: false, annualaverage: false }; // Default params from fetchIndustryData used in getDataFreshness
       const cacheKey = `bls_data_${JSON.stringify(payload)}`;
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
       // Call with matching default parameters for other boolean flags
       const freshness = await blsService.getDataFreshness([seriesId1], undefined, undefined, false, false, false);
@@ -297,7 +300,7 @@ describe('BlsService', () => {
     });
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 1, size: 1, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = jest.fn().mockReturnValue(mockStats);
+      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
       expect(blsService.getCacheStatus()).toEqual(mockStats);
     });
   });

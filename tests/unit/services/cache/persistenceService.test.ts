@@ -1,11 +1,12 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import { CacheEntry } from '../../../../src/types/cache';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-jest.mock('fs/promises'); // Mock the entire fs/promises module
+vi.mock('fs/promises'); // Mock the entire fs/promises module
 
-const mockFs = fs as jest.Mocked<typeof fs>;
+const mockFs = fs as any;
 const TEST_CACHE_DIR = path.join(process.cwd(), '.cache_data_test');
 
 describe('PersistenceService', () => {
@@ -14,7 +15,7 @@ describe('PersistenceService', () => {
 
   beforeEach(() => {
     // Ensure each test starts with a fresh service and mocks
-    jest.resetAllMocks();
+    vi.clearAllMocks();
     // Configure the service to use a specific test directory for most tests
     // Individual tests (like constructor) might use a different path if needed
     persistenceService = new PersistenceService({ filePath: path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_default') });
@@ -38,7 +39,7 @@ describe('PersistenceService', () => {
 
     it('should log an error if creating storage directory fails', async () => {
       const specificTestDirFail = path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_constructor_fail');
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const testError = new Error('MKDIR failed');
       mockFs.mkdir.mockRejectedValue(testError); // Mock this before instantiation
 
@@ -56,7 +57,6 @@ describe('PersistenceService', () => {
 
   describe('save', () => {
     it('should save data to a file', async () => {
-      const key = 'testKey';
       const key = 'testKey';
       const data: CacheEntry<string> = { data: 'testData', timestamp: Date.now(), ttl: 1000 };
       // Uses the default path from beforeEach's persistenceService instance
@@ -85,7 +85,7 @@ describe('PersistenceService', () => {
     it('should handle errors during writeFile', async () => {
       const key = 'testKey';
       const data: CacheEntry<string> = { data: 'testData', timestamp: Date.now(), ttl: 1000 };
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       mockFs.writeFile.mockRejectedValue(new Error('Disk full'));
 
@@ -123,7 +123,7 @@ describe('PersistenceService', () => {
     it('should return null and log error for other read errors', async () => {
       const key = 'errorKey';
       mockFs.readFile.mockRejectedValue(new Error('Read error'));
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await persistenceService.load<string>(key);
       expect(result).toBeNull();
@@ -136,7 +136,7 @@ describe('PersistenceService', () => {
         const currentTestCacheDir = (persistenceService as any).storagePath;
         const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
         mockFs.readFile.mockResolvedValue("this is not json");
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         const result = await persistenceService.load<string>(key);
         expect(mockFs.readFile).toHaveBeenCalledWith(expectedPath, 'utf8');
@@ -162,7 +162,7 @@ describe('PersistenceService', () => {
         const enoentError: any = new Error('File not found');
         enoentError.code = 'ENOENT';
         mockFs.unlink.mockRejectedValue(enoentError);
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await persistenceService.remove(key);
         expect(consoleErrorSpy).not.toHaveBeenCalled(); // Should not log error for ENOENT
@@ -172,7 +172,7 @@ describe('PersistenceService', () => {
     it('should log other errors during remove', async () => {
         const key = 'errorKey';
         mockFs.unlink.mockRejectedValue(new Error('Delete error'));
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await persistenceService.remove(key);
         expect(consoleErrorSpy).toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe('PersistenceService', () => {
 
     it('should handle errors during clearAll', async () => {
         mockFs.readdir.mockRejectedValue(new Error('Cannot read dir'));
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await persistenceService.clearAll();
         expect(consoleErrorSpy).toHaveBeenCalled();

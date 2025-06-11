@@ -1,12 +1,14 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 // Mock all individual data source services
-jest.mock('../../../../src/services/dataSources/alphaVantageService');
-jest.mock('../../../../src/services/dataSources/censusService');
-jest.mock('../../../../src/services/dataSources/fredService');
-jest.mock('../../../../src/services/dataSources/worldBankService');
-jest.mock('../../../../src/services/dataSources/blsService');
-jest.mock('../../../../src/services/dataSources/nasdaqDataService');
-jest.mock('../../../../src/services/dataSources/oecdService');
-jest.mock('../../../../src/services/dataSources/imfService');
+vi.mock('../../../../src/services/dataSources/alphaVantageService');
+vi.mock('../../../../src/services/dataSources/censusService');
+vi.mock('../../../../src/services/dataSources/fredService');
+vi.mock('../../../../src/services/dataSources/worldBankService');
+vi.mock('../../../../src/services/dataSources/blsService');
+vi.mock('../../../../src/services/dataSources/nasdaqDataService');
+vi.mock('../../../../src/services/dataSources/oecdService');
+vi.mock('../../../../src/services/dataSources/imfService');
 
 import { DataService } from '../../../../src/services/dataService';
 import { AlphaVantageService } from '../../../../src/services/dataSources/alphaVantageService';

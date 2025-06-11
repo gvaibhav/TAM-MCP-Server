@@ -1,6 +1,9 @@
 // Vitest global setup
 import { vi } from 'vitest';
 
+// Load environment variables from .env file for tests
+import 'dotenv/config';
+
 // Setup environment variables for tests
 process.env.NODE_ENV = 'test';
 process.env.RATE_LIMIT_REQUESTS = '100';

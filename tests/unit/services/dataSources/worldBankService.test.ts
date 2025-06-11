@@ -1,25 +1,26 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
 import { WorldBankService } from '../../../../src/services/dataSources/worldBankService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 
 describe('WorldBankService', () => {
   let worldBankService: WorldBankService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
 
   beforeEach(() => {
-    jest.resetAllMocks(); // Resets axios, CacheService, and envHelper mocks
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks(); // Resets axios, CacheService, and envHelper mocks
+    mockCacheServiceInstance = new MockedCacheService() as any;
     // Default mock for getEnvAsNumber, can be overridden in specific tests
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     worldBankService = new WorldBankService(mockCacheServiceInstance);
@@ -157,7 +158,7 @@ describe('WorldBankService', () => {
       const now = Date.now();
       const cacheEntry: CacheEntry<any> = { data: {}, timestamp: now, ttl: 3600000 };
       // Ensure getEntry is part of the mock type if CacheService was auto-mocked more strictly
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
       const freshness = await worldBankService.getDataFreshness('US', 'NY.GDP.MKTP.CD');
       expect(freshness).toEqual(new Date(now));
@@ -165,7 +166,7 @@ describe('WorldBankService', () => {
     });
 
     it('should return null if no cache entry', async () => {
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(null);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(null);
       const freshness = await worldBankService.getDataFreshness('US', 'NY.GDP.MKTP.CD');
       expect(freshness).toBeNull();
     });
@@ -174,7 +175,7 @@ describe('WorldBankService', () => {
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 1, size: 1, lastRefreshed: new Date() };
       // Ensure getStats is part of the mock type
-      (mockCacheServiceInstance as any).getStats = jest.fn().mockReturnValue(mockStats);
+      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
       expect(worldBankService.getCacheStatus()).toEqual(mockStats);
       expect(mockCacheServiceInstance.getStats).toHaveBeenCalled();
     });

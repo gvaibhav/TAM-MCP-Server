@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import axios from 'axios';
 import { FredService } from '../../../../src/services/dataSources/fredService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -6,20 +7,19 @@ import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 import * as process from 'process';
 
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper');
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper');
-
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 const OLD_ENV = { ...process.env }; // Store original process.env
 
 
 describe('FredService', () => {
   let fredService: FredService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
   const apiKey = 'test_fred_api_key';
   const seriesId = 'GDP';
   const cacheKey = `fred_marketsize_${seriesId}`;
@@ -27,14 +27,21 @@ describe('FredService', () => {
 
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    process.env = { ...OLD_ENV }; // Reset process.env before each test
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    // Reset env vars
+    Object.keys(process.env).forEach(key => {
+      if (key.startsWith('FRED_') || key.startsWith('CACHE_TTL_FRED_')) {
+        delete (process.env as any)[key];
+      }
+    });
+    Object.assign(process.env, OLD_ENV);
+    mockCacheServiceInstance = new MockedCacheService() as any;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // fredService instantiated in describe blocks or tests to control API key
   });
    afterAll(() => {
-    process.env = OLD_ENV; // Restore original process.env after all tests
+    Object.keys(process.env).forEach(key => delete (process.env as any)[key]);
+    Object.assign(process.env, OLD_ENV);
   });
 
 
@@ -57,7 +64,7 @@ describe('FredService', () => {
     });
 
     it('should warn if API key is not configured', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       delete process.env.FRED_API_KEY;
       new FredService(mockCacheServiceInstance);
       expect(consoleWarnSpy).toHaveBeenCalledWith("FRED API key not configured. FredService will not be available.");
@@ -183,7 +190,7 @@ describe('FredService', () => {
     it('should return timestamp from cache entry', async () => {
       const now = Date.now();
       const cacheEntry: CacheEntry<any> = { data: {}, timestamp: now, ttl: 3600000 };
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
       const freshness = await fredService.getDataFreshness(seriesId);
       expect(freshness).toEqual(new Date(now));

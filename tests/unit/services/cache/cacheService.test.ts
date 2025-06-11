@@ -1,24 +1,25 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 
 // Mock PersistenceService
-jest.mock('../../../../src/services/cache/persistenceService');
+vi.mock('../../../../src/services/cache/persistenceService');
 
-const MockPersistenceService = PersistenceService as jest.MockedClass<typeof PersistenceService>;
+const MockPersistenceService = PersistenceService as any;
 
 describe('CacheService', () => {
   let cacheService: CacheService;
-  let mockPersistenceServiceInstance: jest.Mocked<PersistenceService>;
+  let mockPersistenceServiceInstance: any;
   const RealDate = Date; // Store RealDate
 
   beforeEach(() => {
     MockPersistenceService.mockClear(); // Clears all instances and calls to constructor and all methods.
-    mockPersistenceServiceInstance = new MockPersistenceService() as jest.Mocked<PersistenceService>;
+    mockPersistenceServiceInstance = new MockPersistenceService() as any;
     cacheService = new CacheService(mockPersistenceServiceInstance);
 
     // Mock Date.now() for consistent TTL checks for all tests in this describe block
-    global.Date.now = jest.fn(() => 10000); // A fixed point in time
+    global.Date.now = vi.fn(() => 10000); // A fixed point in time
     // Mock `new Date()` constructor to return a fixed date if it's used for `lastRefreshed`
     global.Date = class extends RealDate {
       constructor() {
@@ -53,7 +54,7 @@ describe('CacheService', () => {
       await cacheService.set('key1', 'data1', 500); // Expires at 10500
 
       // Advance time so item is expired
-      global.Date.now = jest.fn(() => 11000); // Current time is 11000, after expiry
+      global.Date.now = vi.fn(() => 11000); // Current time is 11000, after expiry
 
       mockPersistenceServiceInstance.load.mockResolvedValue(null); // Simulate not in persistence for the reload attempt
       mockPersistenceServiceInstance.remove.mockResolvedValue(undefined); // Mock remove op
@@ -125,7 +126,7 @@ describe('CacheService', () => {
       expect(entry?.data).toBe(originalData);
 
       // Advance time so item is expired
-      global.Date.now = jest.fn(() => 10200); // Now > 10100
+      global.Date.now = vi.fn(() => 10200); // Now > 10100
 
       // Mock persistence interactions for the 'get' call
       mockPersistenceServiceInstance.load.mockResolvedValue(null);
@@ -218,7 +219,7 @@ describe('CacheService', () => {
       // Date.now() is 10000
       await cacheService.set('keyEntry', 'dataEntry', 100); // Expires 10100
 
-      global.Date.now = jest.fn(() => 10200); // Advance time past expiry for memory check
+      global.Date.now = vi.fn(() => 10200); // Advance time past expiry for memory check
       const entry = await cacheService.getEntry<string>('keyEntry'); // getEntry does not check TTL itself
       expect(entry).toEqual({ data: 'dataEntry', timestamp: 10000, ttl: 100 });
     });
@@ -242,7 +243,7 @@ describe('CacheService', () => {
 
   describe('constructor loadCacheFromPersistence', () => {
     it('should log attempt to load from persistence on init', () => {
-        const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         new CacheService(mockPersistenceServiceInstance); // constructor is called
         // The current implementation of loadCacheFromPersistence only logs.
         expect(consoleLogSpy).toHaveBeenCalledWith("CacheService: Initial load from persistence (if any) would occur here.");

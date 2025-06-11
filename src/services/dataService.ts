@@ -98,8 +98,8 @@ export class DataService {
   }
 
   // --- Updated getMarketSize ---
-  async getMarketSize(industryId: string, region: string): Promise<any | null> {
-    console.log(`DataService: getMarketSize for industry "${industryId}" in region "${region}"`);
+  async getMarketSize(industryId: string, region: string, year?: number): Promise<any | null> {
+    console.log(`DataService: getMarketSize for industry "${industryId}" in region "${region}"${year ? ` for year ${year}` : ''}`);
 
     // Attempt AlphaVantage if industryId looks like a stock symbol (e.g., IBM, AAPL)
     if (/^[A-Z]{1,5}$/.test(industryId)) {

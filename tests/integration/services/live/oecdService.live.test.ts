@@ -1,12 +1,16 @@
-import { OecdService } from '../../../../src/services/dataSources/oecdService';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import { OecdService     let getEnvAsNumberSpy: any;
+
+    try {
+      getEnvAsNumberSpy = vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => {
+          if (key === 'CACHE_TTL_OECD_NODATA_MS') return 500; // 0.5 sec
+          return defaultValue;
+      });
+      // Re-instantiate service for this specific TTL behavior../../../../src/services/dataSources/oecdService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import * as path from 'path';
 import * as envHelper from '../../../../src/utils/envHelper';
-
-
-// Increase timeout for live API calls
-jest.setTimeout(30000); // 30 seconds for OECD
 
 describe('OecdService - Live API Integration Tests', () => {
   let oecdService: OecdService;
@@ -31,7 +35,7 @@ describe('OecdService - Live API Integration Tests', () => {
     await persistenceService.clearAll();
     cacheService = new CacheService(persistenceService);
     // Mock getEnvAsNumber to return default TTLs unless overridden in a specific test
-    jest.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => defaultValue);
+    vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => defaultValue);
     oecdService = new OecdService(cacheService);
   });
 
@@ -40,9 +44,9 @@ describe('OecdService - Live API Integration Tests', () => {
     // Optionally remove testCacheDir using fs.rm if needed and safe.
   });
 
-  afterEach(()=> {
-      // Restore any mocks that were changed per-test, like getEnvAsNumber
-      jest.restoreAllMocks();
+  afterEach(() => {
+    // Restore any mocks that were changed per-test, like getEnvAsNumber
+    vi.restoreAllMocks();
   });
 
   it('should fetch and parse Quarterly GDP for Australia (QNA dataset)', async () => {

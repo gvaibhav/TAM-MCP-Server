@@ -260,6 +260,7 @@ Code coverage reports are generated in the `coverage/` directory. Live API tests
 
 ### API Key Management
 - API keys for external data sources are configured via environment variables (see "Environment Variables" section).
+- **📋 For detailed registration instructions, see [API Registration Guide](doc/API-REGISTRATION-GUIDE.md)**
 - Ensure the `.env` file is secured and not committed to version control.
 - The application is designed to function with missing optional API keys, though data availability from those sources will be impacted or disabled.
 

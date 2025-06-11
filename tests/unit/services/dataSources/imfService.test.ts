@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
 import { ImfService } from '../../../../src/services/dataSources/imfService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -5,13 +6,13 @@ import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { imfApi } from '../../../../src/config/apiConfig';
 import * as envHelper from '../../../../src/utils/envHelper';
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper');
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper');
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 // Mock IMF SDMX-JSON CompactData Structure
 const mockImfSdmxCompactDataResponse = {
@@ -64,11 +65,11 @@ const mockImfSdmxCompactDataResponse = {
 
 describe('ImfService', () => {
   let imfService: ImfService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    mockCacheServiceInstance = new MockedCacheService() as any;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     imfService = new ImfService(mockCacheServiceInstance);
   });
@@ -144,7 +145,7 @@ describe('ImfService', () => {
         const noStructureResponse = JSON.parse(JSON.stringify(mockImfSdmxCompactDataResponse));
         delete noStructureResponse.structure?.dimensions?.series; // Remove critical part of structure
         mockedAxios.get.mockResolvedValue({ data: noStructureResponse });
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const result = await imfService.fetchImfDataset(dataflowId, key);
         expect(result).toBeNull();
@@ -213,7 +214,7 @@ describe('ImfService', () => {
 
   describe('fetchIndustryData', () => {
     it('should call fetchImfDataset with correct parameters', async () => {
-      const spy = jest.spyOn(imfService as any, 'fetchImfDataset').mockResolvedValue([]);
+      const spy = vi.spyOn(imfService as any, 'fetchImfDataset').mockResolvedValue([]);
       const options = { startPeriod: '2021', endPeriod: '2022' };
       await imfService.fetchIndustryData('FLOW', 'KEY.A', options);
       expect(spy).toHaveBeenCalledWith('FLOW', 'KEY.A', options.startPeriod, options.endPeriod);
@@ -227,7 +228,7 @@ describe('ImfService', () => {
             { FREQ: 'A', TIME_PERIOD: '2022', value: 100 },
             { FREQ: 'A', TIME_PERIOD: '2023', value: 110 }
         ];
-        const spy = jest.spyOn(imfService as any, 'fetchImfDataset').mockResolvedValue(mockObservations);
+        const spy = vi.spyOn(imfService as any, 'fetchImfDataset').mockResolvedValue(mockObservations);
 
         const result = await imfService.fetchMarketSize('FLOW', 'KEY.A');
         expect(result).toEqual({
@@ -247,7 +248,7 @@ describe('ImfService', () => {
       const cacheEntry: CacheEntry<any> = { data: [], timestamp: now, ttl: 1000 };
       const cacheKeyObj = { dataflowId:'ID', key:'K', startPeriod: '2020' };
       const cacheKey = `imf_${JSON.stringify(cacheKeyObj)}`;
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
       const freshness = await imfService.getDataFreshness('ID', 'K', '2020');
       expect(freshness).toEqual(new Date(now));
@@ -258,7 +259,7 @@ describe('ImfService', () => {
    describe('getCacheStatus', () => {
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 0, size: 1, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = jest.fn().mockReturnValue(mockStats);
+      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
       expect(imfService.getCacheStatus()).toEqual(mockStats);
     });
   });

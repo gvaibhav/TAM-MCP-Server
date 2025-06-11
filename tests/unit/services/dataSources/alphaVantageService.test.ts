@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import axios from 'axios';
 import { AlphaVantageService } from '../../../../src/services/dataSources/alphaVantageService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -6,31 +7,32 @@ import { alphaVantageApi } from '../../../../src/config/apiConfig'; // For defau
 import * as process from 'process';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 describe('AlphaVantageService', () => {
   let alphaVantageService: AlphaVantageService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
   const OLD_ENV = { ...process.env }; // Deep copy
   const apiKey = 'test_alpha_vantage_api_key';
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    process.env = { ...OLD_ENV }; // Reset env for each test
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    // Use vi.stubEnv to safely mock environment variables
+    vi.unstubAllEnvs();
+    mockCacheServiceInstance = new MockedCacheService() as any;
     // Default mock for getEnvAsNumber, can be overridden in specific tests
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service will be instantiated in context blocks or tests to control API key presence
   });
 
   afterAll(() => {
-    process.env = OLD_ENV; // Restore original env
+    vi.unstubAllEnvs(); // Clean up environment variable stubs
   });
 
   describe('constructor and isAvailable', () => {
@@ -51,8 +53,8 @@ describe('AlphaVantageService', () => {
       expect(await alphaVantageService.isAvailable()).toBe(false);
     });
      it('should warn if API key is not configured', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      delete process.env.ALPHA_VANTAGE_API_KEY;
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv('ALPHA_VANTAGE_API_KEY', undefined);
       new AlphaVantageService(mockCacheServiceInstance); // Instantiation triggers the warning
       expect(consoleWarnSpy).toHaveBeenCalledWith("Alpha Vantage API key not configured. AlphaVantageService will not be available.");
       consoleWarnSpy.mockRestore();
@@ -378,7 +380,7 @@ describe('AlphaVantageService', () => {
         const now = Date.now();
         const overviewCacheKey = `alphavantage_${alphaVantageApi.defaultOverviewFunction}_${symbol}`;
         const cacheEntry: CacheEntry<any> = { data: {}, timestamp: now, ttl: 1000 };
-        (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+        (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
         const freshness = await alphaVantageService.getDataFreshness(symbol, 'overview');
         expect(freshness).toEqual(new Date(now));
@@ -391,14 +393,14 @@ describe('AlphaVantageService', () => {
         const now = Date.now();
         const timeSeriesCacheKey = `alphavantage_timeseries_${seriesType}_${symbol}`;
         const cacheEntry: CacheEntry<any> = { data: {}, timestamp: now, ttl: 1000 };
-        (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+        (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
         const freshness = await alphaVantageService.getDataFreshness(symbol, 'timeseries', seriesType);
         expect(freshness).toEqual(new Date(now));
         expect(mockCacheServiceInstance.getEntry).toHaveBeenCalledWith(timeSeriesCacheKey);
     });
      it('should return null if no cache entry for getDataFreshness', async () => {
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(null);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(null);
       const freshness = await alphaVantageService.getDataFreshness('NONE', 'overview');
       expect(freshness).toBeNull();
     });
@@ -409,7 +411,7 @@ describe('AlphaVantageService', () => {
     });
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 5, misses: 2, size: 10, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = jest.fn().mockReturnValue(mockStats);
+      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
       expect(alphaVantageService.getCacheStatus()).toEqual(mockStats);
       expect(mockCacheServiceInstance.getStats).toHaveBeenCalled();
     });

@@ -1,11 +1,9 @@
+import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { ImfService } from '../../../../src/services/dataSources/imfService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import * as path from 'path';
 import * as envHelper from '../../../../src/utils/envHelper';
-
-// Increase timeout for live API calls
-jest.setTimeout(30000); // 30 seconds for IMF
 
 describe('ImfService - Live API Integration Tests', () => {
   let imfService: ImfService;
@@ -22,7 +20,7 @@ describe('ImfService - Live API Integration Tests', () => {
   beforeEach(async () => {
     await persistenceService.clearAll();
     cacheService = new CacheService(persistenceService);
-    jest.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => defaultValue);
+    vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => defaultValue);
     imfService = new ImfService(cacheService);
   });
 
@@ -31,8 +29,8 @@ describe('ImfService - Live API Integration Tests', () => {
     // Optionally remove testCacheDir
   });
 
-  afterEach(()=> {
-      jest.restoreAllMocks();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should fetch and parse US Real GDP Growth (Annual) from IFS', async () => {
@@ -131,10 +129,10 @@ describe('ImfService - Live API Integration Tests', () => {
   it('should return null for a query that yields no data (e.g., invalid key structure or non-existent series)', async () => {
     const dataflowId = 'IFS';
     const keyForNoData = 'A.NONEXISTENT_COUNTRY.BOGUS_INDICATOR';
-    let getEnvAsNumberSpy: jest.SpyInstance | undefined;
+    let getEnvAsNumberSpy: any;
 
     try {
-      getEnvAsNumberSpy = jest.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((envKey, defaultValue) => {
+      getEnvAsNumberSpy = vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((envKey, defaultValue) => {
           if (envKey === 'CACHE_TTL_IMF_NODATA_MS') return 500; // 0.5 sec
           return defaultValue;
       });

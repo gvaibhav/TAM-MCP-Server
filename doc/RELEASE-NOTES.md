@@ -423,4 +423,24 @@ Upcoming features and improvements will be documented here as they are implement
 
 ---
 
+### June 10, 2025 - Test File Organization
+
+**Infrastructure: Test File Structure Cleanup**
+
+#### 🗂️ **Test Organization Improvement**
+- **File Movement**: Moved `test-notifications.js` and `test-simple-notification.js` from root directory to `tests/unit/` directory
+- **Structure Compliance**: Aligned with professional test structure guidelines outlined in CONTRIBUTING.md
+- **Project Cleanup**: Removed test files from root directory to maintain clean project structure
+
+#### 📁 **Files Changed**
+- `test-notifications.js` → `tests/unit/test-notifications.js`
+- `test-simple-notification.js` → `tests/unit/test-simple-notification.js`
+
+#### 🎯 **Benefits Achieved**
+- **Organization**: Better test file organization following project guidelines
+- **Maintainability**: Cleaner root directory structure
+- **Consistency**: Follows established test directory structure patterns
+
+---
+
 *For detailed technical information about specific implementations, refer to the individual source files and their inline documentation.*

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
 import { OecdService } from '../../../../src/services/dataSources/oecdService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -5,13 +6,13 @@ import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { oecdApi } from '../../../../src/config/apiConfig';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 // Simplified Mock SDMX-JSON structure for testing
 const mockSdmxJsonResponseAllDimensions = {
@@ -93,11 +94,11 @@ mockSdmxMissingAttributes.dataSets[0].observations['0:0:0:1:0'] = [150, null, 0]
 
 describe('OecdService', () => {
   let oecdService: OecdService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    mockCacheServiceInstance = new MockedCacheService() as any;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     oecdService = new OecdService(mockCacheServiceInstance);
   });
@@ -320,7 +321,7 @@ describe('OecdService', () => {
 
   describe('fetchIndustryData', () => {
     it('should call fetchOecdDataset with correct parameters', async () => {
-      const spy = jest.spyOn(oecdService as any, 'fetchOecdDataset').mockResolvedValue([]);
+      const spy = vi.spyOn(oecdService as any, 'fetchOecdDataset').mockResolvedValue([]);
       const options = { agencyId: 'OECD', startTime: '2020', endTime: '2021', dimensionAtObservation: 'TIME_PERIOD' };
       await oecdService.fetchIndustryData('DSD', 'FILTER', options);
       expect(spy).toHaveBeenCalledWith('DSD', 'FILTER', options.agencyId, options.startTime, options.endTime, options.dimensionAtObservation);
@@ -334,7 +335,7 @@ describe('OecdService', () => {
             { LOCATION: 'AUS', TIME_PERIOD: '2022', TIME_PERIOD_ID: '2022', value: 100, MY_MEASURE: 150 },
             { LOCATION: 'AUS', TIME_PERIOD: '2023', TIME_PERIOD_ID: '2023', value: 110, MY_MEASURE: 160 }
         ];
-        const spy = jest.spyOn(oecdService as any, 'fetchOecdDataset').mockResolvedValue(mockObservations);
+        const spy = vi.spyOn(oecdService as any, 'fetchOecdDataset').mockResolvedValue(mockObservations);
         const options = { agencyId: 'OECD' };
 
         let result = await oecdService.fetchMarketSize('DSD', 'FILTER', 'MY_MEASURE', options);
@@ -353,7 +354,7 @@ describe('OecdService', () => {
     });
 
     it('should return null if fetchOecdDataset returns null or empty for market size', async () => {
-        const spy = jest.spyOn(oecdService as any, 'fetchOecdDataset').mockResolvedValue(null);
+        const spy = vi.spyOn(oecdService as any, 'fetchOecdDataset').mockResolvedValue(null);
         let result = await oecdService.fetchMarketSize('DSD', 'FILTER');
         expect(result).toBeNull();
 
@@ -370,7 +371,7 @@ describe('OecdService', () => {
       const cacheEntry: CacheEntry<any> = { data: [], timestamp: now, ttl: 1000 };
       const cacheKeyObj = { datasetId:'ID', filterExpression:'FLT', agencyId: oecdApi.defaultAgencyId, dimensionAtObservation: oecdApi.defaultDimensionObservation };
       const cacheKey = `oecd_${JSON.stringify(cacheKeyObj)}`;
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
       const freshness = await oecdService.getDataFreshness('ID', 'FLT'); // Uses default agencyId and dimAtObs
       expect(freshness).toEqual(new Date(now));
@@ -381,7 +382,7 @@ describe('OecdService', () => {
    describe('getCacheStatus', () => {
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 0, size: 1, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = jest.fn().mockReturnValue(mockStats);
+      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
       expect(oecdService.getCacheStatus()).toEqual(mockStats);
     });
   });

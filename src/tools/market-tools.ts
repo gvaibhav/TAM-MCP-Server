@@ -234,7 +234,7 @@ export class MarketAnalysisTools {
         validateYear(year);
       }
 
-      const marketDataResult = await MarketAnalysisTools.dataService.getMarketSize(industryId, region);
+      const marketDataResult = await MarketAnalysisTools.dataService.getMarketSize(industryId, region, year);
 
       if (!marketDataResult || marketDataResult.value === null || marketDataResult.value === undefined) {
         return createErrorResponse(`Market size data not available for industry: ${industryId} in region: ${region}`);

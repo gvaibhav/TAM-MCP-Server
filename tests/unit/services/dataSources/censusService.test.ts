@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import axios from 'axios';
 import { CensusService } from '../../../../src/services/dataSources/censusService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -5,16 +6,16 @@ import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { censusApi as realCensusApiConfig } from '../../../../src/config/apiConfig'; // Import real one to spy/mock
 import * as process from 'process';
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
 
 // Mock the config specifically for cbpYear to ensure consistent NAICS key generation in tests
-jest.mock('../../../../src/config/apiConfig', () => {
-  const originalConfig = jest.requireActual('../../../../src/config/apiConfig');
+vi.mock('../../../../src/config/apiConfig', async () => {
+  const originalConfig = await vi.importActual('../../../../src/config/apiConfig');
   return {
     ...originalConfig,
     censusApi: {
-      ...originalConfig.censusApi,
+      ...(originalConfig as any).censusApi,
       cbpYear: '2021', // Fixed year for predictable NAICS2021 key in some tests
       cbpDataset: 'cbp', // Ensure this is also fixed if tests rely on it
     },
@@ -24,28 +25,31 @@ jest.mock('../../../../src/config/apiConfig', () => {
 import { censusApi } from '../../../../src/config/apiConfig';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
+vi.mock('../../../../src/utils/envHelper');
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 
 describe('CensusService', () => {
   let censusService: CensusService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
   const OLD_ENV = { ...process.env };
   const apiKey = 'test_census_api_key';
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    process.env = { ...OLD_ENV };
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    Object.keys(process.env).forEach(key => delete (process.env as any)[key]);
+    Object.assign(process.env, OLD_ENV);
+    mockCacheServiceInstance = new MockedCacheService() as any;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // censusService instantiated in describe blocks or tests
   });
 
   afterAll(() => {
-    process.env = OLD_ENV;
+    Object.keys(process.env).forEach(key => delete (process.env as any)[key]);
+    Object.assign(process.env, OLD_ENV);
   });
 
   describe('constructor and isAvailable', () => {

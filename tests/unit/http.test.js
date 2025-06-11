@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import request from 'supertest';
 import { logger } from '../setup';
 
-// Create comprehensive Express mock
+// Create comprehensive Express mock outside the vi.mock
 const mockApp = {
   use: vi.fn(),
   get: vi.fn(),
@@ -16,16 +16,15 @@ const mockApp = {
   })
 };
 
+const mockExpress = vi.fn(() => mockApp);
+mockExpress.json = vi.fn(() => (req, res, next) => next());
+mockExpress.urlencoded = vi.fn(() => (req, res, next) => next());
+mockExpress.static = vi.fn(() => (req, res, next) => next());
+
 // Mock express module
-vi.mock('express', () => {
-  const mockExpress = vi.fn(() => mockApp);
-  mockExpress.json = vi.fn(() => (req, res, next) => next());
-  mockExpress.urlencoded = vi.fn(() => (req, res, next) => next());
-  mockExpress.static = vi.fn(() => (req, res, next) => next());
-  return {
-    default: mockExpress
-  };
-});
+vi.mock('express', () => ({
+  default: mockExpress
+}));
 
 // Mock server and cleanup
 const mockServer = {

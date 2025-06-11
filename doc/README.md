@@ -9,6 +9,7 @@ This directory contains comprehensive documentation for the TAM MCP Server proje
 - **[Changelog](../CHANGELOG.md)** - Detailed version history and breaking changes
 
 ### 🔧 **Implementation Guides**
+- **[API Registration Guide](API-REGISTRATION-GUIDE.md)** - Step-by-step guide for registering API keys
 - **[Notifications Implementation](NOTIFICATIONS-IMPLEMENTATION.md)** - Detailed guide for the notification system
 - **[Test Organization](TEST-ORGANIZATION.md)** - Professional test suite structure and organization
 

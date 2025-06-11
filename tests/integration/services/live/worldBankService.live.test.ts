@@ -1,11 +1,9 @@
+import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { WorldBankService } from '../../../../src/services/dataSources/worldBankService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import * as path from 'path';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import for spying
-
-// Increase timeout for live API calls
-jest.setTimeout(20000); // 20 seconds
 
 describe('WorldBankService - Live API Integration Tests', () => {
   let worldBankService: WorldBankService;
@@ -121,12 +119,12 @@ describe('WorldBankService - Live API Integration Tests', () => {
     const countryCode = 'US';
     const nonExistentIndicator = 'NON.EXISTENT.INDICATOR';
     const cacheKey = `worldbank_marketsize_${nonExistentIndicator}_${countryCode}`;
-    let getEnvAsNumberSpy: jest.SpyInstance | undefined;
+    let getEnvAsNumberSpy: any;
 
     try {
       const shortNoDataTTL = 500; // 0.5 seconds
       // Mock getEnvAsNumber for this test only to control TTL
-      getEnvAsNumberSpy = jest.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => {
+      getEnvAsNumberSpy = vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => {
           if (key === 'CACHE_TTL_WORLD_BANK_NODATA_MS') return shortNoDataTTL;
           return defaultValue;
       });

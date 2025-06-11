@@ -11,7 +11,10 @@ The TAM MCP Server test suite has been completely reorganized following industry
 ```
 tests/
 ├── unit/                    # Unit tests for individual components
-│   └── tools.test.js       # Comprehensive tool testing
+│   ├── tools.test.js       # Comprehensive tool testing
+│   ├── test-notifications.js # Notification system unit tests
+│   ├── test-simple-notification.js # Simple notification tests
+│   └── ...                 # Other unit test files
 ├── integration/            # Integration tests for component interactions  
 │   └── server.test.js      # Server initialization and MCP protocol
 ├── e2e/                   # End-to-end tests for complete workflows
@@ -119,6 +122,9 @@ node tests/run-tests.js all --coverage
 - ✅ **Comprehensive documentation** created for maintainability
 - ✅ **CI/CD ready** configuration with proper cleanup
 - ✅ **Developer-friendly** with watch mode and debugging options
+- ✅ **Root directory cleanup** - Moved notification test files from root to `tests/unit/`
+  - `test-notifications.js` → `tests/unit/test-notifications.js`
+  - `test-simple-notification.js` → `tests/unit/test-simple-notification.js`
 
 ### 🎯 Benefits Achieved
 

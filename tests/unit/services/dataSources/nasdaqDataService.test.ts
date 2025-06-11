@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import axios from 'axios';
 import { NasdaqDataService } from '../../../../src/services/dataSources/nasdaqDataService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -6,32 +7,32 @@ import { nasdaqDataApi } from '../../../../src/config/apiConfig';
 import * as process from 'process';
 import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
 
-jest.mock('axios');
-jest.mock('../../../../src/services/cache/cacheService');
-jest.mock('../../../../src/utils/envHelper'); // Mock the envHelper
+vi.mock('axios');
+vi.mock('../../../../src/services/cache/cacheService');
+vi.mock('../../../../src/utils/envHelper'); // Mock the envHelper
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const MockedCacheService = CacheService as jest.MockedClass<typeof CacheService>;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as jest.Mock;
+const mockedAxios = axios as any;
+const MockedCacheService = CacheService as any;
+const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
 
 describe('NasdaqDataService', () => {
   let nasdaqService: NasdaqDataService;
-  let mockCacheServiceInstance: jest.Mocked<CacheService>;
+  let mockCacheServiceInstance: any;
   const OLD_ENV = { ...process.env };
   const apiKey = 'test_nasdaq_api_key';
   const databaseCode = 'ODA'; // Example: OPEC Crude Oil Price
   const datasetCode = 'PORCROILWTICO_USD';
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    process.env = { ...OLD_ENV };
-    mockCacheServiceInstance = new MockedCacheService() as jest.Mocked<CacheService>;
+    vi.resetAllMocks();
+    vi.unstubAllEnvs();
+    mockCacheServiceInstance = new MockedCacheService() as any;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service instantiated in contexts or tests
   });
 
   afterAll(() => {
-    process.env = OLD_ENV;
+    vi.unstubAllEnvs();
   });
 
   describe('constructor and isAvailable', () => {
@@ -47,13 +48,13 @@ describe('NasdaqDataService', () => {
     });
 
     it('isAvailable should be false if no API key is available', async () => {
-      delete process.env.NASDAQ_DATA_LINK_API_KEY;
+      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', undefined);
       nasdaqService = new NasdaqDataService(mockCacheServiceInstance);
       expect(await nasdaqService.isAvailable()).toBe(false);
     });
      it('should warn if API key is not configured', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-      delete process.env.NASDAQ_DATA_LINK_API_KEY;
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', undefined);
       new NasdaqDataService(mockCacheServiceInstance);
       expect(consoleWarnSpy).toHaveBeenCalledWith("Nasdaq Data Link API key not configured. NasdaqDataService will not be available.");
       consoleWarnSpy.mockRestore();
@@ -198,8 +199,8 @@ describe('NasdaqDataService', () => {
     });
 
     it('should throw if API key is not configured', async () => {
+      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', undefined);
       nasdaqService = new NasdaqDataService(mockCacheServiceInstance); // No API key
-      delete process.env.NASDAQ_DATA_LINK_API_KEY;
       await expect(nasdaqService.fetchIndustryData(databaseCode, datasetCode, params))
         .rejects.toThrow('Nasdaq Data Link API key is not configured.');
     });
@@ -216,7 +217,7 @@ describe('NasdaqDataService', () => {
       // nasdaqService instantiated in beforeEach
       const mockDataPoint = { Date: '2023-01-01', Open: 99, Value: 101, Close: 100 };
       // Mock fetchDatasetTimeSeries directly as it's simpler here
-      const fetchDatasetTimeSeriesSpy = jest.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
+      const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode /* no valueColumn */);
       expect(result?.value).toBe(101);
@@ -227,7 +228,7 @@ describe('NasdaqDataService', () => {
     it('should correctly resolve valueColumn when not provided (finds first numeric non-Date if "Value" absent)', async () => {
       // nasdaqService instantiated in beforeEach
       const mockDataPoint = { Date: '2023-01-01', StringCol: 'abc', NumericCol1: 100, NumericCol2: 200 };
-      const fetchDatasetTimeSeriesSpy = jest.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
+      const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode);
       expect(result?.value).toBe(100); // NumericCol1
@@ -239,7 +240,7 @@ describe('NasdaqDataService', () => {
       // nasdaqService instantiated in beforeEach
       // Date is typically first. If 'SecondCol' is next, it should be picked if no numbers.
       const mockDataPoint = { Date: '2023-01-01', SecondCol: 'data_val', ThirdCol: 'more_data' };
-      const fetchDatasetTimeSeriesSpy = jest.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
+      const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode);
       expect(result?.value).toBe('data_val');
@@ -253,7 +254,7 @@ describe('NasdaqDataService', () => {
       const actualRecordDate = '2023-01-01';
       const mockDataPoint = { Date: actualRecordDate, Value: 100 };
 
-      const fetchDatasetTimeSeriesSpy = jest.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries')
+      const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries')
           .mockImplementation(async (db, ds, params) => {
               // Simulate API call where specific date filter (start_date=X, end_date=X) still might return latest if exact not found, or just one record.
               // For this test, we ensure the spy returns a record with a date different from requested.
@@ -262,7 +263,7 @@ describe('NasdaqDataService', () => {
               }
               return [mockDataPoint]; // Default mock return if params don't match specific date query
           });
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'Value', requestedDate);
 
@@ -327,7 +328,7 @@ describe('NasdaqDataService', () => {
 
     it('should return null if time series is null for market size', async () => {
         // This mocks fetchDatasetTimeSeries to return null, as if API failed or returned no data
-        const fetchSpy = jest.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue(null);
+        const fetchSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue(null);
 
         const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'Value');
         expect(result).toBeNull();
@@ -338,7 +339,7 @@ describe('NasdaqDataService', () => {
         const mockApiResponse = { dataset_data: { column_names: ['Date', 'Price'], data: [['2023-01-01', 90]] } };
         mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
         mockCacheServiceInstance.get.mockResolvedValue(null);
-        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'NonExistentColumn');
         expect(result).toBeNull();
@@ -357,7 +358,7 @@ describe('NasdaqDataService', () => {
       const params = { limit: 1 };
       const paramsString = JSON.stringify(params);
       const cacheKey = `nasdaq_${databaseCode}_${datasetCode}_${paramsString}`;
-      (mockCacheServiceInstance as any).getEntry = jest.fn().mockResolvedValue(cacheEntry);
+      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
 
       const freshness = await nasdaqService.getDataFreshness(databaseCode, datasetCode, params);
       expect(freshness).toEqual(new Date(now));
@@ -371,7 +372,7 @@ describe('NasdaqDataService', () => {
     });
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 0, size: 1, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = jest.fn().mockReturnValue(mockStats);
+      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
       expect(nasdaqService.getCacheStatus()).toEqual(mockStats);
     });
   });
