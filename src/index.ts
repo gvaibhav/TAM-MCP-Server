@@ -23,10 +23,10 @@ async function run() {
                 break;
             default:
                 console.error(`Unknown transport method: ${scriptName}`);
-                console.log('Available transport methods:');
-                console.log('- stdio (default)');
-                console.log('- sse');
-                console.log('- http/streamableHttp');
+                console.error('Available transport methods:');
+                console.error('- stdio (default)');
+                console.error('- sse');
+                console.error('- http/streamableHttp');
                 process.exit(1);
         }
     } catch (error) {

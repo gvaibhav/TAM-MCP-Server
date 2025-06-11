@@ -95,7 +95,7 @@ export class DataService {
 
   // --- Existing methods (searchIndustries, getIndustryById) largely unchanged for now ---
   async searchIndustries(query: string, limit?: number): Promise<any[]> { // Added limit from market-tools
-    console.log(`DataService: Searching industries for query "${query}"`);
+    console.error(`DataService: Searching industries for query "${query}"`);
     // Stays mock for now
     const results = Object.values(mockIndustryData).filter(ind =>
       ind.name.toLowerCase().includes(query.toLowerCase())
@@ -104,7 +104,7 @@ export class DataService {
   }
 
   async getIndustryById(id: string): Promise<any | null> {
-    console.log(`DataService: Getting industry by ID "${id}"`);
+    console.error(`DataService: Getting industry by ID "${id}"`);
     // Stays mock for now
     const industry = mockIndustryData[id as keyof typeof mockIndustryData] || null;
     if (industry) { // Add defaultRegion for compatibility with market-tools
@@ -126,14 +126,14 @@ export class DataService {
 
   // --- Updated getMarketSize ---
   async getMarketSize(industryId: string, region: string): Promise<any | null> {
-    console.log(`DataService: getMarketSize for industry "${industryId}" in region "${region}"`);
+    console.error(`DataService: getMarketSize for industry "${industryId}" in region "${region}"`);
 
     // Attempt AlphaVantage if industryId looks like a stock symbol (e.g., IBM, AAPL)
     if (/^[A-Z]{1,5}$/.test(industryId)) {
       try {
         const avService = this.dataSourceServicesMap['AlphaVantageService'] as AlphaVantageService;
         if (avService && await avService.isAvailable()) {
-          console.log(`Attempting to fetch from AlphaVantageService with symbol: ${industryId}`);
+          console.error(`Attempting to fetch from AlphaVantageService with symbol: ${industryId}`);
           const overview = await avService.fetchMarketSize(industryId, region);
           if (overview && overview.marketCapitalization) {
             return {
@@ -153,7 +153,7 @@ export class DataService {
       try {
         const censusService = this.dataSourceServicesMap['CensusService'] as CensusService;
         if (censusService && await censusService.isAvailable()) {
-          console.log(`Attempting to fetch from CensusService with NAICS: ${industryId}, region: ${region}`);
+          console.error(`Attempting to fetch from CensusService with NAICS: ${industryId}, region: ${region}`);
           const censusData = await censusService.fetchMarketSize(industryId, region, "EMP");
           if (censusData && censusData.value !== null && censusData.value !== undefined) {
             return {
@@ -171,7 +171,7 @@ export class DataService {
     try {
         const fredService = this.dataSourceServicesMap['FredService'] as FredService;
         if (fredService && await fredService.isAvailable()) {
-            console.log(`Attempting to fetch from FredService with seriesId: ${industryId}`);
+            console.error(`Attempting to fetch from FredService with seriesId: ${industryId}`);
             const fredDataArray = await fredService.fetchMarketSize(industryId, region); // region might be used by specific series logic
             if (fredDataArray && fredDataArray.length > 0 && fredDataArray[0].value !== null) {
                 return {
@@ -190,7 +190,7 @@ export class DataService {
         if (wbService && await wbService.isAvailable()) {
             // Use industryId as indicator if it's not a generic term like "GDP", otherwise default indicator is used by service
             const indicator = (industryId && industryId.toUpperCase() !== 'GDP') ? industryId : undefined;
-            console.log(`Attempting to fetch from WorldBankService with countryCode: ${region}, indicator: ${indicator || 'default GDP'}`);
+            console.error(`Attempting to fetch from WorldBankService with countryCode: ${region}, indicator: ${indicator || 'default GDP'}`);
             const wbDataArray = await wbService.fetchMarketSize(region, indicator);
             if (wbDataArray && wbDataArray.length > 0 && wbDataArray[0].value !== null) {
                 return {
@@ -220,7 +220,7 @@ export class DataService {
 
   // --- New method for specific data source access ---
   async getSpecificDataSourceData(sourceName: string, methodName: string, params: any[]): Promise<any | null> {
-    console.log(`DataService: getSpecificDataSourceData for source "${sourceName}", method "${methodName}" with params:`, params);
+    console.error(`DataService: getSpecificDataSourceData for source "${sourceName}", method "${methodName}" with params:`, params);
     const service = this.dataSourceServicesMap[sourceName];
 
     if (!service) {
@@ -248,7 +248,7 @@ export class DataService {
   }
 
   async generateMarketForecast(industryId: string, years?: number, region?: string): Promise<any[] | null> {
-    console.log(`DataService: Generating market forecast for industry "${industryId}" in region "${region}" for ${years} years.`);
+    console.error(`DataService: Generating market forecast for industry "${industryId}" in region "${region}" for ${years} years.`);
     const forecast = mockMarketForecast[industryId as keyof typeof mockMarketForecast] || null;
     return Promise.resolve(forecast ? (years ? forecast.slice(0, years) : forecast) : null);
   }
@@ -258,7 +258,7 @@ export class DataService {
   }
 
   async getMarketOpportunities(industryId: string, region: string, minMarketSize?: number): Promise<any> {
-    console.log(`DataService: Getting market opportunities for ${industryId} in ${region}`);
+    console.error(`DataService: Getting market opportunities for ${industryId} in ${region}`);
     // Return a structure that matches market-tools expectation (an object with an 'opportunities' array)
     return {
       industry: industryId,
@@ -274,7 +274,7 @@ export class DataService {
   async calculateTam(industryId: string, region: string, _customerSegments?: any[]): Promise<number | null> {
     const marketSizeData = await this.getMarketSize(industryId, region);
     if (marketSizeData && marketSizeData.value !== null && marketSizeData.value !== undefined) {
-      console.log(`DataService: Calculating TAM based on market size ${marketSizeData.value} from ${marketSizeData.source}`);
+      console.error(`DataService: Calculating TAM based on market size ${marketSizeData.value} from ${marketSizeData.source}`);
       return marketSizeData.value;
     }
     return null;
@@ -284,21 +284,21 @@ export class DataService {
     const tam = await this.calculateTam(industryId, region, []);
     if (tam !== null) {
       const samPercentage = 0.5;
-      console.log(`DataService: Calculating SAM as ${samPercentage*100}% of TAM ${tam}`);
+      console.error(`DataService: Calculating SAM as ${samPercentage*100}% of TAM ${tam}`);
       return tam * samPercentage;
     }
     return null;
   }
 
   async compareMarkets(marketA_industryId: string, marketA_region: string, marketB_industryId: string, marketB_region: string): Promise<any> {
-    console.log(`DataService: Comparing markets A(${marketA_industryId}/${marketA_region}) and B(${marketB_industryId}/${marketB_region})`);
+    console.error(`DataService: Comparing markets A(${marketA_industryId}/${marketA_region}) and B(${marketB_industryId}/${marketB_region})`);
     const marketAData = await this.getMarketSize(marketA_industryId, marketA_region);
     const marketBData = await this.getMarketSize(marketB_industryId, marketB_region);
     return { marketA: marketAData, marketB: marketBData, source: "DataService (aggregation)" };
   }
 
   async validateMarketData(dataToValidate: any, referenceIndustryId: string, referenceRegion: string): Promise<any> {
-     console.log(`DataService: Validating data against ${referenceIndustryId}/${referenceRegion}`);
+     console.error(`DataService: Validating data against ${referenceIndustryId}/${referenceRegion}`);
      const referenceData = await this.getMarketSize(referenceIndustryId, referenceRegion);
      let isValid = false;
      let variance = null;
@@ -310,13 +310,13 @@ export class DataService {
   }
 
   async forecastMarket(industryId: string, region: string, years: number): Promise<any[] | null> {
-    console.log(`DataService: Forecasting market for ${industryId} in ${region} for ${years} years`);
+    console.error(`DataService: Forecasting market for ${industryId} in ${region} for ${years} years`);
     const baseForecast = await this.generateMarketForecast(industryId, years, region);
     return baseForecast;
   }
 
   async getMarketSegments(industryId: string, region: string): Promise<any[] | null> {
-    console.log(`DataService: Getting market segments for ${industryId} in ${region}`);
+    console.error(`DataService: Getting market segments for ${industryId} in ${region}`);
     if (industryId === 'tech-software' || industryId === 'tech-ai') {
         const marketSizeData = await this.getMarketSize(industryId, region);
         const totalMarketSize = marketSizeData?.value || 1_000_000_000; // Fallback for segment value calculation

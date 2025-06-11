@@ -55,14 +55,14 @@ export class NasdaqDataService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any[]>(cacheKey);
     if (cachedData) {
-      console.log(`NasdaqDataService: Returning cached data for ${databaseCode}/${datasetCode} with params ${paramsString}`);
+      console.error(`NasdaqDataService: Returning cached data for ${databaseCode}/${datasetCode} with params ${paramsString}`);
       return cachedData;
     }
 
     const queryParams = { ...apiParams, api_key: this.apiKey };
     const apiUrl = `${nasdaqDataApi.baseUrl}/${databaseCode}/${datasetCode}/data.json`;
 
-    console.log(`NasdaqDataService: Fetching data for ${databaseCode}/${datasetCode} from API with params:`, apiParams);
+    console.error(`NasdaqDataService: Fetching data for ${databaseCode}/${datasetCode} from API with params:`, apiParams);
 
     try {
       const response = await axios.get(apiUrl, { params: queryParams });

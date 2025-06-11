@@ -24,7 +24,7 @@ export class WorldBankService implements DataSourceService {
 
   async fetchIndustryData(industryId: string): Promise<any> {
     // ... (implementation remains unchanged)
-    console.log(`WorldBankService: Fetching industry data for ${industryId}`);
+    console.error(`WorldBankService: Fetching industry data for ${industryId}`);
     throw new Error('WorldBankService.fetchIndustryData not yet implemented');
   }
 
@@ -33,11 +33,11 @@ export class WorldBankService implements DataSourceService {
     const cachedData = await this.cacheService.get<any>(cacheKey);
 
     if (cachedData) {
-      console.log(`WorldBankService: Returning cached market size for ${countryCode}, indicator ${indicator}`);
+      console.error(`WorldBankService: Returning cached market size for ${countryCode}, indicator ${indicator}`);
       return cachedData;
     }
 
-    console.log(`WorldBankService: Fetching market size for ${countryCode}, indicator ${indicator} from API`);
+    console.error(`WorldBankService: Fetching market size for ${countryCode}, indicator ${indicator} from API`);
     const apiUrl = `${worldBankApi.baseUrl}/country/${countryCode}/indicator/${indicator}?format=json&mrv=1`;
 
     try {

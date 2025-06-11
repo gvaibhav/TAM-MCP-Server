@@ -31,7 +31,7 @@ export class FredService implements DataSourceService {
   async fetchIndustryData(industryId: string): Promise<any> {
     // ... (implementation remains unchanged)
      if (!await this.isAvailable()) throw new Error('FRED API key is not configured or service is unavailable.');
-    console.log(`FredService: Fetching industry data for ${industryId}`);
+    console.error(`FredService: Fetching industry data for ${industryId}`);
     throw new Error('FredService.fetchIndustryData not yet implemented');
   }
 
@@ -45,11 +45,11 @@ export class FredService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any>(cacheKey);
     if (cachedData) {
-      console.log(`FredService: Returning cached market size for series ${seriesId}`);
+      console.error(`FredService: Returning cached market size for series ${seriesId}`);
       return cachedData;
     }
 
-    console.log(`FredService: Fetching market size for series ${seriesId} from API`);
+    console.error(`FredService: Fetching market size for series ${seriesId} from API`);
     const apiUrl = `${fredApi.baseUrl}/series/observations?series_id=${seriesId}&api_key=${this.apiKey}&file_type=json&sort_order=desc&limit=1`;
 
     try {

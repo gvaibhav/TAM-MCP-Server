@@ -49,14 +49,14 @@ export class AlphaVantageService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any>(cacheKey);
     if (cachedData) {
-      console.log(`AlphaVantageService: Returning cached overview for symbol ${symbol}`);
+      console.error(`AlphaVantageService: Returning cached overview for symbol ${symbol}`);
       return cachedData; // This will be the market cap value or null if cached as no data
     }
 
     // Alpha Vantage rate limit: 25 requests per day for free tier as of 2024.
     // Previous info mentioned 500/day or 5/min, API docs should be checked.
     // Aggressive caching is key.
-    console.log(`AlphaVantageService: Fetching overview for symbol ${symbol} from API`);
+    console.error(`AlphaVantageService: Fetching overview for symbol ${symbol} from API`);
     const apiUrl = `${alphaVantageApi.baseUrl}${alphaVantageApi.queryPath}?function=${functionType}&symbol=${symbol}&apikey=${this.apiKey}`;
 
     try {
@@ -119,11 +119,11 @@ export class AlphaVantageService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any>(cacheKey);
     if (cachedData) {
-      console.log(`AlphaVantageService: Returning cached time series for ${seriesType} ${symbol}`);
+      console.error(`AlphaVantageService: Returning cached time series for ${seriesType} ${symbol}`);
       return cachedData;
     }
 
-    console.log(`AlphaVantageService: Fetching time series ${seriesType} for ${symbol} from API`);
+    console.error(`AlphaVantageService: Fetching time series ${seriesType} for ${symbol} from API`);
     // Example for TIME_SERIES_DAILY_ADJUSTED. Other series might need different params (e.g. interval for intraday)
     const apiUrl = `${alphaVantageApi.baseUrl}${alphaVantageApi.queryPath}?function=${seriesType}&symbol=${symbol}&apikey=${this.apiKey}`;
 

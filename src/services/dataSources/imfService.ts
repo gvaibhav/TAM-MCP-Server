@@ -91,14 +91,14 @@ export class ImfService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any[]>(cacheKey);
     if (cachedData) {
-      console.log(`IMF Service: Returning cached data for ${dataflowId}/${key}`);
+      console.error(`IMF Service: Returning cached data for ${dataflowId}/${key}`);
       return cachedData;
     }
 
     // IMF CompactData URL structure: /CompactData/{DataflowID}/{Key}?params...
     // Key is typically FREQ.REF_AREA.INDICATOR.COUNTERPART_AREA...
     const apiUrl = `${imfApi.baseUrl}/CompactData/${dataflowId}/${key}`;
-    console.log(`IMF Service: Fetching data from ${apiUrl} with params:`, queryParams);
+    console.error(`IMF Service: Fetching data from ${apiUrl} with params:`, queryParams);
 
     try {
       const response = await axios.get<ImfSdmxData>(apiUrl, { params: queryParams });

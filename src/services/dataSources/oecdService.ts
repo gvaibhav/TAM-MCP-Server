@@ -98,12 +98,12 @@ export class OecdService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any[]>(cacheKey);
     if (cachedData) {
-      console.log(`OECD Service: Returning cached data for ${datasetId}/${filterExpression}`);
+      console.error(`OECD Service: Returning cached data for ${datasetId}/${filterExpression}`);
       return cachedData;
     }
 
     const apiUrl = `${oecdApi.baseUrl}/${datasetId}/${filterExpression}/${agencyId}`;
-    console.log(`OECD Service: Fetching data from ${apiUrl} with params:`, queryParams);
+    console.error(`OECD Service: Fetching data from ${apiUrl} with params:`, queryParams);
 
     try {
       const response = await axios.get<OecdSdmxData>(apiUrl, { params: queryParams });

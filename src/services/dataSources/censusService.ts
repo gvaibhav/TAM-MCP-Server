@@ -71,12 +71,12 @@ export class CensusService implements DataSourceService {
 
     const cachedData = await this.cacheService.get<any[]>(cacheKey);
     if (cachedData) {
-      console.log(`CensusService: Returning cached data for year ${year}, dataset ${datasetPath}, geo ${forGeography}, vars ${varString}`);
+      console.error(`CensusService: Returning cached data for year ${year}, dataset ${datasetPath}, geo ${forGeography}, vars ${varString}`);
       return cachedData;
     }
 
     const apiUrl = `${censusApi.baseUrl}/${year}/${datasetPath}`;
-    console.log(`CensusService: Fetching data from ${apiUrl} with params:`, queryBase);
+    console.error(`CensusService: Fetching data from ${apiUrl} with params:`, queryBase);
 
     try {
       const response = await axios.get(apiUrl, { params: queryBase });
