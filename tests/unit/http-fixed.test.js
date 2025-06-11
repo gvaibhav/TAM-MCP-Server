@@ -3,21 +3,26 @@ import { Request, Response } from 'express';
 import request from 'supertest';
 import { logger } from '../setup';
 
-// Mock Express - define app inside the mock to avoid hoisting issues
-vi.mock('express', () => {
-  const mockApp = {
-    use: vi.fn(),
-    get: vi.fn(),
-    post: vi.fn(),
-    delete: vi.fn(),
-    listen: vi.fn().mockImplementation((port, callback) => {
-      if (callback) callback();
-      return { close: vi.fn() };
-    }),
-    set: vi.fn(),
-    disable: vi.fn()
-  };
+// Create mock app instance that will be returned by express()
+const mockApp = {
+  use: vi.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+  listen: vi.fn().mockImplementation((port, callback) => {
+    if (callback) callback();
+    return { 
+      close: vi.fn((callback) => {
+        if (callback) callback();
+      })
+    };
+  }),
+  set: vi.fn(),
+  disable: vi.fn()
+};
 
+// Mock Express
+vi.mock('express', () => {
   const mockExpress = vi.fn().mockReturnValue(mockApp);
   mockExpress.json = vi.fn().mockReturnValue(vi.fn());
   mockExpress.urlencoded = vi.fn().mockReturnValue(vi.fn());
@@ -63,11 +68,16 @@ describe('HTTP Server Transport', () => {
   let randomUUID;
   let createServer;
   let express;
-  let mockApp;
 
   beforeEach(async () => {
     // Clear all mocks
     vi.clearAllMocks();
+    
+    // Reset mock app state
+    mockApp.use.mockClear();
+    mockApp.get.mockClear();
+    mockApp.post.mockClear();
+    mockApp.listen.mockClear();
     
     // Get the mocked modules
     const { StreamableHTTPServerTransport: MockTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js');
@@ -81,12 +91,6 @@ describe('HTTP Server Transport', () => {
     randomUUID = mockUUID;
     createServer = mockCreateServer;
     express = expressModule.default;
-    
-    // Import the HTTP module to trigger Express app setup
-    await import('../../src/http.ts?t=' + Date.now());
-    
-    // Get the mocked app instance
-    mockApp = express.mock.results[express.mock.results.length - 1].value;
   });
 
   afterEach(() => {
@@ -94,6 +98,9 @@ describe('HTTP Server Transport', () => {
   });
 
   it('should create an express app', async () => {
+    // Import the HTTP module to trigger Express app setup
+    await import('../../src/http.ts?t=' + Date.now());
+    
     // Verify express was instantiated and middleware configured
     expect(express).toHaveBeenCalled();
     expect(mockApp.use).toHaveBeenCalled();
@@ -324,7 +331,7 @@ describe('HTTP Server Transport', () => {
 
   it('should handle SIGINT with clean shutdown', async () => {
     // Verify that process.on was called for SIGINT
-    const processOnSpy = vi.spyOn(process, 'on');
+    const processOnSpy = vi.spyOn(process, 'on').mockImplementation(() => {});
     
     // Re-import to trigger signal handler setup
     await import('../../src/http.ts?t=' + Date.now());
@@ -334,8 +341,10 @@ describe('HTTP Server Transport', () => {
     expect(sigintCall).toBeDefined();
     
     // Test the handler doesn't throw
-    const sigintHandler = sigintCall[1];
-    expect(() => sigintHandler()).not.toThrow();
+    if (sigintCall && sigintCall[1]) {
+      const sigintHandler = sigintCall[1];
+      expect(() => sigintHandler()).not.toThrow();
+    }
     
     processOnSpy.mockRestore();
   });
@@ -344,11 +353,20 @@ describe('HTTP Server Transport', () => {
     // Similar to above but with error handling
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {});
+    const processOnSpy = vi.spyOn(process, 'on').mockImplementation(() => {});
     
     // Re-import and test error handling in shutdown
     await import('../../src/http.ts?t=' + Date.now());
     
+    // Find the SIGINT handler and test it
+    const sigintCall = processOnSpy.mock.calls.find(call => call[0] === 'SIGINT');
+    if (sigintCall && sigintCall[1]) {
+      const sigintHandler = sigintCall[1];
+      expect(() => sigintHandler()).not.toThrow();
+    }
+    
     consoleLogSpy.mockRestore();
     processExitSpy.mockRestore();
+    processOnSpy.mockRestore();
   });
 });

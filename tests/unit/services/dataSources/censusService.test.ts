@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { CensusService } from '../../../../src/services/dataSources/censusService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -6,8 +6,8 @@ import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 // Import real config to get its baseUrl for constructing mockApiUrl,
 // but the service itself will use the mocked version of censusApi.cbpYear.
 import { censusApi as realCensusApiConfig } from '../../../../src/config/apiConfig';
-import * as process from 'process';
 import * as envHelper from '../../../../src/utils/envHelper';
+import { envTestUtils } from '../../../utils/envTestHelper';
 
 vi.mock('axios');
 vi.mock('../../../../src/services/cache/cacheService');
@@ -37,19 +37,18 @@ const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
 describe('CensusService', () => {
   let censusService: CensusService;
   let mockCacheServiceInstance: InstanceType<typeof CacheService>;
-  const OLD_ENV = { ...process.env };
   const apiKey = 'test_census_api_key';
 
   beforeEach(() => {
     vi.resetAllMocks();
-    process.env = { ...OLD_ENV };
+    envTestUtils.setup();
     mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // censusService instantiated in describe blocks or tests
   });
 
-  afterAll(() => {
-    process.env = OLD_ENV;
+  afterEach(() => {
+    envTestUtils.cleanup();
   });
 
   describe('constructor and isAvailable', () => {
@@ -59,23 +58,23 @@ describe('CensusService', () => {
     });
 
     it('isAvailable should be true if CENSUS_API_KEY is in process.env', async () => {
-      process.env.CENSUS_API_KEY = apiKey;
+      envTestUtils.mockWith({ CENSUS_API_KEY: apiKey });
       censusService = new CensusService(mockCacheServiceInstance);
       expect(await censusService.isAvailable()).toBe(true);
     });
 
     it('isAvailable should be false if no API key is available', async () => {
-      delete process.env.CENSUS_API_KEY;
+      envTestUtils.mockWith({ CENSUS_API_KEY: undefined });
       censusService = new CensusService(mockCacheServiceInstance);
       expect(await censusService.isAvailable()).toBe(false);
     });
 
     it('should warn if API key is not configured', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      delete process.env.CENSUS_API_KEY;
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      envTestUtils.mockWith({ CENSUS_API_KEY: undefined });
       new CensusService(mockCacheServiceInstance);
-      expect(consoleWarnSpy).toHaveBeenCalledWith("Census API key not configured. CensusService will not be available.");
-      consoleWarnSpy.mockRestore();
+      expect(consoleErrorSpy).toHaveBeenCalledWith("ℹ️  Census Bureau: API key not configured - service disabled (set CENSUS_API_KEY to enable)");
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -167,7 +166,7 @@ describe('CensusService', () => {
     });
 
     it('should throw error if API key is not configured', async () => {
-      delete process.env.CENSUS_API_KEY;
+      envTestUtils.mockWith({ CENSUS_API_KEY: undefined });
       censusService = new CensusService(mockCacheServiceInstance);
       await expect(censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath))
         .rejects.toThrow('Census API key is not configured or service is unavailable.');

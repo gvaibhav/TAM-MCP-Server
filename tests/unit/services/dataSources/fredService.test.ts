@@ -1,10 +1,10 @@
-import { vi, describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { FredService } from '../../../../src/services/dataSources/fredService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import * as envHelper from '../../../../src/utils/envHelper';
-import * as process from 'process';
+import { envTestUtils } from '../../../utils/envTestHelper';
 
 
 vi.mock('axios');
@@ -14,7 +14,6 @@ vi.mock('../../../../src/utils/envHelper');
 const mockedAxiosGet = vi.mocked(axios.get);
 const MockedCacheService = CacheService as unknown as ReturnType<typeof vi.fn>; // Mocked Constructor
 const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
-const OLD_ENV = { ...process.env };
 
 
 describe('FredService', () => {
@@ -28,14 +27,14 @@ describe('FredService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    process.env = { ...OLD_ENV };
+    envTestUtils.setup();
     mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // fredService instantiated in describe blocks or tests to control API key
   });
 
-   afterAll(() => {
-    process.env = OLD_ENV;
+  afterEach(() => {
+    envTestUtils.cleanup();
   });
 
   // afterEach is not strictly needed here as vi.resetAllMocks() handles mock states
@@ -48,23 +47,23 @@ describe('FredService', () => {
     });
 
     it('isAvailable should be true if FRED_API_KEY is in process.env', async () => {
-      process.env.FRED_API_KEY = apiKey;
+      vi.stubEnv('FRED_API_KEY', apiKey);
       fredService = new FredService(mockCacheServiceInstance);
       expect(await fredService.isAvailable()).toBe(true);
     });
 
     it('isAvailable should be false if no API key is available', async () => {
-      delete process.env.FRED_API_KEY;
+      vi.unstubAllEnvs();
       fredService = new FredService(mockCacheServiceInstance);
       expect(await fredService.isAvailable()).toBe(false);
     });
 
     it('should warn if API key is not configured', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      delete process.env.FRED_API_KEY;
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.unstubAllEnvs();
       new FredService(mockCacheServiceInstance);
-      expect(consoleWarnSpy).toHaveBeenCalledWith("FRED API key not configured. FredService will not be available.");
-      consoleWarnSpy.mockRestore();
+      expect(consoleErrorSpy).toHaveBeenCalledWith("ℹ️  FRED: API key not configured - service disabled (set FRED_API_KEY to enable)");
+      consoleErrorSpy.mockRestore();
     });
   });
 

@@ -1,24 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock all individual data source services
-vi.mock('../../../../src/services/dataSources/alphaVantageService');
-vi.mock('../../../../src/services/dataSources/censusService');
-vi.mock('../../../../src/services/dataSources/fredService');
-vi.mock('../../../../src/services/dataSources/worldBankService');
-vi.mock('../../../../src/services/dataSources/blsService');
-vi.mock('../../../../src/services/dataSources/nasdaqDataService');
-vi.mock('../../../../src/services/dataSources/oecdService');
-vi.mock('../../../../src/services/dataSources/imfService');
+vi.mock('../../../src/services/dataSources/alphaVantageService');
+vi.mock('../../../src/services/dataSources/censusService');
+vi.mock('../../../src/services/dataSources/fredService');
+vi.mock('../../../src/services/dataSources/worldBankService');
+vi.mock('../../../src/services/dataSources/blsService');
+vi.mock('../../../src/services/dataSources/nasdaqDataService');
+vi.mock('../../../src/services/dataSources/oecdService');
+vi.mock('../../../src/services/dataSources/imfService');
 
-import { DataService } from '../../../../src/services/dataService';
-import { AlphaVantageService } from '../../../../src/services/dataSources/alphaVantageService';
-import { CensusService } from '../../../../src/services/dataSources/censusService';
-import { FredService } from '../../../../src/services/dataSources/fredService';
-import { WorldBankService } from '../../../../src/services/dataSources/worldBankService';
-import { BlsService } from '../../../../src/services/dataSources/blsService';
-import { NasdaqDataService } from '../../../../src/services/dataSources/nasdaqDataService';
-import { OecdService } from '../../../../src/services/dataSources/oecdService';
-import { ImfService } from '../../../../src/services/dataSources/imfService';
+import { DataService } from '../../../src/services/dataService';
+import { AlphaVantageService } from '../../../src/services/dataSources/alphaVantageService';
+import { CensusService } from '../../../src/services/dataSources/censusService';
+import { FredService } from '../../../src/services/dataSources/fredService';
+import { WorldBankService } from '../../../src/services/dataSources/worldBankService';
+import { BlsService } from '../../../src/services/dataSources/blsService';
+import { NasdaqDataService } from '../../../src/services/dataSources/nasdaqDataService';
+import { OecdService } from '../../../src/services/dataSources/oecdService';
+import { ImfService } from '../../../src/services/dataSources/imfService';
 
 describe('DataService - Integration Tests', () => {
   let dataService: DataService;

@@ -253,15 +253,18 @@ describe('MarketAnalysisTools - Industry Data', () => {
 describe('MarketAnalysisTools - Market Size', () => {
   const mockMarketSize = {
     value: 659000000000,
-    year: 2025,
-    region: 'global',
-    confidenceScore: 0.9,
-    methodology: 'bottom-up',
-    sources: ['industry-report-1', 'industry-report-2'],
-    segments: [
-      { name: 'Enterprise', value: 350000000000, percentage: 0.53, growthRate: 0.09, description: 'Enterprise software' },
-      { name: 'Consumer', value: 309000000000, percentage: 0.47, growthRate: 0.13, description: 'Consumer software' }
-    ]
+    source: 'test-source',
+    details: {
+      year: 2025,
+      region: 'global',
+      confidenceScore: 0.9,
+      methodology: 'bottom-up',
+      sources: ['industry-report-1', 'industry-report-2'],
+      segments: [
+        { name: 'Enterprise', value: 350000000000, percentage: 0.53, growthRate: 0.09, description: 'Enterprise software' },
+        { name: 'Consumer', value: 309000000000, percentage: 0.47, growthRate: 0.13, description: 'Consumer software' }
+      ]
+    }
   };
 
   beforeEach(() => {
@@ -276,7 +279,7 @@ describe('MarketAnalysisTools - Market Size', () => {
       currency: 'USD'
     });
     
-    expect(MarketAnalysisTools.dataService.getMarketSize).toHaveBeenCalledWith('tech-software', 'global', undefined);
+    expect(MarketAnalysisTools.dataService.getMarketSize).toHaveBeenCalledWith('tech-software', 'global');
     expect(result?.data?.marketSize?.value).toBe(659000000000);
     expect(result?.data?.segments?.length).toBe(2);
   });
@@ -289,7 +292,7 @@ describe('MarketAnalysisTools - Market Size', () => {
       currency: 'USD'
     });
     
-    expect(MarketAnalysisTools.dataService.getMarketSize).toHaveBeenCalledWith('tech-software', 'global', 2024);
+    expect(MarketAnalysisTools.dataService.getMarketSize).toHaveBeenCalledWith('tech-software', 'global');
   });
   
   it('should handle market data not available', async () => {

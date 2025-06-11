@@ -1,11 +1,11 @@
-import { vi, describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { NasdaqDataService } from '../../../../src/services/dataSources/nasdaqDataService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { nasdaqDataApi } from '../../../../src/config/apiConfig';
-import * as process from 'process';
 import * as envHelper from '../../../../src/utils/envHelper';
+import { envTestUtils } from '../../../utils/envTestHelper';
 
 vi.mock('axios');
 vi.mock('../../../../src/services/cache/cacheService');
@@ -18,21 +18,20 @@ const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
 describe('NasdaqDataService', () => {
   let nasdaqService: NasdaqDataService;
   let mockCacheServiceInstance: InstanceType<typeof CacheService>;
-  const OLD_ENV = { ...process.env };
   const apiKey = 'test_nasdaq_api_key';
   const databaseCode = 'ODA';
   const datasetCode = 'PORCROILWTICO_USD';
 
   beforeEach(() => {
     vi.resetAllMocks();
-    process.env = { ...OLD_ENV };
+    envTestUtils.setup();
     mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service instantiated in contexts or tests
   });
 
-  afterAll(() => {
-    process.env = OLD_ENV;
+  afterEach(() => {
+    envTestUtils.cleanup();
   });
 
   describe('constructor and isAvailable', () => {
@@ -42,22 +41,22 @@ describe('NasdaqDataService', () => {
     });
 
     it('isAvailable should be true if NASDAQ_DATA_LINK_API_KEY is in process.env', async () => {
-      process.env.NASDAQ_DATA_LINK_API_KEY = apiKey;
+      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', apiKey);
       nasdaqService = new NasdaqDataService(mockCacheServiceInstance);
       expect(await nasdaqService.isAvailable()).toBe(true);
     });
 
     it('isAvailable should be false if no API key is available', async () => {
-      delete process.env.NASDAQ_DATA_LINK_API_KEY;
+      vi.unstubAllEnvs();
       nasdaqService = new NasdaqDataService(mockCacheServiceInstance);
       expect(await nasdaqService.isAvailable()).toBe(false);
     });
      it('should warn if API key is not configured', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      delete process.env.NASDAQ_DATA_LINK_API_KEY;
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.unstubAllEnvs();
       new NasdaqDataService(mockCacheServiceInstance);
-      expect(consoleWarnSpy).toHaveBeenCalledWith("Nasdaq Data Link API key not configured. NasdaqDataService will not be available.");
-      consoleWarnSpy.mockRestore();
+      expect(consoleErrorSpy).toHaveBeenCalledWith("ℹ️  Nasdaq Data Link: API key not configured - service disabled (set NASDAQ_DATA_LINK_API_KEY to enable)");
+      consoleErrorSpy.mockRestore();
     });
   });
 

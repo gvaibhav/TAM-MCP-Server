@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock DataService at the top
-vi.mock('../../../../src/services/dataService');
+vi.mock('../../../src/services/dataService');
 
-import { MarketAnalysisTools } from '../../../../src/tools/market-tools';
-import { DataService } from '../../../../src/services/dataService';
-import { APIResponse } from '../../../../src/types';
+import { MarketAnalysisTools } from '../../../src/tools/market-tools';
+import { DataService } from '../../../src/services/dataService';
+import { APIResponse } from '../../../src/types';
 import { z } from "zod";
 // Utils are not mocked for tool integration tests, tools use them directly
-import { formatCurrency, formatPercentage } from '../../../../src/utils';
+import { formatCurrency, formatPercentage } from '../../../src/utils';
 
 
 // Define helper schemas locally as they were in the Jest version for test clarity

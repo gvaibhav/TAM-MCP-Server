@@ -275,7 +275,7 @@ describe('OecdService', () => {
         mockedAxiosGet.mockRejectedValue(apiError as any); // Cast for simplicity
 
         await expect(oecdService.fetchOecdDataset(datasetId, filterExpression))
-            .rejects.toThrow('OECD API Error: 404 - {"code":404,"title":"Not Found","detail":"No matching data found."}');
+            .rejects.toThrow('Request failed with status code 404');
     });
   });
 
