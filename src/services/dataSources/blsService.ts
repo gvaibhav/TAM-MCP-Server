@@ -1,11 +1,11 @@
 // src/services/dataSources/blsService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources.js';
-import { CacheEntry, CacheStatus } from '../../types/cache.js';
-import { CacheService } from '../cache/cacheService.js';
-import { blsApi } from '../../config/apiConfig.js';
-import { getEnvAsNumber } from '../../utils/envHelper.js';
+import { DataSourceService } from '../../types/dataSources';
+import { CacheEntry, CacheStatus } from '../../types/cache';
+import { CacheService } from '../cache/cacheService';
+import { blsApi } from '../../config/apiConfig';
+import { getEnvAsNumber } from '../../utils/envHelper';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -145,7 +145,7 @@ export class BlsService implements DataSourceService {
    * as "market size" isn't a standard BLS series concept.
    * Users should use fetchIndustryData with specific series IDs.
    */
-  async fetchMarketSize(_industryId: string, _region?: string): Promise<any | null> { // Added region to match interface
+  async fetchMarketSize(industryId: string, region?: string): Promise<any | null> { // Added region to match interface
     console.warn("BLS Service: fetchMarketSize is not directly applicable. Use fetchIndustryData with specific series IDs (industryId can be a series ID, region is ignored).");
     // Example: could map industryId to a known high-level employment series
     // if (industryId === 'TOTAL_NONFARM_EMPLOYMENT_US') { // This is a conceptual example

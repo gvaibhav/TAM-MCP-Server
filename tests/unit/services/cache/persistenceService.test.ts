@@ -1,55 +1,53 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'fs/promises'; // fs will be auto-mocked by vi.mock below
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import { CacheEntry } from '../../../../src/types/cache';
-import * as fs from 'fs/promises';
 import * as path from 'path';
 
-vi.mock('fs/promises'); // Mock the entire fs/promises module
+vi.mock('fs/promises'); // Auto-mocks fs.promises, all its functions become vi.fn()
 
-const mockFs = fs as any;
-const TEST_CACHE_DIR = path.join(process.cwd(), '.cache_data_test');
+const mockFs = fs as { // Type assertion for mocked fs module
+  mkdir: ReturnType<typeof vi.fn>;
+  writeFile: ReturnType<typeof vi.fn>;
+  readFile: ReturnType<typeof vi.fn>;
+  unlink: ReturnType<typeof vi.fn>;
+  readdir: ReturnType<typeof vi.fn>;
+};
+
+// const TEST_CACHE_DIR = path.join(process.cwd(), '.cache_data_test'); // Used in original, path constructed in tests now
 
 describe('PersistenceService', () => {
   let persistenceService: PersistenceService;
-  const TEST_CACHE_DIR_BASE = process.cwd(); // Define base path for clarity
+  const TEST_CACHE_DIR_BASE = process.cwd();
 
   beforeEach(() => {
-    // Ensure each test starts with a fresh service and mocks
-    vi.clearAllMocks();
-    // Configure the service to use a specific test directory for most tests
-    // Individual tests (like constructor) might use a different path if needed
+    vi.resetAllMocks();
+    // Default behavior for mkdir for most tests, can be overridden locally if a failure is tested.
+    vi.mocked(fs.mkdir).mockResolvedValue(undefined as any);
     persistenceService = new PersistenceService({ filePath: path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_default') });
-    // Mock mkdir to simulate directory creation/existence for the default path
-    mockFs.mkdir.mockResolvedValue(undefined);
   });
 
-  afterEach(async () => {
-    // Optional: clean up the test cache directory if files were actually written (not typical with mocks)
-  });
+  // afterEach can remain empty if no specific cleanup beyond vi.resetAllMocks() is needed for each test.
 
   describe('constructor', () => {
     it('should create the storage directory if it does not exist', async () => {
       const specificTestDir = path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_constructor_success');
-      // mockFs.mkdir is global, so this mock will apply.
-      // If it were instance-specific, we'd mock before new PersistenceService.
-      mockFs.mkdir.mockResolvedValue(undefined);
+      vi.mocked(fs.mkdir).mockResolvedValue(undefined as any);
       new PersistenceService({ filePath: specificTestDir });
-      expect(mockFs.mkdir).toHaveBeenCalledWith(specificTestDir, { recursive: true });
+      expect(fs.mkdir).toHaveBeenCalledWith(specificTestDir, { recursive: true });
     });
 
     it('should log an error if creating storage directory fails', async () => {
       const specificTestDirFail = path.join(TEST_CACHE_DIR_BASE, '.cache_data_test_constructor_fail');
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const testError = new Error('MKDIR failed');
-      mockFs.mkdir.mockRejectedValue(testError); // Mock this before instantiation
+      vi.mocked(fs.mkdir).mockRejectedValue(testError);
 
       new PersistenceService({ filePath: specificTestDirFail });
 
-      // The constructor calls initStorage, which is async but not awaited in constructor.
-      // We need to wait a bit for the async mkdir to potentially call console.error
-      await new Promise(resolve => setTimeout(resolve, 0)); // Allow microtask queue to process
+      await new Promise(resolve => setTimeout(resolve, 0));
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith(specificTestDirFail, { recursive: true });
+      expect(fs.mkdir).toHaveBeenCalledWith(specificTestDirFail, { recursive: true });
       expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to create persistence storage directory:', testError);
       consoleErrorSpy.mockRestore();
     });
@@ -59,15 +57,14 @@ describe('PersistenceService', () => {
     it('should save data to a file', async () => {
       const key = 'testKey';
       const data: CacheEntry<string> = { data: 'testData', timestamp: Date.now(), ttl: 1000 };
-      // Uses the default path from beforeEach's persistenceService instance
       const currentTestCacheDir = (persistenceService as any).storagePath;
       const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
 
-      mockFs.writeFile.mockResolvedValue(undefined);
+      vi.mocked(fs.writeFile).mockResolvedValue(undefined);
 
       await persistenceService.save(key, data);
 
-      expect(mockFs.writeFile).toHaveBeenCalledWith(expectedPath, JSON.stringify(data, null, 2), 'utf8');
+      expect(fs.writeFile).toHaveBeenCalledWith(expectedPath, JSON.stringify(data, null, 2), 'utf8');
     });
 
     it('should sanitize the key for the filename', async () => {
@@ -77,9 +74,9 @@ describe('PersistenceService', () => {
       const currentTestCacheDir = (persistenceService as any).storagePath;
       const expectedPath = path.join(currentTestCacheDir, `${safeKey}.json`);
 
-      mockFs.writeFile.mockResolvedValue(undefined);
+      vi.mocked(fs.writeFile).mockResolvedValue(undefined);
       await persistenceService.save(key, data);
-      expect(mockFs.writeFile).toHaveBeenCalledWith(expectedPath, JSON.stringify(data, null, 2), 'utf8');
+      expect(fs.writeFile).toHaveBeenCalledWith(expectedPath, JSON.stringify(data, null, 2), 'utf8');
     });
 
     it('should handle errors during writeFile', async () => {
@@ -87,7 +84,7 @@ describe('PersistenceService', () => {
       const data: CacheEntry<string> = { data: 'testData', timestamp: Date.now(), ttl: 1000 };
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      mockFs.writeFile.mockRejectedValue(new Error('Disk full'));
+      vi.mocked(fs.writeFile).mockRejectedValue(new Error('Disk full'));
 
       await persistenceService.save(key, data);
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -99,14 +96,13 @@ describe('PersistenceService', () => {
     it('should load data from a file if it exists and is valid', async () => {
       const key = 'testKey';
       const now = Date.now();
-      // Persisted entry should be returned as is by load, CacheService will check TTL
       const entry: CacheEntry<string> = { data: 'testData', timestamp: now - 500, ttl: 1000 };
       const currentTestCacheDir = (persistenceService as any).storagePath;
       const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
-      mockFs.readFile.mockResolvedValue(JSON.stringify(entry));
+      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(entry));
 
       const result = await persistenceService.load<string>(key);
-      expect(mockFs.readFile).toHaveBeenCalledWith(expectedPath, 'utf8');
+      expect(fs.readFile).toHaveBeenCalledWith(expectedPath, 'utf8');
       expect(result).toEqual(entry);
     });
 
@@ -114,7 +110,7 @@ describe('PersistenceService', () => {
       const key = 'nonExistentKey';
       const enoentError: any = new Error('File not found');
       enoentError.code = 'ENOENT';
-      mockFs.readFile.mockRejectedValue(enoentError);
+      vi.mocked(fs.readFile).mockRejectedValue(enoentError);
 
       const result = await persistenceService.load<string>(key);
       expect(result).toBeNull();
@@ -122,7 +118,7 @@ describe('PersistenceService', () => {
 
     it('should return null and log error for other read errors', async () => {
       const key = 'errorKey';
-      mockFs.readFile.mockRejectedValue(new Error('Read error'));
+      vi.mocked(fs.readFile).mockRejectedValue(new Error('Read error'));
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result = await persistenceService.load<string>(key);
@@ -135,11 +131,11 @@ describe('PersistenceService', () => {
         const key = 'corruptedKey';
         const currentTestCacheDir = (persistenceService as any).storagePath;
         const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
-        mockFs.readFile.mockResolvedValue("this is not json");
+        vi.mocked(fs.readFile).mockResolvedValue("this is not json");
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         const result = await persistenceService.load<string>(key);
-        expect(mockFs.readFile).toHaveBeenCalledWith(expectedPath, 'utf8');
+        expect(fs.readFile).toHaveBeenCalledWith(expectedPath, 'utf8');
         expect(result).toBeNull();
         expect(consoleErrorSpy).toHaveBeenCalled();
         consoleErrorSpy.mockRestore();
@@ -151,27 +147,27 @@ describe('PersistenceService', () => {
       const key = 'testKey';
       const currentTestCacheDir = (persistenceService as any).storagePath;
       const expectedPath = path.join(currentTestCacheDir, `${key}.json`);
-      mockFs.unlink.mockResolvedValue(undefined);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
 
       await persistenceService.remove(key);
-      expect(mockFs.unlink).toHaveBeenCalledWith(expectedPath);
+      expect(fs.unlink).toHaveBeenCalledWith(expectedPath);
     });
 
     it('should handle ENOENT error gracefully when removing non-existent file', async () => {
         const key = 'nonExistentKey';
         const enoentError: any = new Error('File not found');
         enoentError.code = 'ENOENT';
-        mockFs.unlink.mockRejectedValue(enoentError);
+        vi.mocked(fs.unlink).mockRejectedValue(enoentError);
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await persistenceService.remove(key);
-        expect(consoleErrorSpy).not.toHaveBeenCalled(); // Should not log error for ENOENT
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
         consoleErrorSpy.mockRestore();
     });
 
     it('should log other errors during remove', async () => {
         const key = 'errorKey';
-        mockFs.unlink.mockRejectedValue(new Error('Delete error'));
+        vi.mocked(fs.unlink).mockRejectedValue(new Error('Delete error'));
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await persistenceService.remove(key);
@@ -183,20 +179,20 @@ describe('PersistenceService', () => {
   describe('clearAll', () => {
     it('should remove all files in the storage directory', async () => {
       const files = ['file1.json', 'file2.json'];
-      mockFs.readdir.mockResolvedValue(files as any); // Type assertion for simplicity
-      mockFs.unlink.mockResolvedValue(undefined);
+      vi.mocked(fs.readdir).mockResolvedValue(files as any);
+      vi.mocked(fs.unlink).mockResolvedValue(undefined);
       const currentTestCacheDir = (persistenceService as any).storagePath;
 
       await persistenceService.clearAll();
 
-      expect(mockFs.readdir).toHaveBeenCalledWith(currentTestCacheDir);
-      expect(mockFs.unlink).toHaveBeenCalledTimes(files.length);
-      expect(mockFs.unlink).toHaveBeenCalledWith(path.join(currentTestCacheDir, 'file1.json'));
-      expect(mockFs.unlink).toHaveBeenCalledWith(path.join(currentTestCacheDir, 'file2.json'));
+      expect(fs.readdir).toHaveBeenCalledWith(currentTestCacheDir);
+      expect(fs.unlink).toHaveBeenCalledTimes(files.length);
+      expect(fs.unlink).toHaveBeenCalledWith(path.join(currentTestCacheDir, 'file1.json'));
+      expect(fs.unlink).toHaveBeenCalledWith(path.join(currentTestCacheDir, 'file2.json'));
     });
 
     it('should handle errors during clearAll', async () => {
-        mockFs.readdir.mockRejectedValue(new Error('Cannot read dir'));
+        vi.mocked(fs.readdir).mockRejectedValue(new Error('Cannot read dir'));
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await persistenceService.clearAll();

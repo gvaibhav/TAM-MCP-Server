@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock all individual data source services
 vi.mock('../../../../src/services/dataSources/alphaVantageService');
@@ -20,158 +20,141 @@ import { NasdaqDataService } from '../../../../src/services/dataSources/nasdaqDa
 import { OecdService } from '../../../../src/services/dataSources/oecdService';
 import { ImfService } from '../../../../src/services/dataSources/imfService';
 
-
-// Get typed mocks
-const MockedAlphaVantageService = AlphaVantageService as jest.MockedClass<typeof AlphaVantageService>;
-const MockedCensusService = CensusService as jest.MockedClass<typeof CensusService>;
-const MockedFredService = FredService as jest.MockedClass<typeof FredService>;
-const MockedWorldBankService = WorldBankService as jest.MockedClass<typeof WorldBankService>;
-const MockedBlsService = BlsService as jest.MockedClass<typeof BlsService>;
-const MockedNasdaqDataService = NasdaqDataService as jest.MockedClass<typeof NasdaqDataService>;
-const MockedOecdService = OecdService as jest.MockedClass<typeof OecdService>;
-const MockedImfService = ImfService as jest.MockedClass<typeof ImfService>;
-
-
 describe('DataService - Integration Tests', () => {
   let dataService: DataService;
-  // Mock instances that will be created by DataService constructor
-  let mockAlphaVantageInstance: jest.Mocked<AlphaVantageService>;
-  let mockCensusInstance: jest.Mocked<CensusService>;
-  let mockFredInstance: jest.Mocked<FredService>;
-  let mockWorldBankInstance: jest.Mocked<WorldBankService>;
-  let mockBlsInstance: jest.Mocked<BlsService>;
-  let mockNasdaqInstance: jest.Mocked<NasdaqDataService>;
-  let mockOecdInstance: jest.Mocked<OecdService>;
-  let mockImfInstance: jest.Mocked<ImfService>;
-
 
   beforeEach(() => {
-    // Reset mocks and their calls/instances before each test
-    MockedAlphaVantageService.mockClear();
-    MockedCensusService.mockClear();
-    MockedFredService.mockClear();
-    MockedWorldBankService.mockClear();
-    MockedBlsService.mockClear();
-    MockedNasdaqDataService.mockClear();
-    MockedOecdService.mockClear();
-    MockedImfService.mockClear();
+    vi.resetAllMocks();
 
-    dataService = new DataService(); // This will use the mocked constructors
+    // Default mocks for all service prototype methods that DataService might call
+    const services = [
+      AlphaVantageService, CensusService, FredService, WorldBankService,
+      BlsService, NasdaqDataService, OecdService, ImfService
+    ];
 
-    // Retrieve the mock instances created by the DataService constructor
-    mockAlphaVantageInstance = MockedAlphaVantageService.mock.instances[0] as jest.Mocked<AlphaVantageService>;
-    mockCensusInstance = MockedCensusService.mock.instances[0] as jest.Mocked<CensusService>;
-    mockFredInstance = MockedFredService.mock.instances[0] as jest.Mocked<FredService>;
-    mockWorldBankInstance = MockedWorldBankService.mock.instances[0] as jest.Mocked<WorldBankService>;
-    mockBlsInstance = MockedBlsService.mock.instances[0] as jest.Mocked<BlsService>;
-    mockNasdaqInstance = MockedNasdaqDataService.mock.instances[0] as jest.Mocked<NasdaqDataService>;
-    mockOecdInstance = MockedOecdService.mock.instances[0] as jest.Mocked<OecdService>;
-    mockImfInstance = MockedImfService.mock.instances[0] as jest.Mocked<ImfService>;
+    services.forEach(service => {
+      if (service.prototype.isAvailable) { // Check if method exists before mocking
+        vi.mocked(service.prototype.isAvailable).mockResolvedValue(false);
+      }
+      if (service.prototype.fetchMarketSize) {
+        vi.mocked(service.prototype.fetchMarketSize).mockResolvedValue(null);
+      }
+      if (service.prototype.fetchIndustryData) {
+        vi.mocked(service.prototype.fetchIndustryData).mockResolvedValue(null);
+      }
+      // Add other common methods if DataService calls them directly in other untested logic
+    });
+
+    dataService = new DataService();
   });
 
   describe('getMarketSize', () => {
     it('should prioritize AlphaVantage for stock symbols', async () => {
-      mockAlphaVantageInstance.isAvailable.mockResolvedValue(true);
+      vi.mocked(AlphaVantageService.prototype.isAvailable).mockResolvedValue(true);
       const avData = { marketCapitalization: 1e12, symbol: 'AAPL', name: 'Apple Inc.' };
-      mockAlphaVantageInstance.fetchMarketSize.mockResolvedValue(avData);
-
-      // Mock other services to ensure AV is chosen
-      mockCensusInstance.isAvailable.mockResolvedValue(false);
-      mockFredInstance.isAvailable.mockResolvedValue(false);
-      mockWorldBankInstance.isAvailable.mockResolvedValue(false);
-
+      vi.mocked(AlphaVantageService.prototype.fetchMarketSize).mockResolvedValue(avData);
 
       const result = await dataService.getMarketSize('AAPL', 'US');
       expect(result?.source).toBe('AlphaVantageService');
       expect(result?.value).toBe(1e12);
       expect(result?.details).toEqual(avData);
-      expect(mockAlphaVantageInstance.fetchMarketSize).toHaveBeenCalledWith('AAPL', 'US');
+      expect(AlphaVantageService.prototype.fetchMarketSize).toHaveBeenCalledWith('AAPL', 'US');
     });
 
-    it('should prioritize CensusService for NAICS codes', async () => {
-      mockAlphaVantageInstance.isAvailable.mockResolvedValue(true); // Assume AV might be checked first
-      mockAlphaVantageInstance.fetchMarketSize.mockResolvedValue(null); // but returns no data for "23"
+    it('should prioritize CensusService for NAICS codes if AlphaVantage fails/misses', async () => {
+      // AlphaVantage might be tried first if "23" loosely matches symbol pattern, make it return null
+      vi.mocked(AlphaVantageService.prototype.isAvailable).mockResolvedValue(true);
+      vi.mocked(AlphaVantageService.prototype.fetchMarketSize).mockResolvedValue(null);
 
-      mockCensusInstance.isAvailable.mockResolvedValue(true);
+      vi.mocked(CensusService.prototype.isAvailable).mockResolvedValue(true);
       const censusData = { value: 50000, measure: 'EMP', naicsCode: '23', geography: 'state:01', year: '2021' };
-      mockCensusInstance.fetchMarketSize.mockResolvedValue(censusData);
-
-      mockFredInstance.isAvailable.mockResolvedValue(false);
-      mockWorldBankInstance.isAvailable.mockResolvedValue(false);
-
+      vi.mocked(CensusService.prototype.fetchMarketSize).mockResolvedValue(censusData);
 
       const result = await dataService.getMarketSize('23', 'state:01');
       expect(result?.source).toBe('CensusService');
       expect(result?.value).toBe(50000);
       expect(result?.details).toEqual(censusData);
-      expect(mockCensusInstance.fetchMarketSize).toHaveBeenCalledWith('23', 'state:01', "EMP");
+      expect(CensusService.prototype.fetchMarketSize).toHaveBeenCalledWith('23', 'state:01', "EMP");
     });
 
     it('should fall back to FredService if symbol/NAICS checks dont apply or fail', async () => {
-        // industryId "GDPSERIES" does not match stock symbol or NAICS pattern
-        mockAlphaVantageInstance.isAvailable.mockResolvedValue(true);
-        mockAlphaVantageInstance.fetchMarketSize.mockResolvedValue(null);
-        mockCensusInstance.isAvailable.mockResolvedValue(true);
-        mockCensusInstance.fetchMarketSize.mockResolvedValue(null);
+        // Ensure AV and Census mocks lead to fallback
+        vi.mocked(AlphaVantageService.prototype.isAvailable).mockResolvedValue(true);
+        vi.mocked(AlphaVantageService.prototype.fetchMarketSize).mockResolvedValue(null);
+        vi.mocked(CensusService.prototype.isAvailable).mockResolvedValue(true);
+        vi.mocked(CensusService.prototype.fetchMarketSize).mockResolvedValue(null);
 
-        mockFredInstance.isAvailable.mockResolvedValue(true);
+        vi.mocked(FredService.prototype.isAvailable).mockResolvedValue(true);
         const fredObs = { date: '2023-01-01', value: 25000 };
-        mockFredInstance.fetchMarketSize.mockResolvedValue([fredObs]);
+        vi.mocked(FredService.prototype.fetchMarketSize).mockResolvedValue([fredObs]);
 
-        const result = await dataService.getMarketSize('GDPSERIES', 'US');
+        const result = await dataService.getMarketSize('GDPSERIES', 'US'); // "GDPSERIES" doesn't match stock/NAICS
         expect(result?.source).toBe('FredService');
         expect(result?.value).toBe(25000);
-        expect(mockFredInstance.fetchMarketSize).toHaveBeenCalledWith('GDPSERIES', 'US');
+        expect(FredService.prototype.fetchMarketSize).toHaveBeenCalledWith('GDPSERIES', 'US');
     });
 
      it('should fall back to WorldBankService if Fred also fails or doesnt apply', async () => {
-        mockAlphaVantageInstance.isAvailable.mockResolvedValue(true);
-        mockAlphaVantageInstance.fetchMarketSize.mockResolvedValue(null);
-        mockCensusInstance.isAvailable.mockResolvedValue(true);
-        mockCensusInstance.fetchMarketSize.mockResolvedValue(null);
-        mockFredInstance.isAvailable.mockResolvedValue(true);
-        mockFredInstance.fetchMarketSize.mockResolvedValue(null);
+        vi.mocked(AlphaVantageService.prototype.isAvailable).mockResolvedValue(true);
+        vi.mocked(AlphaVantageService.prototype.fetchMarketSize).mockResolvedValue(null);
+        vi.mocked(CensusService.prototype.isAvailable).mockResolvedValue(true);
+        vi.mocked(CensusService.prototype.fetchMarketSize).mockResolvedValue(null);
+        vi.mocked(FredService.prototype.isAvailable).mockResolvedValue(true);
+        vi.mocked(FredService.prototype.fetchMarketSize).mockResolvedValue(null);
 
-        mockWorldBankInstance.isAvailable.mockResolvedValue(true);
+        vi.mocked(WorldBankService.prototype.isAvailable).mockResolvedValue(true);
         const wbData = { date: '2022', value: 20e12, country: 'USA' };
-        mockWorldBankInstance.fetchMarketSize.mockResolvedValue([wbData]);
-
+        vi.mocked(WorldBankService.prototype.fetchMarketSize).mockResolvedValue([wbData]);
 
         const result = await dataService.getMarketSize('NY.GDP.MKTP.CD', 'US');
         expect(result?.source).toBe('WorldBankService');
         expect(result?.value).toBe(20e12);
-        expect(mockWorldBankInstance.fetchMarketSize).toHaveBeenCalledWith('US', 'NY.GDP.MKTP.CD');
+        expect(WorldBankService.prototype.fetchMarketSize).toHaveBeenCalledWith('US', 'NY.GDP.MKTP.CD');
     });
 
     it('should fall back through multiple services and finally to mock if all fail', async () => {
-        mockAlphaVantageInstance.isAvailable.mockResolvedValue(true);
-        mockAlphaVantageInstance.fetchMarketSize.mockResolvedValue(null);
-
-        mockCensusInstance.isAvailable.mockResolvedValue(true);
-        mockCensusInstance.fetchMarketSize.mockResolvedValue(null);
-
-        mockFredInstance.isAvailable.mockResolvedValue(true);
-        mockFredInstance.fetchMarketSize.mockResolvedValue(null);
-
-        mockWorldBankInstance.isAvailable.mockResolvedValue(true);
-        mockWorldBankInstance.fetchMarketSize.mockResolvedValue(null);
-
-        const result = await dataService.getMarketSize('tech-software', 'US'); // 'tech-software' is a mock key
+        // All real services already default to unavailable / return null in beforeEach setup
+        // So, just call with a mock key known to be in DataService's internal mockData
+        const result = await dataService.getMarketSize('tech-ai', 'US');
         expect(result?.source).toBe('mock');
-        expect(result?.value).toBe(659 * 1e9);
+        expect(result?.value).toBe(328 * 1e9); // Value for tech-ai from mockIndustryData
+    });
+
+    it('should correctly fallback: AV returns null, Census returns data for NAICS', async () => {
+      const industryIdNAICS = "31-33"; // A NAICS code pattern
+      const region = "US";
+
+      // AlphaVantage is tried first for generic IDs if pattern matches, make it return null
+      vi.mocked(AlphaVantageService.prototype.isAvailable).mockResolvedValue(true);
+      vi.mocked(AlphaVantageService.prototype.fetchMarketSize).mockResolvedValue(null);
+      // console.log('AV MOCK:', AlphaVantageService.prototype.fetchMarketSize.getMockName(), vi.mocked(AlphaVantageService.prototype.fetchMarketSize).getMockImplementation() );
+
+
+      // Census should be tried next for NAICS
+      vi.mocked(CensusService.prototype.isAvailable).mockResolvedValue(true);
+      const censusData = { value: 12345, measure: 'EMP', naicsCode: industryIdNAICS, geography: region, year: '2021' };
+      vi.mocked(CensusService.prototype.fetchMarketSize).mockResolvedValue(censusData);
+
+      const result = await dataService.getMarketSize(industryIdNAICS, region);
+
+      expect(AlphaVantageService.prototype.fetchMarketSize).toHaveBeenCalledWith(industryIdNAICS, region);
+      expect(CensusService.prototype.fetchMarketSize).toHaveBeenCalledWith(industryIdNAICS, region, "EMP");
+      expect(result?.source).toBe('CensusService');
+      expect(result?.value).toBe(12345);
+      expect(result?.details).toEqual(censusData);
     });
   });
 
   describe('getSpecificDataSourceData', () => {
     it('should call the correct method on the specified service', async () => {
-      mockBlsInstance.isAvailable.mockResolvedValue(true);
+      vi.mocked(BlsService.prototype.isAvailable).mockResolvedValue(true);
       const blsSeriesData = { series: [{ seriesID: 'CES001', data: [] }] };
-      mockBlsInstance.fetchIndustryData.mockResolvedValue(blsSeriesData);
-      const params = [['CES001'], '2022', '2023', false, false, false]; // Matched BlsService.fetchIndustryData signature
+      vi.mocked(BlsService.prototype.fetchIndustryData).mockResolvedValue(blsSeriesData);
+      const params = [['CES001'], '2022', '2023', false, false, false];
 
       const result = await dataService.getSpecificDataSourceData('BlsService', 'fetchIndustryData', params);
       expect(result).toEqual(blsSeriesData);
-      expect(mockBlsInstance.fetchIndustryData).toHaveBeenCalledWith(...params);
+      expect(BlsService.prototype.fetchIndustryData).toHaveBeenCalledWith(...params);
     });
 
     it('should throw error for invalid sourceName', async () => {
@@ -180,20 +163,22 @@ describe('DataService - Integration Tests', () => {
     });
 
     it('should throw error for invalid methodName', async () => {
+      // Ensure BlsService itself is available for this check
+      vi.mocked(BlsService.prototype.isAvailable).mockResolvedValue(true);
       await expect(dataService.getSpecificDataSourceData('BlsService', 'nonExistentMethod', []))
         .rejects.toThrow('Method "nonExistentMethod" not found on source "BlsService".');
     });
 
     it('should return null if specified service is unavailable', async () => {
-      mockBlsInstance.isAvailable.mockResolvedValue(false);
+      vi.mocked(BlsService.prototype.isAvailable).mockResolvedValue(false); // Specifically make it unavailable
       const result = await dataService.getSpecificDataSourceData('BlsService', 'fetchIndustryData', []);
       expect(result).toBeNull();
-      expect(mockBlsInstance.fetchIndustryData).not.toHaveBeenCalled();
+      expect(BlsService.prototype.fetchIndustryData).not.toHaveBeenCalled();
     });
 
     it('should re-throw error from the underlying service method call', async () => {
-        mockBlsInstance.isAvailable.mockResolvedValue(true);
-        mockBlsInstance.fetchIndustryData.mockRejectedValue(new Error("BLS Internal Error"));
+        vi.mocked(BlsService.prototype.isAvailable).mockResolvedValue(true);
+        vi.mocked(BlsService.prototype.fetchIndustryData).mockRejectedValue(new Error("BLS Internal Error"));
         await expect(dataService.getSpecificDataSourceData('BlsService', 'fetchIndustryData', []))
             .rejects.toThrow("BLS Internal Error");
     });

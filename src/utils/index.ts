@@ -2,7 +2,7 @@ import NodeCache = require('node-cache');
 import { createLogger, format, transports } from 'winston';
 import { APIResponse } from '../types/index.js';
 
-export * from './envHelper.js'; // Add this line
+export * from './envHelper'; // Add this line
 
 // Cache configuration
 const cache = new NodeCache({
@@ -11,26 +11,7 @@ const cache = new NodeCache({
   useClones: false
 });
 
-// Logger configuration - conditionally exclude console transport for STDIO mode
-const isStdioMode = process.argv.includes('stdio') || 
-                    process.argv[1]?.includes('stdio-simple') || 
-                    (process.argv[1]?.includes('index') && process.argv.length === 2);
-
-const loggerTransports: any[] = [
-  new transports.File({ filename: 'logs/error.log', level: 'error' }),
-  new transports.File({ filename: 'logs/combined.log' })
-];
-
-// Only add console transport if not in STDIO mode (to avoid interfering with JSON-RPC)
-if (!isStdioMode) {
-  loggerTransports.push(new transports.Console({
-    format: format.combine(
-      format.colorize(),
-      format.simple()
-    )
-  }));
-}
-
+// Logger configuration
 export const logger = createLogger({
   level: 'info',
   format: format.combine(
@@ -39,7 +20,16 @@ export const logger = createLogger({
     format.json()
   ),
   defaultMeta: { service: 'tam-mcp-server' },
-  transports: loggerTransports
+  transports: [
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' }),
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.simple()
+      )
+    })
+  ]
 });
 
 // Cache utility functions

@@ -1,11 +1,11 @@
 // src/services/dataSources/alphaVantageService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources.js';
-import { CacheEntry, CacheStatus } from '../../types/cache.js';
-import { CacheService } from '../cache/cacheService.js';
-import { alphaVantageApi } from '../../config/apiConfig.js';
-import { getEnvAsNumber } from '../../utils/envHelper.js';
+import { DataSourceService } from '../../types/dataSources';
+import { CacheEntry, CacheStatus } from '../../types/cache';
+import { CacheService } from '../cache/cacheService';
+import { alphaVantageApi } from '../../config/apiConfig';
+import { getEnvAsNumber } from '../../utils/envHelper';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -38,7 +38,7 @@ export class AlphaVantageService implements DataSourceService {
    * @param symbol The company stock symbol (e.g., "IBM", "AAPL").
    * @param region Optional region parameter (unused by Alpha Vantage for company overview).
    */
-  async fetchMarketSize(symbol: string, _region?: string): Promise<any | null> {
+  async fetchMarketSize(symbol: string, region?: string): Promise<any | null> {
     if (!await this.isAvailable()) {
       throw new Error('Alpha Vantage API key is not configured or service is unavailable.');
     }

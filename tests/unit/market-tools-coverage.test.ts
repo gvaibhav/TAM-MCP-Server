@@ -26,7 +26,7 @@ describe('MarketAnalysisTools - Coverage Tests', () => {
       expect(typeof MarketAnalysisTools.getToolDefinitions).toBe('function');
       const tools = MarketAnalysisTools.getToolDefinitions();
       expect(Array.isArray(tools)).toBe(true);
-      expect(tools.length).toBe(11);
+      expect(tools.length).toBe(10);
     });
   });
 

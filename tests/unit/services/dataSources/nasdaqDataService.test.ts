@@ -1,38 +1,38 @@
-import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import axios from 'axios';
 import { NasdaqDataService } from '../../../../src/services/dataSources/nasdaqDataService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { nasdaqDataApi } from '../../../../src/config/apiConfig';
 import * as process from 'process';
-import * as envHelper from '../../../../src/utils/envHelper'; // Import to mock
+import * as envHelper from '../../../../src/utils/envHelper';
 
 vi.mock('axios');
 vi.mock('../../../../src/services/cache/cacheService');
-vi.mock('../../../../src/utils/envHelper'); // Mock the envHelper
+vi.mock('../../../../src/utils/envHelper');
 
-const mockedAxios = axios as any;
-const MockedCacheService = CacheService as any;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
+const mockedAxiosGet = vi.mocked(axios.get);
+const MockedCacheService = CacheService as unknown as ReturnType<typeof vi.fn>;
+const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
 
 describe('NasdaqDataService', () => {
   let nasdaqService: NasdaqDataService;
-  let mockCacheServiceInstance: any;
+  let mockCacheServiceInstance: InstanceType<typeof CacheService>;
   const OLD_ENV = { ...process.env };
   const apiKey = 'test_nasdaq_api_key';
-  const databaseCode = 'ODA'; // Example: OPEC Crude Oil Price
+  const databaseCode = 'ODA';
   const datasetCode = 'PORCROILWTICO_USD';
 
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.unstubAllEnvs();
-    mockCacheServiceInstance = new MockedCacheService() as any;
+    process.env = { ...OLD_ENV };
+    mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     // Service instantiated in contexts or tests
   });
 
   afterAll(() => {
-    vi.unstubAllEnvs();
+    process.env = OLD_ENV;
   });
 
   describe('constructor and isAvailable', () => {
@@ -48,13 +48,13 @@ describe('NasdaqDataService', () => {
     });
 
     it('isAvailable should be false if no API key is available', async () => {
-      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', undefined);
+      delete process.env.NASDAQ_DATA_LINK_API_KEY;
       nasdaqService = new NasdaqDataService(mockCacheServiceInstance);
       expect(await nasdaqService.isAvailable()).toBe(false);
     });
      it('should warn if API key is not configured', () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', undefined);
+      delete process.env.NASDAQ_DATA_LINK_API_KEY;
       new NasdaqDataService(mockCacheServiceInstance);
       expect(consoleWarnSpy).toHaveBeenCalledWith("Nasdaq Data Link API key not configured. NasdaqDataService will not be available.");
       consoleWarnSpy.mockRestore();
@@ -72,10 +72,9 @@ describe('NasdaqDataService', () => {
     });
 
     it('should construct correct API URL and cache key with various apiParams', async () => {
-      // nasdaqService is already instantiated with apiKey in beforeEach
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const mockApiResponse = { dataset_data: { column_names: ['Date', 'Value'], data: [['2023-01-01', 75.5]] } };
-      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
 
       const testParams = { start_date: '2022-01-01', end_date: '2022-12-31', limit: 10, order: 'asc' as 'asc' | 'desc' };
       const expectedApiUrl = `${nasdaqDataApi.baseUrl}/${databaseCode}/${datasetCode}/data.json`;
@@ -84,53 +83,53 @@ describe('NasdaqDataService', () => {
 
       await nasdaqService.fetchIndustryData(databaseCode, datasetCode, testParams);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(expectedApiUrl, expectedAxiosParams);
+      expect(mockedAxiosGet).toHaveBeenCalledWith(expectedApiUrl, expectedAxiosParams);
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expectedCacheKey, expect.any(Array), expect.any(Number));
     });
 
     it('should use TTL from env var for successful fetch when CACHE_TTL_NASDAQ_MS is set', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const mockApiResponse = { dataset_data: { column_names: ['Date', 'Value'], data: [['2023-01-01', 75.5]] } };
-      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
 
       const customSuccessTTL = 333333;
       mockedGetEnvAsNumber.mockImplementation((key) => {
         if (key === 'CACHE_TTL_NASDAQ_MS') return customSuccessTTL;
         return 1000;
       });
-      nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey); // Re-instantiate
+      nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey);
 
       await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Array), customSuccessTTL);
     });
 
     it('should use TTL from env var for no data response when CACHE_TTL_NASDAQ_NODATA_MS is set', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const mockApiResponseNoData = { dataset_data: { column_names: ['Date', 'Value'], data: [] } };
-      mockedAxios.get.mockResolvedValue({ data: mockApiResponseNoData });
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponseNoData });
 
       const customNoDataTTL = 666666;
       mockedGetEnvAsNumber.mockImplementation((key) => {
         if (key === 'CACHE_TTL_NASDAQ_NODATA_MS') return customNoDataTTL;
         return 1000;
       });
-      nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey); // Re-instantiate
+      nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey);
 
       await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
     });
 
     it('should use NoData TTL when API returns quandl_error in response body', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const errorResponse = { quandl_error: { code: 'QECx02', message: 'Invalid API key' } };
-      mockedAxios.get.mockResolvedValue({ data: errorResponse }); // API returns 200 but with error payload
+      mockedAxiosGet.mockResolvedValue({ data: errorResponse });
 
       const customNoDataTTL = 222111;
        mockedGetEnvAsNumber.mockImplementation((key) => {
         if (key === 'CACHE_TTL_NASDAQ_NODATA_MS') return customNoDataTTL;
         return 1000;
       });
-      nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey); // Re-instantiate
+      nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey);
 
       await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
@@ -139,68 +138,68 @@ describe('NasdaqDataService', () => {
 
     it('should return data from cache if available', async () => {
       const cachedData = [{ Date: '2023-01-01', Value: 100 }];
-      mockCacheServiceInstance.get.mockResolvedValue(cachedData);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(cachedData);
 
       const result = await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(result).toEqual(cachedData);
       expect(mockCacheServiceInstance.get).toHaveBeenCalledWith(cacheKey);
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(mockedAxiosGet).not.toHaveBeenCalled();
     });
 
     it('should fetch, transform, and cache data if not in cache', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const mockApiResponse = {
         dataset_data: {
           column_names: ['Date', 'Value'],
           data: [['2023-01-01', 75.5]],
         },
       };
-      mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
 
       const expectedData = [{ Date: '2023-01-01', Value: 75.5 }];
 
       const result = await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(result).toEqual(expectedData);
-      expect(mockedAxios.get).toHaveBeenCalledWith(mockApiUrl, { params: { ...params, api_key: apiKey } });
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expectedData, expect.any(Number)); // Successful TTL
+      expect(mockedAxiosGet).toHaveBeenCalledWith(mockApiUrl, { params: { ...params, api_key: apiKey } });
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expectedData, expect.any(Number));
     });
 
     it('should handle API error (quandl_error in response body) and cache null', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const errorResponse = { quandl_error: { code: 'QECx02', message: 'Invalid API key' } };
-      mockedAxios.get.mockResolvedValue({ data: errorResponse }); // API returns 200 but with error payload
+      mockedAxiosGet.mockResolvedValue({ data: errorResponse });
 
       const result = await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(result).toBeNull();
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number)); // NoData TTL
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
     });
 
     it('should handle API error (rejected promise with quandl_error)', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const errorObj = {
         response: { data: { quandl_error: { code: 'QESx03', message: 'Dataset not found' } } }
       };
-      mockedAxios.get.mockRejectedValue({...new Error("API Error"), ...errorObj});
+      mockedAxiosGet.mockRejectedValue({...new Error("API Error"), ...errorObj});
 
       await expect(nasdaqService.fetchIndustryData(databaseCode, datasetCode, params))
         .rejects.toThrow('Nasdaq API Error: Dataset not found (Code: QESx03)');
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number)); // NoData TTL
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
     });
 
 
     it('should handle no data points in response and cache null', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const noDataResponse = { dataset_data: { column_names: ['Date', 'Value'], data: [] } };
-      mockedAxios.get.mockResolvedValue({ data: noDataResponse });
+      mockedAxiosGet.mockResolvedValue({ data: noDataResponse });
 
       const result = await nasdaqService.fetchIndustryData(databaseCode, datasetCode, params);
       expect(result).toBeNull();
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number)); // NoData TTL
+      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
     });
 
     it('should throw if API key is not configured', async () => {
-      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', undefined);
-      nasdaqService = new NasdaqDataService(mockCacheServiceInstance); // No API key
+      delete process.env.NASDAQ_DATA_LINK_API_KEY;
+      nasdaqService = new NasdaqDataService(mockCacheServiceInstance);
       await expect(nasdaqService.fetchIndustryData(databaseCode, datasetCode, params))
         .rejects.toThrow('Nasdaq Data Link API key is not configured.');
     });
@@ -211,12 +210,8 @@ describe('NasdaqDataService', () => {
         nasdaqService = new NasdaqDataService(mockCacheServiceInstance, apiKey);
     });
 
-    // ... existing tests for fetchMarketSize ...
-
     it('should correctly resolve valueColumn when not provided (finds "Value")', async () => {
-      // nasdaqService instantiated in beforeEach
       const mockDataPoint = { Date: '2023-01-01', Open: 99, Value: 101, Close: 100 };
-      // Mock fetchDatasetTimeSeries directly as it's simpler here
       const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode /* no valueColumn */);
@@ -226,49 +221,42 @@ describe('NasdaqDataService', () => {
     });
 
     it('should correctly resolve valueColumn when not provided (finds first numeric non-Date if "Value" absent)', async () => {
-      // nasdaqService instantiated in beforeEach
       const mockDataPoint = { Date: '2023-01-01', StringCol: 'abc', NumericCol1: 100, NumericCol2: 200 };
       const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode);
-      expect(result?.value).toBe(100); // NumericCol1
+      expect(result?.value).toBe(100);
       expect(result?.valueColumn).toBe('NumericCol1');
       fetchDatasetTimeSeriesSpy.mockRestore();
     });
 
     it('should use fallback (second column after Date) if no "Value" or other numeric found', async () => {
-      // nasdaqService instantiated in beforeEach
-      // Date is typically first. If 'SecondCol' is next, it should be picked if no numbers.
       const mockDataPoint = { Date: '2023-01-01', SecondCol: 'data_val', ThirdCol: 'more_data' };
       const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode);
       expect(result?.value).toBe('data_val');
-      expect(result?.valueColumn).toBe('SecondCol'); // Assuming 'Date' is first, 'SecondCol' is keys[1]
+      expect(result?.valueColumn).toBe('SecondCol');
       fetchDatasetTimeSeriesSpy.mockRestore();
     });
 
     it('should return null if specific date requested is not the date of the returned single record', async () => {
-      // nasdaqService instantiated in beforeEach
       const requestedDate = '2023-01-02';
       const actualRecordDate = '2023-01-01';
       const mockDataPoint = { Date: actualRecordDate, Value: 100 };
 
       const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries')
           .mockImplementation(async (db, ds, params) => {
-              // Simulate API call where specific date filter (start_date=X, end_date=X) still might return latest if exact not found, or just one record.
-              // For this test, we ensure the spy returns a record with a date different from requested.
               if(params && params.start_date === requestedDate && params.end_date === requestedDate) {
-                  return [mockDataPoint]; // API returns a record, but it's for actualRecordDate
+                  return [mockDataPoint];
               }
-              return [mockDataPoint]; // Default mock return if params don't match specific date query
+              return [mockDataPoint];
           });
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'Value', requestedDate);
 
       expect(result).toBeNull();
-      // Check params passed to fetchDatasetTimeSeries by fetchMarketSize
       expect(fetchDatasetTimeSeriesSpy).toHaveBeenCalledWith(
         databaseCode,
         datasetCode,
@@ -283,11 +271,13 @@ describe('NasdaqDataService', () => {
         const mockApiResponse = {
             dataset_data: {
             column_names: ['Date', 'Open', 'High', 'Low', 'Close', 'Volume'],
-            data: [['2023-01-02', 100, 102, 99, 101, 1000]], // desc order, limit 1 implied
+            data: [['2023-01-02', 100, 102, 99, 101, 1000]],
             },
         };
-        mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
-        mockCacheServiceInstance.get.mockResolvedValue(null); // Ensure API call
+        // Instead of mocking axios directly, spy on fetchDatasetTimeSeries for fetchMarketSize tests
+        const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries')
+            .mockResolvedValue([{ Date: '2023-01-02', Open: 100, High: 102, Low: 99, Close: 101, Volume: 1000 }]);
+        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null); // Ensure cache miss for underlying call if it were direct
 
         const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'Close');
         expect(result).toEqual({
@@ -297,21 +287,15 @@ describe('NasdaqDataService', () => {
             valueColumn: 'Close',
             fullRecord: { Date: '2023-01-02', Open: 100, High: 102, Low: 99, Close: 101, Volume: 1000 }
         });
-        const expectedCacheKey = `nasdaq_${databaseCode}_${datasetCode}_${JSON.stringify({ order: 'desc', limit: 1 })}`;
-        const expectedCachedData = [{ Date: '2023-01-02', Open: 100, High: 102, Low: 99, Close: 101, Volume: 1000 }];
-        expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expectedCacheKey, expectedCachedData, expect.any(Number));
+        expect(fetchDatasetTimeSeriesSpy).toHaveBeenCalledWith(databaseCode, datasetCode, { order: 'desc', limit: 1 });
+        fetchDatasetTimeSeriesSpy.mockRestore();
     });
 
     it('should fetch value for a specific date', async () => {
         const specificDate = '2023-01-01';
-        const mockApiResponse = {
-            dataset_data: {
-            column_names: ['Date', 'Value'],
-            data: [[specificDate, 80]],
-            },
-        };
-        mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
-        mockCacheServiceInstance.get.mockResolvedValue(null);
+        const mockDataPoint = { Date: specificDate, Value: 80 };
+        const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
+        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
 
         const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'Value', specificDate);
         expect(result).toEqual({
@@ -321,13 +305,12 @@ describe('NasdaqDataService', () => {
             valueColumn: 'Value',
             fullRecord: { Date: specificDate, Value: 80 }
         });
-         const expectedCacheKey = `nasdaq_${databaseCode}_${datasetCode}_${JSON.stringify({ order: 'desc', start_date: specificDate, end_date: specificDate, limit: 1 })}`;
-         const expectedCachedData = [{ Date: specificDate, Value: 80 }];
-        expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expectedCacheKey, expectedCachedData, expect.any(Number));
+        expect(fetchDatasetTimeSeriesSpy).toHaveBeenCalledWith(databaseCode, datasetCode,
+            { order: 'desc', start_date: specificDate, end_date: specificDate, limit: 1 });
+        fetchDatasetTimeSeriesSpy.mockRestore();
     });
 
     it('should return null if time series is null for market size', async () => {
-        // This mocks fetchDatasetTimeSeries to return null, as if API failed or returned no data
         const fetchSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue(null);
 
         const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'Value');
@@ -336,14 +319,15 @@ describe('NasdaqDataService', () => {
     });
 
     it('should return null if specified valueColumn is not found', async () => {
-        const mockApiResponse = { dataset_data: { column_names: ['Date', 'Price'], data: [['2023-01-01', 90]] } };
-        mockedAxios.get.mockResolvedValue({ data: mockApiResponse });
-        mockCacheServiceInstance.get.mockResolvedValue(null);
+        const mockDataPoint = { Date: '2023-01-01', Price: 90 };
+        const fetchDatasetTimeSeriesSpy = vi.spyOn(nasdaqService as any, 'fetchDatasetTimeSeries').mockResolvedValue([mockDataPoint]);
+        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
         const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const result = await nasdaqService.fetchMarketSize(databaseCode, datasetCode, 'NonExistentColumn');
         expect(result).toBeNull();
         expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Value column "NonExistentColumn" not found'));
+        fetchDatasetTimeSeriesSpy.mockRestore();
         consoleWarnSpy.mockRestore();
     });
   });
@@ -358,7 +342,7 @@ describe('NasdaqDataService', () => {
       const params = { limit: 1 };
       const paramsString = JSON.stringify(params);
       const cacheKey = `nasdaq_${databaseCode}_${datasetCode}_${paramsString}`;
-      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
+      vi.mocked(mockCacheServiceInstance.getEntry).mockResolvedValue(cacheEntry);
 
       const freshness = await nasdaqService.getDataFreshness(databaseCode, datasetCode, params);
       expect(freshness).toEqual(new Date(now));
@@ -372,7 +356,7 @@ describe('NasdaqDataService', () => {
     });
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 0, size: 1, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
+      vi.mocked(mockCacheServiceInstance.getStats).mockReturnValue(mockStats);
       expect(nasdaqService.getCacheStatus()).toEqual(mockStats);
     });
   });

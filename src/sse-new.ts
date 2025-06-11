@@ -1,9 +1,5 @@
 #!/usr/bin/env node
 
-// Load environment variables first
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import { createServer } from "./server.js";

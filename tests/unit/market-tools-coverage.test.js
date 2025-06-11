@@ -173,8 +173,8 @@ describe('MCPTools - Advanced Coverage Tests', () => {
     mockDataService = new DataService();
     mockCacheService = new CacheService();
     
-    // Mock the static dataService property
-    MarketAnalysisTools.dataService = mockDataService;
+    // Create MCPTools instance
+    mcpTools = new MCPTools(mockDataService, mockCacheService);
   });
 
   describe('getMarketOpportunities', () => {
@@ -185,7 +185,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       );
       
       // Call the method with valid parameters
-      await expect(MarketAnalysisTools.marketOpportunities({
+      await expect(mcpTools.getMarketOpportunities({
         industries: ['tech-software'],
         growth_threshold: 0.15,
         time_horizon: 5
@@ -201,7 +201,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       });
       
       // Call the method
-      const result = await MarketAnalysisTools.marketOpportunities({
+      const result = await mcpTools.getMarketOpportunities({
         industries: ['nonexistent-industry'],
         growth_threshold: 0.15,
         time_horizon: 5
@@ -232,7 +232,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       });
       
       // Call with high minimum growth threshold
-      const result = await MarketAnalysisTools.marketOpportunities({
+      const result = await mcpTools.getMarketOpportunities({
         industries: ['tech-software'],
         growth_threshold: 0.2,
         time_horizon: 5
@@ -250,7 +250,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.forecastMarket.mockResolvedValue(mockMarketForecast);
       
       // Call the method
-      const result = await MarketAnalysisTools.marketForecasting({
+      const result = await mcpTools.forecastMarket({
         industry: 'tech-software',
         forecast_years: 3,
         scenario_type: 'conservative',
@@ -265,7 +265,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
     
     it('should validate year parameter range', async () => {
       // Call with invalid (too high) years parameter - this should be caught by schema validation
-      await expect(MarketAnalysisTools.marketForecasting({
+      await expect(mcpTools.forecastMarket({
         industry: 'tech-software',
         forecast_years: 15, // Too many years (max is 10)
         scenario_type: 'conservative'
@@ -279,7 +279,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.calculateTam.mockResolvedValue(mockTamResult);
       
       // Call with top-down methodology
-      const result = await MarketAnalysisTools.tamCalculator({
+      const result = await mcpTools.calculateTam({
         industry: 'tech-software',
         regions: ['global'],
         methodology: 'top-down',
@@ -300,7 +300,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
     
     it('should validate required parameters', async () => {
       // Call with missing required parameters
-      await expect(MarketAnalysisTools.tamCalculator({})).rejects.toThrow();
+      await expect(mcpTools.calculateTam({})).rejects.toThrow();
     });
     
     it('should handle missing industry data', async () => {
@@ -310,7 +310,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       );
       
       // Call method
-      await expect(MarketAnalysisTools.tamCalculator({
+      await expect(mcpTools.calculateTam({
         industry: 'nonexistent-industry',
         regions: ['global'],
         methodology: 'top-down'
@@ -334,7 +334,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.calculateSam.mockResolvedValue(mockPercentageSam);
       
       // Call SAM calculator
-      const result = await MarketAnalysisTools.samCalculator({
+      const result = await mcpTools.calculateSam({
         tam_result: mockTamResult,
         target_segments: ['enterprise', 'smb'],
         geographic_constraints: ['north-america', 'europe']
@@ -347,7 +347,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
     
     it('should validate required parameters', async () => {
       // Call with missing required parameters
-      await expect(MarketAnalysisTools.samCalculator({})).rejects.toThrow();
+      await expect(mcpTools.calculateSam({})).rejects.toThrow();
     });
   });
   
@@ -357,7 +357,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.compareMarkets.mockResolvedValue(mockMarketComparison);
       
       // Call comparison with multiple industries
-      const result = await MarketAnalysisTools.marketComparison({
+      const result = await mcpTools.compareMarkets({
         industries: ['tech-software', 'ecommerce'],
         comparison_metrics: ['size', 'growth'],
         time_period: [2020, 2025]
@@ -372,7 +372,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
     
     it('should handle invalid parameters', async () => {
       // Call with insufficient industries (less than 2)
-      await expect(MarketAnalysisTools.marketComparison({
+      await expect(mcpTools.compareMarkets({
         industries: ['tech-software'], // Only one industry
         comparison_metrics: ['size'],
         time_period: [2020, 2025]
@@ -386,7 +386,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.validateMarketData.mockResolvedValue(mockValidationResult);
       
       // Call validation
-      const result = await MarketAnalysisTools.dataValidation({
+      const result = await mcpTools.validateMarketData({
         market_size: 659000000000,
         industry: 'tech-software',
         year: 2025,
@@ -415,7 +415,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.validateMarketData.mockResolvedValue(mockFailedValidation);
       
       // Call with invalid data
-      const result = await MarketAnalysisTools.dataValidation({
+      const result = await mcpTools.validateMarketData({
         market_size: -1000, // Negative market size
         industry: 'test-industry',
         year: 2025
@@ -433,7 +433,7 @@ describe('MCPTools - Advanced Coverage Tests', () => {
       mockDataService.getMarketSegments.mockResolvedValue(mockMarketSegments);
       
       // Call segments analysis
-      const result = await MarketAnalysisTools.marketSegments({
+      const result = await mcpTools.getMarketSegments({
         industry: 'tech-software',
         segmentation_type: 'product'
       });

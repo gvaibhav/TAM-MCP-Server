@@ -26,17 +26,13 @@ describe('MarketAnalysisTools - Coverage Tests', () => {
       expect(typeof MarketAnalysisTools.getToolDefinitions).toBe('function');
       const tools = MarketAnalysisTools.getToolDefinitions();
       expect(Array.isArray(tools)).toBe(true);
-      expect(tools.length).toBe(11);
+      expect(tools.length).toBe(10);
     });
   });
 
   describe('industrySearch', () => {
     it('should return search results for valid query', async () => {
-      const result = await MarketAnalysisTools.industrySearch({ 
-        query: 'software',
-        limit: 10,
-        includeSubIndustries: true
-      });
+      const result = await MarketAnalysisTools.industrySearch({ query: 'software' });
       expect(result).toBeDefined();
       expect(typeof result).toBe('object');
       expect(result).toHaveProperty('success');

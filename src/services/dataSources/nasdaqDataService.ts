@@ -1,11 +1,11 @@
 // src/services/dataSources/nasdaqDataService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources.js';
-import { CacheEntry, CacheStatus } from '../../types/cache.js';
-import { CacheService } from '../cache/cacheService.js';
-import { nasdaqDataApi } from '../../config/apiConfig.js';
-import { getEnvAsNumber } from '../../utils/envHelper.js';
+import { DataSourceService } from '../../types/dataSources';
+import { CacheEntry, CacheStatus } from '../../types/cache';
+import { CacheService } from '../cache/cacheService';
+import { nasdaqDataApi } from '../../config/apiConfig';
+import { getEnvAsNumber } from '../../utils/envHelper';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour

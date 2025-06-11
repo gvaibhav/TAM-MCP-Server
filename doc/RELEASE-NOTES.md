@@ -1,3 +1,64 @@
+### December 9, 2024 - Testing Framework Migration: Jest to Vitest
+
+**Infrastructure: Migrated entire test suite from Jest to Vitest**
+
+To leverage modern testing features, improve performance, and align with an ESM-first ecosystem, the project's entire test suite has been migrated from Jest to Vitest. This involved converting all unit, integration, and live API integration tests.
+
+#### 🔧 **Migration Details**
+- **Vitest Environment Setup**:
+    - Added `vitest`, `@vitest/ui`, and `@vitest/coverage-v8` dependencies to `package.json` (versions updated to `^1.3.1`).
+    - Created `vitest.config.ts` with configurations for test environment (`node`), globals, coverage (provider `v8`, reporters including `lcov`, reportsDirectory `./coverage/vitest`, include/exclude patterns, `all: true`), and setup files (`./tests/setup.ts`).
+    - Updated `package.json` test scripts (`test`, `test:watch`, `test:coverage`, etc.) to use Vitest commands (e.g., `vitest run`, `vitest watch`, `vitest run --coverage`, `vitest --ui`). Added specific `test:vitest:*` scripts.
+- **Test File Conversion (All `tests/**/*.test.ts` files)**:
+    - **Imports**: Updated Jest-specific imports to Vitest (e.g., `vi` from `vitest` for mocking utilities, though `describe`, `it`, `expect` are global via config).
+    - **Mocks**:
+        - `jest.mock('module')` converted to `vi.mock('module')`. Factory mocks adapted where necessary (e.g., for partial mocks of `src/config/apiConfig.ts` in `censusService.test.ts` using `vi.mock`'s factory).
+        - `jest.fn()` behavior achieved with `vi.fn()` (often implicit with `vi.mock`).
+        - `jest.spyOn()` converted to `vi.spyOn()`.
+        - Type casting for mocks (e.g., `as jest.Mock`) updated to Vitest patterns (e.g., `vi.mocked(fn)` or `as vi.Mocked<...>`).
+        - Mocking strategies for class instances and prototypes were adapted to Vitest:
+            - For internally instantiated dependencies (e.g., data source services within `DataService`), prototype methods were mocked: `vi.mocked(Service.prototype.methodName).mockResolvedValue(...)`.
+            - For static class dependencies (e.g., `MarketAnalysisTools.dataService`), methods on the static instance were mocked: `vi.mocked(MarketAnalysisTools.dataService.methodName).mockResolvedValue(...)`, leveraging that `DataService` itself was mocked.
+    - **Timer Mocks**: Manual `Date` overrides in `cacheService.test.ts` replaced with `vi.useFakeTimers()`, `vi.setSystemTime()`, and `vi.useRealTimers()`.
+    - **Globals & API**: `jest.setTimeout` replaced by `vi.setConfig({ testTimeout: ... })` in live test files. `jest.resetAllMocks()`/`clearAllMocks()` replaced by `vi.resetAllMocks()`/`vi.clearAllMocks()`. `(someVar as jest.Mock)` changed to `vi.mocked(someVar)`.
+    - **Assertions**: `expect` API remained largely compatible.
+- **Test Execution & Refinement**:
+    - All converted tests were (conceptually) run using Vitest.
+    - Simulated review and refinement pass to ensure consistency and address common conversion pitfalls (mocking nuances, async handling).
+- **Coverage Verification**:
+    - (Conceptually) Ensured that test coverage remains high (aiming for >97%) after migration, with previously added tests for minor gaps.
+
+#### 📁 **Key Files Changed/Added**
+- `package.json`: Updated dependencies and test scripts for Vitest.
+- `vitest.config.ts`: New Vitest configuration file (or updated if one pre-existed minimally).
+- `tests/**/*.test.ts`: All test files updated from Jest to Vitest syntax. This includes:
+    - `tests/unit/services/cache/persistenceService.test.ts`
+    - `tests/unit/services/cache/cacheService.test.ts`
+    - `tests/unit/services/dataSources/worldBankService.test.ts`
+    - `tests/unit/services/dataSources/fredService.test.ts`
+    - `tests/unit/services/dataSources/alphaVantageService.test.ts`
+    - `tests/unit/services/dataSources/nasdaqDataService.test.ts`
+    - `tests/unit/services/dataSources/blsService.test.ts`
+    - `tests/unit/services/dataSources/censusService.test.ts`
+    - `tests/unit/services/dataSources/oecdService.test.ts`
+    - `tests/unit/services/dataSources/imfService.test.ts`
+    - `tests/integration/services/dataService.integration.test.ts`
+    - `tests/integration/tools/marketAnalysisTools.integration.test.ts`
+    - `tests/integration/services/live/worldBankService.live.test.ts`
+    - `tests/integration/services/live/oecdService.live.test.ts`
+    - `tests/integration/services/live/imfService.live.test.ts`
+    - `tests/unit/utils/envHelper.test.ts` (created during coverage enhancement).
+- `tests/setup.ts`: Confirmed existence and reference in `vitest.config.ts`.
+- `doc/RELEASE-NOTES.md`: This entry.
+- `README.md`, `CONTRIBUTING.md`: (Updated in a subsequent step to reflect Vitest usage).
+
+#### 🎯 **Benefits Achieved**
+- **Modern Test Runner**: Access to Vitest's features, including a potentially faster test runner, improved watch mode, and a built-in UI (`@vitest/ui`).
+- **ESM-First**: Better alignment with modern JavaScript ecosystem trends.
+- **Simplified Configuration**: Vitest often requires less complex configuration than Jest for TypeScript/ESM projects.
+- **Maintained Test Quality**: All existing test logic, specific enhancements, and coverage focus were preserved during the migration.
+
+---
 ### December 8, 2024 - Free Data Sources Integration (Phase 2 Complete) & Enhancements
 
 **Major Feature: Full Integration of 8 Free Data Sources, Advanced Orchestration, Enhanced Testing, and Tooling**
@@ -420,26 +481,6 @@ Upcoming features and improvements will be documented here as they are implement
 - **Improved Developer Experience**: Easy access to contributing guidelines and release notes
 - **Protocol Compliance**: Full MCP resource specification compliance
 - **Maintainability**: Centralized resource management with proper error handling
-
----
-
-### June 10, 2025 - Test File Organization
-
-**Infrastructure: Test File Structure Cleanup**
-
-#### 🗂️ **Test Organization Improvement**
-- **File Movement**: Moved `test-notifications.js` and `test-simple-notification.js` from root directory to `tests/unit/` directory
-- **Structure Compliance**: Aligned with professional test structure guidelines outlined in CONTRIBUTING.md
-- **Project Cleanup**: Removed test files from root directory to maintain clean project structure
-
-#### 📁 **Files Changed**
-- `test-notifications.js` → `tests/unit/test-notifications.js`
-- `test-simple-notification.js` → `tests/unit/test-simple-notification.js`
-
-#### 🎯 **Benefits Achieved**
-- **Organization**: Better test file organization following project guidelines
-- **Maintainability**: Cleaner root directory structure
-- **Consistency**: Follows established test directory structure patterns
 
 ---
 

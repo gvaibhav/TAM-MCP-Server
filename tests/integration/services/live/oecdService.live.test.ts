@@ -1,16 +1,13 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
-import { OecdService     let getEnvAsNumberSpy: any;
-
-    try {
-      getEnvAsNumberSpy = vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => {
-          if (key === 'CACHE_TTL_OECD_NODATA_MS') return 500; // 0.5 sec
-          return defaultValue;
-      });
-      // Re-instantiate service for this specific TTL behavior../../../../src/services/dataSources/oecdService';
+import { vi, describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
+import { OecdService } from '../../../../src/services/dataSources/oecdService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import * as path from 'path';
 import * as envHelper from '../../../../src/utils/envHelper';
+import { oecdApi } from '../../../../src/config/apiConfig'; // For default values
+
+// Increase timeout for live API calls
+vi.setConfig({ testTimeout: 30000 }); // 30 seconds for OECD
 
 describe('OecdService - Live API Integration Tests', () => {
   let oecdService: OecdService;
@@ -20,38 +17,26 @@ describe('OecdService - Live API Integration Tests', () => {
 
   beforeAll(async () => {
     persistenceService = new PersistenceService({ filePath: testCacheDir });
-    // Ensure initStorage is async and awaited if it performs async operations
-    // The PersistenceService constructor calls initStorage, which is async void.
-    // For tests, it's better if initStorage is explicitly awaitable or constructor returns Promise.
-    // However, for local fs operations, it's usually fast enough.
-    // If issues arise, this might need adjustment or a delay.
-    // await (persistenceService as any).initStorage?.(); // This is not standard, constructor handles it.
+    // PersistenceService constructor calls initStorage.
   });
 
   beforeEach(async () => {
-    // Ensure a clean state for persistence for each test.
-    // This involves re-creating persistenceService or ensuring its state is reset.
-    // For simplicity here, we'll clear and reuse.
     await persistenceService.clearAll();
     cacheService = new CacheService(persistenceService);
-    // Mock getEnvAsNumber to return default TTLs unless overridden in a specific test
     vi.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => defaultValue);
     oecdService = new OecdService(cacheService);
   });
 
   afterAll(async () => {
     await persistenceService.clearAll();
-    // Optionally remove testCacheDir using fs.rm if needed and safe.
   });
 
-  afterEach(() => {
-    // Restore any mocks that were changed per-test, like getEnvAsNumber
-    vi.restoreAllMocks();
+  afterEach(()=> {
+      vi.restoreAllMocks();
   });
 
   it('should fetch and parse Quarterly GDP for Australia (QNA dataset)', async () => {
     const datasetId = 'QNA';
-    // Filter: Australia, Gross domestic product (expenditure approach), Current prices, National currency, seasonally adjusted, Quarterly
     const filterExpression = 'AUS.B1_GE.CPCARSA.Q';
     const startTime = '2022-Q1';
     const endTime = '2022-Q4';
@@ -64,8 +49,8 @@ describe('OecdService - Live API Integration Tests', () => {
 
       const dataPoint = data[0];
       expect(dataPoint).toHaveProperty('LOCATION_ID', 'AUS');
-      expect(dataPoint).toHaveProperty('SUBJECT_ID'); // e.g., B1_GE
-      expect(dataPoint).toHaveProperty('MEASURE_ID'); // e.g., CPCARSA
+      expect(dataPoint).toHaveProperty('SUBJECT_ID');
+      expect(dataPoint).toHaveProperty('MEASURE_ID');
       expect(dataPoint).toHaveProperty('FREQUENCY_ID', 'Q');
       expect(dataPoint).toHaveProperty('TIME_PERIOD');
       expect(typeof dataPoint.TIME_PERIOD).toBe('string');
@@ -86,7 +71,7 @@ describe('OecdService - Live API Integration Tests', () => {
 
   it('should fetch and parse Short-Term Labour Market Statistics for USA (STLABOUR dataset)', async () => {
     const datasetId = 'STLABOUR';
-    const filterExpression = 'USA.LREM64TT.TOT.SA.Q'; // Employment Rate 15-64, Total, Seasonally Adjusted, Quarterly
+    const filterExpression = 'USA.LREM64TT.TOT.SA.Q';
     const startTime = '2022-Q1';
     const endTime = '2022-Q4';
 
@@ -98,9 +83,8 @@ describe('OecdService - Live API Integration Tests', () => {
 
       const dataPoint = data[0];
       expect(dataPoint).toHaveProperty('LOCATION_ID', 'USA');
-      expect(dataPoint).toHaveProperty('SUBJECT_ID', 'LREM64TT'); // Main subject
-      // Other dimensions like SEX, AGE, SERIES might be part of the key or attributes depending on exact filter and dataset structure
-      expect(dataPoint).toHaveProperty('MEASURE_ID'); // Or similar, e.g. SA for seasonally adjusted
+      expect(dataPoint).toHaveProperty('SUBJECT_ID', 'LREM64TT');
+      expect(dataPoint).toHaveProperty('MEASURE_ID');
       expect(dataPoint).toHaveProperty('FREQUENCY_ID', 'Q');
       expect(dataPoint).toHaveProperty('TIME_PERIOD');
       expect(typeof dataPoint.value).toBe('number');
@@ -121,17 +105,20 @@ describe('OecdService - Live API Integration Tests', () => {
     const filterExpressionForNoData = 'AUS.NONEXISTENT_SUBJECT.BOGUS_MEASURE.Q';
     const startTime = '2022-Q1';
     const endTime = '2022-Q1';
-    let getEnvAsNumberSpy: jest.SpyInstance | undefined;
+
+    // This spy is set up here, will be restored by afterEach
+    const getEnvAsNumberSpy = vi.spyOn(envHelper, 'getEnvAsNumber');
+    getEnvAsNumberSpy.mockImplementation((key, defaultValue) => {
+        if (key === 'CACHE_TTL_OECD_NODATA_MS') return 500;
+        return defaultValue;
+    });
+
+    // Re-instantiate service for this specific TTL behavior (CacheService is newed up with this persistence, OecdService with new CacheService)
+    const localCacheService = new CacheService(persistenceService);
+    const localOecdService = new OecdService(localCacheService);
+
 
     try {
-      getEnvAsNumberSpy = jest.spyOn(envHelper, 'getEnvAsNumber').mockImplementation((key, defaultValue) => {
-          if (key === 'CACHE_TTL_OECD_NODATA_MS') return 500; // 0.5 sec
-          return defaultValue;
-      });
-      // Re-instantiate service for this specific TTL behavior
-      const localCacheService = new CacheService(persistenceService); // Use the same persistenceService
-      const localOecdService = new OecdService(localCacheService);
-
       const data = await localOecdService.fetchOecdDataset(datasetId, filterExpressionForNoData, 'OECD', startTime, endTime);
 
       expect(data).toBeNull();
@@ -143,9 +130,8 @@ describe('OecdService - Live API Integration Tests', () => {
 
     } catch (error: any) {
       console.warn(`OECD live test for "no data" encountered an error (this might be expected if filter is invalid): ${error.message}`);
-      expect(error).toBeInstanceOf(Error); // If it throws, it's still an outcome.
-    } finally {
-        if(getEnvAsNumberSpy) getEnvAsNumberSpy.mockRestore();
+      expect(error).toBeInstanceOf(Error);
     }
+    // Spy restored by afterEach
   });
 });

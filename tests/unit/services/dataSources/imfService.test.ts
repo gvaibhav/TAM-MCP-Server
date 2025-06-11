@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { ImfService } from '../../../../src/services/dataSources/imfService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
@@ -10,11 +10,11 @@ vi.mock('axios');
 vi.mock('../../../../src/services/cache/cacheService');
 vi.mock('../../../../src/utils/envHelper');
 
-const mockedAxios = axios as any;
-const MockedCacheService = CacheService as any;
-const mockedGetEnvAsNumber = envHelper.getEnvAsNumber as any;
+const mockedAxiosGet = vi.mocked(axios.get);
+const MockedCacheService = CacheService as unknown as ReturnType<typeof vi.fn>;
+const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
 
-// Mock IMF SDMX-JSON CompactData Structure
+// Mock IMF SDMX-JSON CompactData Structure (remains the same as before)
 const mockImfSdmxCompactDataResponse = {
   structure: {
     name: "IMF Primary Commodity Price System (PCPS)",
@@ -25,53 +25,34 @@ const mockImfSdmxCompactDataResponse = {
         { keyPosition: 2, id: "COMMODITY", name: "Commodity", values: [{ id: "PAUM", name: "Aluminum" }, {id: "PCOAL", name: "Coal"}] },
         { keyPosition: 3, id: "UNIT_MEASURE", name: "Unit of  Measure", values: [{ id: "USD", name: "US Dollar" }] }
       ],
-      observation: [ // Only TIME_PERIOD typically, others are on series
-        { id: "TIME_PERIOD", name: "Time Period", role: "time" } // Values for TIME_PERIOD are actual time strings in obs keys
-      ]
+      observation: [ { id: "TIME_PERIOD", name: "Time Period", role: "time" } ]
     },
-    attributes: { // Attributes can be on series or observation
-      observation: [
+    attributes: { observation: [
         { id: "OBS_STATUS", name: "Observation Status", values: [{id: "A", name: "Actual"}, {id: "E", name: "Estimated"}] }
-      ],
-      series: [
+      ], series: [
           {id: "UNIT_MULT", name: "Unit Multiplier", values: [{id: "0", name: "Units"}, {id: "3", name: "Thousands"}]}
-      ]
-    }
+      ]}
   },
-  dataSets: [
-    {
-      series: {
-        // Series Key: FREQ:REF_AREA:COMMODITY:UNIT_MEASURE (e.g., Monthly.World.Aluminum.USD)
-        // Example: M.W00.PAUM.USD -> series key "1:0:0:0" (indices into values arrays of dimensions above)
-        "1:0:0:0": { // Monthly, World, Aluminum, USD
-          attributes: [0], // UNIT_MULT index 0 ('Units')
-          observations: {
-            "2023-01": [175.0, 0], // Value, OBS_STATUS index 0 ('Actual')
-            "2023-02": [176.5, 0]
-          }
-        },
-        "1:0:1:0": { // Monthly, World, Coal, USD
-          attributes: [1], // UNIT_MULT index 1 ('Thousands')
-          observations: {
-            "2023-01": [300.0, 1], // Value, OBS_STATUS index 1 ('Estimated')
-            "2023-02": [305.0, 0]
-          }
-        }
-      }
-    }
-  ]
+  dataSets: [ { series: {
+        "1:0:0:0": { attributes: [0], observations: { "2023-01": [175.0, 0], "2023-02": [176.5, 0] }},
+        "1:0:1:0": { attributes: [1], observations: { "2023-01": [300.0, 1], "2023-02": [305.0, 0] }}
+  }}]
 };
 
 
 describe('ImfService', () => {
   let imfService: ImfService;
-  let mockCacheServiceInstance: any;
+  let mockCacheServiceInstance: InstanceType<typeof CacheService>;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mockCacheServiceInstance = new MockedCacheService() as any;
+    mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
     mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
     imfService = new ImfService(mockCacheServiceInstance);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('isAvailable', () => {
@@ -82,7 +63,7 @@ describe('ImfService', () => {
 
   describe('fetchImfDataset', () => {
     const dataflowId = 'IFS';
-    const key = 'A.US.NGDP_RPCH'; // Example key
+    const key = 'A.US.NGDP_RPCH';
     const startPeriod = '2020';
     const endPeriod = '2022';
     const queryParams = { startPeriod, endPeriod };
@@ -97,42 +78,40 @@ describe('ImfService', () => {
 
     it('should return data from cache if available', async () => {
       const cachedData = [{ FREQ: 'Annual', value: 100 }];
-      mockCacheServiceInstance.get.mockResolvedValue(cachedData);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(cachedData);
 
       const result = await imfService.fetchImfDataset(dataflowId, key, startPeriod, endPeriod);
       expect(result).toEqual(cachedData);
       expect(mockCacheServiceInstance.get).toHaveBeenCalledWith(cacheKey);
-      expect(mockedAxios.get).not.toHaveBeenCalled();
+      expect(mockedAxiosGet).not.toHaveBeenCalled();
     });
 
     it('should fetch, parse (CompactData series), and cache data if not in cache', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
-      mockedAxios.get.mockResolvedValue({ data: mockImfSdmxCompactDataResponse });
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
+      mockedAxiosGet.mockResolvedValue({ data: mockImfSdmxCompactDataResponse });
 
       const result = await imfService.fetchImfDataset(dataflowId, key, startPeriod, endPeriod);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(mockApiUrl, { params: queryParams });
+      expect(mockedAxiosGet).toHaveBeenCalledWith(mockApiUrl, { params: queryParams });
       expect(result).toBeInstanceOf(Array);
-      expect(result?.length).toBe(4); // 2 series, 2 obs each
+      expect(result?.length).toBe(4);
 
-      // Check first observation of first series (Aluminum)
       expect(result?.[0]).toEqual({
         FREQ: 'Monthly', FREQ_ID: 'M',
         REF_AREA: 'World', REF_AREA_ID: 'W00',
         COMMODITY: 'Aluminum', COMMODITY_ID: 'PAUM',
         UNIT_MEASURE: 'US Dollar', UNIT_MEASURE_ID: 'USD',
-        UNIT_MULT: 'Units', UNIT_MULT_ID: '0', // Series attribute
+        UNIT_MULT: 'Units', UNIT_MULT_ID: '0',
         TIME_PERIOD: '2023-01',
         value: 175.0,
-        OBS_STATUS: 'Actual', OBS_STATUS_ID: 'A' // Observation attribute
+        OBS_STATUS: 'Actual', OBS_STATUS_ID: 'A'
       });
-      // Check second observation of second series (Coal)
       expect(result?.[3]).toEqual({
         FREQ: 'Monthly', FREQ_ID: 'M',
         REF_AREA: 'World', REF_AREA_ID: 'W00',
         COMMODITY: 'Coal', COMMODITY_ID: 'PCOAL',
         UNIT_MEASURE: 'US Dollar', UNIT_MEASURE_ID: 'USD',
-        UNIT_MULT: 'Thousands', UNIT_MULT_ID: '3', // Series attribute
+        UNIT_MULT: 'Thousands', UNIT_MULT_ID: '3',
         TIME_PERIOD: '2023-02',
         value: 305.0,
         OBS_STATUS: 'Actual', OBS_STATUS_ID: 'A'
@@ -141,10 +120,10 @@ describe('ImfService', () => {
     });
 
     it('should handle missing series structure and return null', async () => {
-        mockCacheServiceInstance.get.mockResolvedValue(null);
+        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
         const noStructureResponse = JSON.parse(JSON.stringify(mockImfSdmxCompactDataResponse));
-        delete noStructureResponse.structure?.dimensions?.series; // Remove critical part of structure
-        mockedAxios.get.mockResolvedValue({ data: noStructureResponse });
+        delete noStructureResponse.structure?.dimensions?.series;
+        mockedAxiosGet.mockResolvedValue({ data: noStructureResponse });
         const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const result = await imfService.fetchImfDataset(dataflowId, key);
@@ -155,57 +134,57 @@ describe('ImfService', () => {
     });
 
     it('should handle no series data in response and cache null', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const noSeriesResponse = { ...mockImfSdmxCompactDataResponse, dataSets: [{ series: {} }] };
-      mockedAxios.get.mockResolvedValue({ data: noSeriesResponse });
+      mockedAxiosGet.mockResolvedValue({ data: noSeriesResponse });
 
       const result = await imfService.fetchImfDataset(dataflowId, key);
-      expect(result).toBeNull(); // because observations array will be empty
+      expect(result).toBeNull();
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expect.stringContaining(dataflowId), null, expect.any(Number));
     });
 
     it('should handle API error and cache null', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
-      mockedAxios.get.mockRejectedValue(new Error('Network Error'));
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
+      mockedAxiosGet.mockRejectedValue(new Error('Network Error'));
 
       await expect(imfService.fetchImfDataset(dataflowId, key)).rejects.toThrow('Network Error');
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expect.stringContaining(dataflowId), null, expect.any(Number));
     });
+
      it('should handle IMF API error response (e.g. 400 with JSON error)', async () => {
-        mockCacheServiceInstance.get.mockResolvedValue(null);
+        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
         const apiError = {
             isAxiosError: true,
             response: {
                 status: 400,
-                data: { Message: "Invalid request parameters." } // Example error structure
+                data: { Message: "Invalid request parameters." }
             },
             message: "Request failed with status code 400"
         };
-        mockedAxios.get.mockRejectedValue(apiError);
+        mockedAxiosGet.mockRejectedValue(apiError as any);
 
         await expect(imfService.fetchImfDataset(dataflowId, key))
             .rejects.toThrow('IMF API Error: 400 - {"Message":"Invalid request parameters."}');
     });
 
-    // Add TTL tests similar to other services
     it('should use TTL from env var for successful fetch', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
-      mockedAxios.get.mockResolvedValue({ data: mockImfSdmxCompactDataResponse });
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
+      mockedAxiosGet.mockResolvedValue({ data: mockImfSdmxCompactDataResponse });
       const customTTL = 555000;
       mockedGetEnvAsNumber.mockImplementation((envKey, defVal) => envKey === 'CACHE_TTL_IMF_MS' ? customTTL : defVal);
-      imfService = new ImfService(mockCacheServiceInstance); // Re-instantiate
+      imfService = new ImfService(mockCacheServiceInstance);
 
       await imfService.fetchImfDataset(dataflowId, key, startPeriod, endPeriod);
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Array), customTTL);
     });
 
      it('should use NoData TTL from env var when no series data found', async () => {
-      mockCacheServiceInstance.get.mockResolvedValue(null);
+      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
       const noSeriesResponse = { ...mockImfSdmxCompactDataResponse, dataSets: [{ series: {} }] };
-      mockedAxios.get.mockResolvedValue({ data: noSeriesResponse });
+      mockedAxiosGet.mockResolvedValue({ data: noSeriesResponse });
       const customNoDataTTL = 666000;
       mockedGetEnvAsNumber.mockImplementation((envKey, defVal) => envKey === 'CACHE_TTL_IMF_NODATA_MS' ? customNoDataTTL : defVal);
-      imfService = new ImfService(mockCacheServiceInstance); // Re-instantiate
+      imfService = new ImfService(mockCacheServiceInstance);
 
       await imfService.fetchImfDataset(dataflowId, key, startPeriod, endPeriod);
       expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
@@ -224,7 +203,7 @@ describe('ImfService', () => {
 
   describe('fetchMarketSize', () => {
     it('should call fetchImfDataset and return latest observation value', async () => {
-        const mockObservations = [ // Note: Service sorts these desc by TIME_PERIOD to get latest
+        const mockObservations = [
             { FREQ: 'A', TIME_PERIOD: '2022', value: 100 },
             { FREQ: 'A', TIME_PERIOD: '2023', value: 110 }
         ];
@@ -232,8 +211,8 @@ describe('ImfService', () => {
 
         const result = await imfService.fetchMarketSize('FLOW', 'KEY.A');
         expect(result).toEqual({
-            value: 110, // Latest after sort
-            dimensions: mockObservations[1], // Latest observation
+            value: 110,
+            dimensions: mockObservations[1],
             source: 'IMF',
             dataset: 'FLOW',
             key: 'KEY.A'
@@ -246,11 +225,11 @@ describe('ImfService', () => {
     it('should return timestamp from cache entry', async () => {
       const now = Date.now();
       const cacheEntry: CacheEntry<any> = { data: [], timestamp: now, ttl: 1000 };
-      const cacheKeyObj = { dataflowId:'ID', key:'K', startPeriod: '2020' };
+      const cacheKeyObj = { dataflowId:'ID', key:'K', startPeriod: '2020' }; // Added endPeriod: undefined for exact match with service if it includes it.
       const cacheKey = `imf_${JSON.stringify(cacheKeyObj)}`;
-      (mockCacheServiceInstance as any).getEntry = vi.fn().mockResolvedValue(cacheEntry);
+      vi.mocked(mockCacheServiceInstance.getEntry).mockResolvedValue(cacheEntry);
 
-      const freshness = await imfService.getDataFreshness('ID', 'K', '2020');
+      const freshness = await imfService.getDataFreshness('ID', 'K', '2020'); // endPeriod is optional
       expect(freshness).toEqual(new Date(now));
       expect(mockCacheServiceInstance.getEntry).toHaveBeenCalledWith(cacheKey);
     });
@@ -259,7 +238,7 @@ describe('ImfService', () => {
    describe('getCacheStatus', () => {
     it('should call cacheService.getStats', () => {
       const mockStats: CacheStatus = { hits: 1, misses: 0, size: 1, lastRefreshed: new Date() };
-      (mockCacheServiceInstance as any).getStats = vi.fn().mockReturnValue(mockStats);
+      vi.mocked(mockCacheServiceInstance.getStats).mockReturnValue(mockStats);
       expect(imfService.getCacheStatus()).toEqual(mockStats);
     });
   });

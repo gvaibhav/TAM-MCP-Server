@@ -57,15 +57,7 @@ const ExtendedIndustryDataSchema = IndustryDataSchema.extend({
 
 
 export class MarketAnalysisTools {
-  private static _dataService: DataService | null = null;
-  
-  static get dataService(): DataService {
-    if (!this._dataService) {
-      this._dataService = new DataService();
-    }
-    return this._dataService;
-  }
-  
+  static dataService = new DataService();
   static getToolDefinitions(): Tool[] { // This method remains unchanged
     return [
       {
@@ -242,7 +234,7 @@ export class MarketAnalysisTools {
         validateYear(year);
       }
 
-      const marketDataResult = await MarketAnalysisTools.dataService.getMarketSize(industryId, region, year);
+      const marketDataResult = await MarketAnalysisTools.dataService.getMarketSize(industryId, region);
 
       if (!marketDataResult || marketDataResult.value === null || marketDataResult.value === undefined) {
         return createErrorResponse(`Market size data not available for industry: ${industryId} in region: ${region}`);
@@ -653,7 +645,7 @@ export class MarketAnalysisTools {
           growthPotential: opp.growthPotential ? formatPercentage(opp.growthPotential) : 'N/A',
           competitiveIntensity: opp.competitiveIntensity,
           // ... (rest of mapping)
-          attractivenessScore: MarketAnalysisTools._calculateAttractivenessScore(opp), // Corrected `this` context
+          attractivenessScore: (this as any).calculateAttractivenessScore(opp), // Corrected `this` context
         })).sort((a: any, b: any) => b.attractivenessScore - a.attractivenessScore),
         // ... (recommendations)
       };
@@ -704,7 +696,7 @@ export class MarketAnalysisTools {
     }
   }
 
-  private static _calculateAttractivenessScore(opportunity: any): number { // Make it static if called with this.
+  private static calculateAttractivenessScore(opportunity: any): number { // Make it static if called with this.
     let score = 0;
     score += Math.min(40, ((opportunity.marketSize || 0) / 1000000000) * 10);
     score += (opportunity.growthPotential || 0) * 3000;
