@@ -57,7 +57,15 @@ const ExtendedIndustryDataSchema = IndustryDataSchema.extend({
 
 
 export class MarketAnalysisTools {
-  static dataService = new DataService();
+  private static _dataService: DataService | null = null;
+  
+  static get dataService(): DataService {
+    if (!this._dataService) {
+      this._dataService = new DataService();
+    }
+    return this._dataService;
+  }
+  
   static getToolDefinitions(): Tool[] { // This method remains unchanged
     return [
       {
@@ -645,7 +653,7 @@ export class MarketAnalysisTools {
           growthPotential: opp.growthPotential ? formatPercentage(opp.growthPotential) : 'N/A',
           competitiveIntensity: opp.competitiveIntensity,
           // ... (rest of mapping)
-          attractivenessScore: (this as any).calculateAttractivenessScore(opp), // Corrected `this` context
+          attractivenessScore: MarketAnalysisTools._calculateAttractivenessScore(opp), // Corrected `this` context
         })).sort((a: any, b: any) => b.attractivenessScore - a.attractivenessScore),
         // ... (recommendations)
       };
@@ -696,7 +704,7 @@ export class MarketAnalysisTools {
     }
   }
 
-  private static calculateAttractivenessScore(opportunity: any): number { // Make it static if called with this.
+  private static _calculateAttractivenessScore(opportunity: any): number { // Make it static if called with this.
     let score = 0;
     score += Math.min(40, ((opportunity.marketSize || 0) / 1000000000) * 10);
     score += (opportunity.growthPotential || 0) * 3000;

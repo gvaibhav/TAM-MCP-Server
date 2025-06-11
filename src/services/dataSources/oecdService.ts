@@ -1,10 +1,10 @@
 // src/services/dataSources/oecdService.ts
 import axios from 'axios';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { oecdApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { oecdApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour

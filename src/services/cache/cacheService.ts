@@ -1,5 +1,5 @@
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { PersistenceService } from './persistenceService';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { PersistenceService } from './persistenceService.js';
 
 export class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();

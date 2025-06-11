@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Load environment variables first
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer } from "./server.js";
 

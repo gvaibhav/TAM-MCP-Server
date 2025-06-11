@@ -1,11 +1,10 @@
 // src/services/dataSources/worldBankService.ts
 import axios from 'axios';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { worldBankApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
-import * as process from 'process';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { worldBankApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_WORLD_BANK_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_WORLD_BANK_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour

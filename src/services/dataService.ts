@@ -1,18 +1,17 @@
 // src/services/dataService.ts
-import * as process from 'process';
-import { CacheService } from './cache/cacheService';
-import { PersistenceService } from './cache/persistenceService';
-import { DataSourceService } from '../types/dataSources';
+import { CacheService } from './cache/cacheService.js';
+import { PersistenceService } from './cache/persistenceService.js';
+import { DataSourceService } from '../types/dataSources.js';
 
 // Import all data source services
-import { WorldBankService } from './dataSources/worldBankService';
-import { FredService } from './dataSources/fredService';
-import { BlsService } from './dataSources/blsService';
-import { CensusService } from './dataSources/censusService';
-import { OecdService } from './dataSources/oecdService';
-import { ImfService } from './dataSources/imfService';
-import { AlphaVantageService } from './dataSources/alphaVantageService';
-import { NasdaqDataService } from './dataSources/nasdaqDataService';
+import { WorldBankService } from './dataSources/worldBankService.js';
+import { FredService } from './dataSources/fredService.js';
+import { BlsService } from './dataSources/blsService.js';
+import { CensusService } from './dataSources/censusService.js';
+import { OecdService } from './dataSources/oecdService.js';
+import { ImfService } from './dataSources/imfService.js';
+import { AlphaVantageService } from './dataSources/alphaVantageService.js';
+import { NasdaqDataService } from './dataSources/nasdaqDataService.js';
 
 // Mock data (remains for ultimate fallback or for methods not yet fully migrated)
 const mockIndustryData: Record<string, any> = {
@@ -33,7 +32,6 @@ export class DataService {
   private persistenceService: PersistenceService;
   private cacheService: CacheService;
   private dataSourceServicesMap: DataSourceServiceMap; // Store as a map for easy lookup by name
-  private orderedServiceNames: string[]; // For sequential attempts in generic methods
 
   // Define a preferred order and class mapping
   private serviceDefinitions: { name: string, class: new (cacheService: CacheService, apiKey?: string) => DataSourceService }[] = [
@@ -61,7 +59,6 @@ export class DataService {
       // This generic instantiation should be fine.
       this.dataSourceServicesMap[def.name] = new def.class(this.cacheService);
     });
-    this.orderedServiceNames = this.serviceDefinitions.map(def => def.name);
 
     console.log("DataService initialized with all data source services:", Object.keys(this.dataSourceServicesMap));
   }
@@ -244,7 +241,7 @@ export class DataService {
     };
   }
 
-  async calculateTam(industryId: string, region: string, customerSegments?: any[]): Promise<number | null> {
+  async calculateTam(industryId: string, region: string, _customerSegments?: any[]): Promise<number | null> {
     const marketSizeData = await this.getMarketSize(industryId, region);
     if (marketSizeData && marketSizeData.value !== null && marketSizeData.value !== undefined) {
       console.log(`DataService: Calculating TAM based on market size ${marketSizeData.value} from ${marketSizeData.source}`);
@@ -253,7 +250,7 @@ export class DataService {
     return null;
   }
 
-  async calculateSam(industryId: string, region: string, targetSegmentCriteria?: any): Promise<number | null> {
+  async calculateSam(industryId: string, region: string, _targetSegmentCriteria?: any): Promise<number | null> {
     const tam = await this.calculateTam(industryId, region, []);
     if (tam !== null) {
       const samPercentage = 0.5;

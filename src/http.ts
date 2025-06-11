@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Load environment variables first
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js';
 import express, { Request, Response } from "express";
