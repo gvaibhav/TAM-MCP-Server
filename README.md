@@ -84,6 +84,10 @@ The server provides the following tools accessible via the `/mcp` endpoint:
     ```
     The server will typically be available at `http://localhost:3000`.
 
+    It can be started with inspector as:
+    ```bash
+    npx @modelcontextprotocol/inspector node dist/stdio-simple.js
+    ```
 ### Docker Installation
 1.  **Build the Docker image:**
     ```bash
@@ -163,6 +167,8 @@ Integration with these premium sources is planned for future releases to provide
 - **Grand View Research**
 - **Bloomberg**
 - **PitchBook**
+
+> **💡 Tip**: If you're experiencing issues with API keys not being recognized or services showing as disabled, see the [Troubleshooting](#-troubleshooting) section for common solutions.
 
 ## 🏗 Architecture
 
@@ -265,6 +271,87 @@ Code coverage reports are generated in the `coverage/` directory. Live API tests
 
 ## 🚀 Deployment
 The server can be deployed using Docker (recommended) or directly via Node.js. Refer to platform-specific deployment guides.
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 🚫 Data Sources Showing as Disabled Despite Having API Keys
+**Symptom**: Status shows fewer enabled services than expected (e.g., "4/8 services enabled" instead of "8/8")
+
+**Cause**: Environment variable loading order issue where services are initialized before `.env` file is loaded.
+
+**Solution**: This issue was fixed in the June 11, 2025 release. Ensure you're using the latest version where `dotenv.config()` is called before any service imports.
+
+**Verification**: Check the startup logs for service status:
+```
+📊 Status: 8/8 services enabled
+✅ Enabled: Alpha Vantage, Census Bureau, FRED, Nasdaq Data Link, BLS, World Bank, OECD, IMF
+```
+
+#### 🔌 MCP Inspector Connection Issues
+**Symptom**: JSON parsing errors or "Invalid JSON" messages in MCP Inspector
+
+**Cause**: Console output contaminating stdout JSON-RPC communication
+
+**Solution**: 
+- Use the correct command: `npx @modelcontextprotocol/inspector node dist/stdio-simple.js`
+- Ensure all console.log() statements use console.error() for stderr output
+- Check that Winston logger is configured with `stderrLevels`
+
+#### 🔑 API Key Configuration Issues
+**Symptom**: Services showing as disabled despite adding API keys to `.env`
+
+**Steps to resolve**:
+1. Verify `.env` file is in the project root directory
+2. Check API key variable names match exactly:
+   ```
+   ALPHA_VANTAGE_API_KEY=your_key_here
+   CENSUS_API_KEY=your_key_here
+   FRED_API_KEY=your_key_here
+   NASDAQ_API_KEY=your_key_here
+   BLS_API_KEY=your_key_here
+   ```
+3. Restart the server after adding new API keys
+4. Check startup logs for service initialization messages
+
+#### 🏗️ Build Errors
+**Symptom**: TypeScript compilation failures
+
+**Common solutions**:
+- Run `npm install` to ensure all dependencies are installed
+- Check Node.js version (v20.x recommended)
+- Clear build cache: `rm -rf dist && npm run build`
+- Verify all import statements include `.js` extensions for ES modules
+
+#### 🐳 Docker Issues
+**Symptom**: Container fails to start or can't access environment variables
+
+**Solutions**:
+- Ensure `.env` file exists and is properly formatted
+- Use `--env-file .env` flag when running container
+- Check container logs: `docker logs <container-id>`
+- Verify port mapping: `-p 3000:3000`
+
+#### 📊 No Data Returned from Tools
+**Symptom**: Tools execute but return empty or error responses
+
+**Debugging steps**:
+1. Check service status in startup logs
+2. Verify API quotas haven't been exceeded
+3. Test individual data sources using `generic_data_query` tool
+4. Check network connectivity and firewall settings
+5. Review service-specific error logs
+
+### Getting Help
+If you encounter issues not covered here:
+1. Check the [Release Notes](doc/RELEASE-NOTES.md) for recent fixes
+2. Search existing [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
+3. Create a new issue with:
+   - Error messages and logs
+   - Environment details (Node.js version, OS)
+   - Steps to reproduce
+   - Configuration (without sensitive API keys)
 
 ## 🤝 Contributing
 Contributions are welcome! Please see `CONTRIBUTING.md` and adhere to the Code of Conduct.

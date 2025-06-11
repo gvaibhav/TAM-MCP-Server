@@ -1,11 +1,11 @@
 // src/services/dataSources/blsService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { blsApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { blsApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -30,9 +30,10 @@ export class BlsService implements DataSourceService {
     this.cacheService = cacheService;
     this.apiKey = apiKey || process.env.BLS_API_KEY;
     if (this.apiKey) {
-        console.log("BLS Service: API key configured.");
+        // Use stderr for initialization logs to avoid contaminating stdout in STDIO transport
+        console.error("✅ BLS: Service enabled with API key (higher limits)");
     } else {
-        console.log("BLS Service: API key not configured. Using anonymous access (lower limits).");
+        console.error("ℹ️  BLS: Using anonymous access (limited requests per day)");
     }
     this.successfulFetchTtl = getEnvAsNumber('CACHE_TTL_BLS_MS', DEFAULT_TTL_MS);
     this.noDataFetchTtl = getEnvAsNumber('CACHE_TTL_BLS_NODATA_MS', DEFAULT_TTL_NODATA_MS);
@@ -91,12 +92,13 @@ export class BlsService implements DataSourceService {
     const cacheKey = `bls_data_${JSON.stringify(cacheKeyPayload)}`;
 
     const cachedData = await this.cacheService.get<any>(cacheKey);
-    if (cachedData) {
-      console.log(`BLS Service: Returning cached data for series ${seriesIds.join(',')}`);
-      return cachedData;
-    }
+    if (cachedData) {    // Cache hit - use stderr for logging to avoid stdout contamination
+    console.error(`BLS Service: Returning cached data for series ${seriesIds.join(',')}`);
+    return cachedData;
+  }
 
-    console.log(`BLS Service: Fetching data for series ${seriesIds.join(',')} from API.`);
+  // Use stderr for API fetch logging to avoid stdout contamination  
+  console.error(`BLS Service: Fetching data for series ${seriesIds.join(',')} from API.`);
     const apiUrl = blsApi.baseUrlV2; // This is POST, so URL is just base
 
     try {
@@ -145,7 +147,7 @@ export class BlsService implements DataSourceService {
    * as "market size" isn't a standard BLS series concept.
    * Users should use fetchIndustryData with specific series IDs.
    */
-  async fetchMarketSize(industryId: string, region?: string): Promise<any | null> { // Added region to match interface
+  async fetchMarketSize(_industryId: string, _region?: string): Promise<any | null> { // Added region to match interface
     console.warn("BLS Service: fetchMarketSize is not directly applicable. Use fetchIndustryData with specific series IDs (industryId can be a series ID, region is ignored).");
     // Example: could map industryId to a known high-level employment series
     // if (industryId === 'TOTAL_NONFARM_EMPLOYMENT_US') { // This is a conceptual example

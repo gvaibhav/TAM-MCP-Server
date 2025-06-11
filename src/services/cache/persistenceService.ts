@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { CacheEntry, PersistenceOptions } from '../../types/cache';
+import { CacheEntry, PersistenceOptions } from '../../types/cache.js';
 
 // Define a default path for storing cache files
 const DEFAULT_CACHE_DIR = path.join(process.cwd(), '.cache_data');

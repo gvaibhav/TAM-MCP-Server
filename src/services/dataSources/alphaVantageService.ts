@@ -1,11 +1,11 @@
 // src/services/dataSources/alphaVantageService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { alphaVantageApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { alphaVantageApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -22,7 +22,9 @@ export class AlphaVantageService implements DataSourceService {
     this.cacheService = cacheService;
     this.apiKey = apiKey || process.env.ALPHA_VANTAGE_API_KEY;
     if (!this.apiKey) {
-      console.warn("Alpha Vantage API key not configured. AlphaVantageService will not be available.");
+      console.error("ℹ️  Alpha Vantage: API key not configured - service disabled (set ALPHA_VANTAGE_API_KEY to enable)");
+    } else {
+      console.error("✅ Alpha Vantage: Service enabled");
     }
     this.successfulFetchTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_MS', DEFAULT_TTL_MS);
     this.noDataFetchTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_NODATA_MS', DEFAULT_TTL_NODATA_MS);
@@ -38,7 +40,7 @@ export class AlphaVantageService implements DataSourceService {
    * @param symbol The company stock symbol (e.g., "IBM", "AAPL").
    * @param region Optional region parameter (unused by Alpha Vantage for company overview).
    */
-  async fetchMarketSize(symbol: string, region?: string): Promise<any | null> {
+  async fetchMarketSize(symbol: string, _region?: string): Promise<any | null> {
     if (!await this.isAvailable()) {
       throw new Error('Alpha Vantage API key is not configured or service is unavailable.');
     }

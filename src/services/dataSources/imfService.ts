@@ -1,10 +1,10 @@
 // src/services/dataSources/imfService.ts
 import axios from 'axios';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { imfApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { imfApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -57,7 +57,8 @@ export class ImfService implements DataSourceService {
     this.cacheService = cacheService;
     this.successfulFetchTtl = getEnvAsNumber('CACHE_TTL_IMF_MS', DEFAULT_TTL_MS);
     this.noDataFetchTtl = getEnvAsNumber('CACHE_TTL_IMF_NODATA_MS', DEFAULT_TTL_NODATA_MS);
-    console.log("IMF Service: Initialized. Uses public access.");
+    // Use stderr for initialization logs to avoid contaminating stdout in STDIO transport
+    console.error("✅ IMF: Service enabled (public access)");
   }
 
   async isAvailable(): Promise<boolean> {

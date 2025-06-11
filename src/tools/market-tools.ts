@@ -57,7 +57,15 @@ const ExtendedIndustryDataSchema = IndustryDataSchema.extend({
 
 
 export class MarketAnalysisTools {
-  static dataService = new DataService();
+  private static _dataService: DataService | null = null;
+  
+  static get dataService(): DataService {
+    if (!this._dataService) {
+      this._dataService = new DataService();
+    }
+    return this._dataService;
+  }
+  
   static getToolDefinitions(): Tool[] { // This method remains unchanged
     return [
       {
@@ -694,18 +702,5 @@ export class MarketAnalysisTools {
         "generic_data_query_error"
       );
     }
-  }
-
-  private static calculateAttractivenessScore(opportunity: any): number { // Make it static if called with this.
-    let score = 0;
-    score += Math.min(40, ((opportunity.marketSize || 0) / 1000000000) * 10);
-    score += (opportunity.growthPotential || 0) * 3000;
-    const competitionScore = opportunity.competitiveIntensity === 'low' ? 20 : 
-                           opportunity.competitiveIntensity === 'medium' ? 10 : 5;
-    score += competitionScore;
-    const barrierScore = opportunity.barrierToEntry === 'low' ? 10 : 
-                        opportunity.barrierToEntry === 'medium' ? 5 : 2;
-    score += barrierScore;
-    return Math.round(Math.min(100, Math.max(0, score)));
   }
 }

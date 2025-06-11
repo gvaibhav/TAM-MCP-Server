@@ -1,3 +1,62 @@
+### June 11, 2025 - Environment Variable Loading Fix & Data Source Enablement
+
+**Critical Bug Fix: Resolved environment variable loading issue preventing API key recognition**
+
+Fixed a critical initialization order bug that prevented API keys from the `.env` file from being loaded properly, causing all configured data sources to show as disabled despite having valid API keys.
+
+#### 🚫 **Problem**
+- All 5 configured data sources (Alpha Vantage, Census, FRED, BLS, Nasdaq) showed as disabled
+- API keys in `.env` file were not being recognized during service initialization
+- Services fell back to anonymous/public access or were completely unavailable
+- Status showed "4/8 services enabled" instead of "8/8 services enabled"
+
+#### 🔧 **Root Cause**
+Module loading order issue where `DataService` was instantiated before environment variables were loaded:
+1. `MarketAnalysisTools` had static property: `static dataService = new DataService()`
+2. Static initialization occurred during module import (before `dotenv.config()`)
+3. Data source services checked `process.env` for API keys during construction
+4. Environment variables were not yet available, causing services to disable themselves
+
+#### ✅ **Solution**
+1. **Fixed Module Loading Order**:
+   - Moved `dotenv.config()` to the very top of `server.ts` and `stdio-simple.ts`
+   - Ensured environment variables load before any other imports
+   
+2. **Implemented Lazy Initialization**:
+   ```typescript
+   // Before (eager - caused the problem):
+   static dataService = new DataService();
+
+   // After (lazy - fixes the problem):
+   private static _dataService: DataService | null = null;
+   static get dataService(): DataService {
+     if (!this._dataService) {
+       this._dataService = new DataService();
+     }
+     return this._dataService;
+   }
+   ```
+
+#### 🎉 **Results**
+- ✅ **All 8/8 data sources now properly enabled**:
+  - Alpha Vantage: Service enabled
+  - Census Bureau: Service enabled  
+  - FRED: Service enabled
+  - Nasdaq Data Link: Service enabled
+  - BLS: Service enabled with API key (higher limits)
+  - World Bank: Service enabled (public access)
+  - OECD: Service enabled (public access)
+  - IMF: Service enabled (public access)
+- ✅ **MCP Inspector compatibility maintained**: Clean JSON-RPC communication
+- ✅ **End-to-end functionality verified**: Market analysis tools working with real data sources
+
+#### 📁 **Files Modified**
+- `src/server.ts`: Moved `dotenv.config()` before imports
+- `src/stdio-simple.ts`: Moved `dotenv.config()` before imports  
+- `src/tools/market-tools.ts`: Changed to lazy initialization pattern
+
+---
+
 ### December 9, 2024 - Testing Framework Migration: Jest to Vitest
 
 **Infrastructure: Migrated entire test suite from Jest to Vitest**

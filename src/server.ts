@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Load environment variables FIRST, before any other imports
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
@@ -10,10 +14,6 @@ import {
 import { MarketAnalysisTools } from './tools/market-tools.js';
 import { logger, CacheManager, checkRateLimit } from './utils/index.js';
 import { NotificationService } from './notifications/notification-service.js';
-import * as dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 export async function createServer() {
   const server = new Server(

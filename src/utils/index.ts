@@ -2,7 +2,7 @@ import NodeCache = require('node-cache');
 import { createLogger, format, transports } from 'winston';
 import { APIResponse } from '../types/index.js';
 
-export * from './envHelper'; // Add this line
+export * from './envHelper.js'; // Add this line
 
 // Cache configuration
 const cache = new NodeCache({
@@ -11,7 +11,7 @@ const cache = new NodeCache({
   useClones: false
 });
 
-// Logger configuration
+// Logger configuration - Only log to files and stderr for MCP compatibility
 export const logger = createLogger({
   level: 'info',
   format: format.combine(
@@ -24,6 +24,7 @@ export const logger = createLogger({
     new transports.File({ filename: 'logs/error.log', level: 'error' }),
     new transports.File({ filename: 'logs/combined.log' }),
     new transports.Console({
+      stderrLevels: ['error', 'warn', 'info', 'verbose', 'debug', 'silly'],
       format: format.combine(
         format.colorize(),
         format.simple()

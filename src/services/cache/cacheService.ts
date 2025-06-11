@@ -1,5 +1,5 @@
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { PersistenceService } from './persistenceService';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { PersistenceService } from './persistenceService.js';
 
 export class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
@@ -83,6 +83,7 @@ export class CacheService {
     // This is a complex part, highly dependent on PersistenceService's design
     // For now, we'll keep it simple and not auto-load all into memory to avoid memory bloat
     // Individual items are loaded on demand in get() if not in memory.
-    console.log("CacheService: Initial load from persistence (if any) would occur here.");
+    // Use stderr for initialization logs to avoid contaminating stdout in STDIO transport
+    console.error("💾 Cache: Persistence layer ready");
   }
 }

@@ -1,11 +1,11 @@
 // src/services/dataSources/censusService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { censusApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { censusApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -23,7 +23,9 @@ export class CensusService implements DataSourceService {
     this.cacheService = cacheService;
     this.apiKey = apiKey || process.env.CENSUS_API_KEY;
     if (!this.apiKey) {
-      console.warn("Census API key not configured. CensusService will not be available.");
+      console.error("ℹ️  Census Bureau: API key not configured - service disabled (set CENSUS_API_KEY to enable)");
+    } else {
+      console.error("✅ Census Bureau: Service enabled");
     }
     this.successfulFetchTtl = getEnvAsNumber('CACHE_TTL_CENSUS_MS', DEFAULT_TTL_MS);
     this.noDataFetchTtl = getEnvAsNumber('CACHE_TTL_CENSUS_NODATA_MS', DEFAULT_TTL_NODATA_MS);

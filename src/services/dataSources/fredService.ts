@@ -1,11 +1,11 @@
 // src/services/dataSources/fredService.ts
 import axios from 'axios';
 import * as process from 'process';
-import { DataSourceService } from '../../types/dataSources';
-import { CacheEntry, CacheStatus } from '../../types/cache';
-import { CacheService } from '../cache/cacheService';
-import { fredApi } from '../../config/apiConfig';
-import { getEnvAsNumber } from '../../utils/envHelper';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheEntry, CacheStatus } from '../../types/cache.js';
+import { CacheService } from '../cache/cacheService.js';
+import { fredApi } from '../../config/apiConfig.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
 
 const DEFAULT_TTL_FRED_MS = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_TTL_FRED_NODATA_MS = 1 * 60 * 60 * 1000; // 1 hour
@@ -20,7 +20,9 @@ export class FredService implements DataSourceService {
     this.cacheService = cacheService;
     this.apiKey = apiKey || process.env.FRED_API_KEY;
     if (!this.apiKey) {
-      console.warn("FRED API key not configured. FredService will not be available.");
+      console.error("ℹ️  FRED: API key not configured - service disabled (set FRED_API_KEY to enable)");
+    } else {
+      console.error("✅ FRED: Service enabled");
     }
     this.successfulFetchTtl = getEnvAsNumber('CACHE_TTL_FRED_MS', DEFAULT_TTL_FRED_MS);
     this.noDataFetchTtl = getEnvAsNumber('CACHE_TTL_FRED_NODATA_MS', DEFAULT_TTL_FRED_NODATA_MS);
