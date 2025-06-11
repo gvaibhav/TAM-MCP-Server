@@ -389,8 +389,9 @@ node tests/scripts/test-http-streaming.mjs
 
 ### API Testing with Postman
 
-Import the included Postman collection for comprehensive API testing:
+Import the comprehensive Postman collection for testing both MCP endpoints and backend API integrations:
 
+#### **MCP Server Testing Collection**
 1. **Import Collection**: `examples/TAM-MCP-Server-Postman-Collection.json`
 2. **Set Environment Variables**:
    - `serverUrl`: http://localhost:3000
@@ -401,6 +402,33 @@ Import the included Postman collection for comprehensive API testing:
    - All 11 market analysis tools
    - Resource access endpoints
    - Session management and cleanup
+
+#### **Backend API Testing Collection**
+For comprehensive testing of external API integrations:
+
+1. **Import Collection**: `TAM-MCP-Server-Postman-Collection.json`
+2. **Import Environment**: `tests/postman/environments/TAM-MCP-Server-Environment.postman_environment.json`
+3. **Configure API Keys**: Add your API keys to the environment variables
+4. **Run Tests**:
+   - 🔑 **Premium APIs**: Alpha Vantage, Census, FRED, Nasdaq Data Link
+   - 🌍 **Public APIs**: World Bank, OECD, IMF, BLS
+   - 🔧 **Health Checks**: Service availability testing
+   - 🧪 **Test Scenarios**: Complete market analysis workflows
+
+#### **Newman CLI Testing**
+Automate Postman tests from command line:
+```bash
+# Install Newman
+npm install -g newman
+
+# Run backend API tests
+newman run TAM-MCP-Server-Postman-Collection.json \
+  -e tests/postman/environments/TAM-MCP-Server-Environment.postman_environment.json \
+  --reporters cli,json
+
+# Or use npm script
+npm run test:postman
+```
 
 ### Test Coverage
 - **Unit Level**: Individual tool functionality and business logic

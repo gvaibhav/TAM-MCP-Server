@@ -1,0 +1,37 @@
+{
+    "id": "tam-mcp-env",
+    "name": "TAM MCP Environment",
+    "values": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "enabled": true
+        },
+        {
+            "key": "fredApiKey",
+            "value": "",
+            "enabled": true
+        },
+        {
+            "key": "blsApiKey", 
+            "value": "",
+            "enabled": true
+        },
+        {
+            "key": "alphaVantageApiKey",
+            "value": "",
+            "enabled": true
+        },
+        {
+            "key": "censusApiKey",
+            "value": "",
+            "enabled": true
+        },
+        {
+            "key": "nasdaqApiKey",
+            "value": "",
+            "enabled": true
+        }
+    ],
+    "_postman_variable_scope": "environment"
+}

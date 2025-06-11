@@ -11,6 +11,7 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a profession
 
 ### 📖 **User Guides**
 - **[API Testing Guide](../examples/README.md)** - Postman collection and API testing
+- **[Backend API Testing](BACKEND-API-TESTING.md)** - Comprehensive backend API integration testing
 - **[Integration Guide](guides/NOTIFICATIONS-IMPLEMENTATION.md)** - Notification system and integration
 - **[Test Organization](guides/TEST-ORGANIZATION.md)** - Testing structure and practices
 
@@ -39,9 +40,10 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a profession
 
 ### **🔧 For Integrators**
 1. Review [API Testing Guide](../examples/README.md) for Postman collection
-2. Read [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
-3. Check [Technical Reports](reports/) for implementation details
-4. Reference [Requirements](reference/requirements.md) for specifications
+2. Check [Backend API Testing](BACKEND-API-TESTING.md) for comprehensive API integration testing
+3. Read [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
+4. Check [Technical Reports](reports/) for implementation details
+5. Reference [Requirements](reference/requirements.md) for specifications
 
 ### **📈 For Project Managers**
 1. Review [Release Notes](reference/RELEASE-NOTES.md) for project status
@@ -51,9 +53,10 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a profession
 
 ### **🧪 For QA Engineers**
 1. Start with [Test Organization](guides/TEST-ORGANIZATION.md) for test structure
-2. Use [API Testing Guide](../examples/README.md) for Postman collection
-3. Review [Integration Test Report](reports/INTEGRATION-TEST-FINAL-REPORT.md) for test results
-4. Check [HTTP Streaming Report](reports/HTTP-STREAMING-TEST-REPORT.md) for transport testing
+2. Use [API Testing Guide](../examples/README.md) for Postman collection testing
+3. Review [Backend API Testing](BACKEND-API-TESTING.md) for comprehensive integration testing
+4. Review [Integration Test Report](reports/INTEGRATION-TEST-FINAL-REPORT.md) for test results
+5. Check [HTTP Streaming Report](reports/HTTP-STREAMING-TEST-REPORT.md) for transport testing
 
 ---
 
@@ -62,6 +65,8 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a profession
 ```
 doc/
 ├── README.md                          # This documentation hub
+├── BACKEND-API-TESTING.md             # Comprehensive backend API testing guide
+├── DOCUMENTATION-REVAMP-SUMMARY.md    # Documentation organization summary
 ├── guides/                           # User and developer guides
 │   ├── CONTRIBUTING.md               # Development guidelines
 │   ├── SECURITY.md                   # Security policy
@@ -81,12 +86,10 @@ doc/
     └── [other archived files]           # Development history
 ```
 
----
-
 ## 🔄 **Document Maintenance**
 
 ### **Active Documents** (regularly updated)
-- Release Notes, Contributing Guide, Test Organization, API Testing Guide
+- Release Notes, Contributing Guide, Test Organization, API Testing Guide, Backend API Testing
 
 ### **Reference Documents** (updated as needed)
 - Requirements, Changelog, Security Policy
@@ -98,77 +101,12 @@ doc/
 
 ## 📞 **Support & Contact**
 
-- **Issues**: [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/gvaibhav/TAM-MCP-Server/discussions)
+- **Issues**: [GitHub Issues](https://github.com/your-org/TAM-MCP-Server/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/TAM-MCP-Server/discussions)
 - **Security**: See [Security Policy](guides/SECURITY.md)
 
 ---
 
 **Last Updated**: June 11, 2025  
-**Documentation Version**: 2.0
-4. **Implementation Details**: Browse implementation guides above
-
-### For Testers
-1. **Test Structure**: Read [Test Organization](TEST-ORGANIZATION.md)
-2. **Integration Testing**: Check [Integration Test Reports](INTEGRATION-TEST-FINAL-REPORT.md)
-3. **HTTP Testing**: Review [HTTP Streaming Report](HTTP-STREAMING-TEST-REPORT.md)
-4. **API Testing**: Use the Postman collection [TAM-MCP-Server-Postman-Collection.json](../examples/TAM-MCP-Server-Postman-Collection.json)
-
-### For Project Management
-1. **Recent Updates**: Review [Documentation Update Summary](DOCUMENTATION-UPDATE-SUMMARY.md)
-2. **Iteration Results**: Check [Final Integration Summary](FINAL-ITERATION-SUMMARY.md)
-3. **Release History**: Browse [Release Notes](RELEASE-NOTES.md)
-4. **Requirements**: Review [Integration Requirements](INTEGRATION_PROMPT.md)
-
-### For Users
-1. **Installation & Usage**: See main [README.md](../README.md)
-2. **What's New**: Check [Release Notes](RELEASE-NOTES.md)
-3. **Troubleshooting**: Refer to implementation guides for specific features
-
-### For Contributors
-1. **Contribution Process**: Read [Contributing Guide](../CONTRIBUTING.md)
-2. **Recent Changes**: Review [Release Notes](RELEASE-NOTES.md)
-3. **Testing Requirements**: Follow [Test Documentation](../tests/README.md)
-4. **Security**: Understand [Security Policy](../SECURITY.md)
-
-## 📅 **Documentation Maintenance**
-
-### Update Schedule
-- **Release Notes**: Updated with each significant change or feature addition
-- **Implementation Guides**: Updated when major architectural changes occur
-- **Test Documentation**: Updated when test structure or tools change
-
-### Documentation Standards
-- **Chronological Order**: Release notes maintain chronological order by date
-- **Clear Categories**: Changes categorized by type (Major Feature, Bug Fix, Enhancement)
-- **Technical Detail**: Implementation guides provide technical depth
-- **User Focus**: Main README remains user-focused and concise
-
-## 🔄 **Change Tracking**
-
-Instead of creating separate documentation files for each completed task, all changes are now tracked in the **[Release Notes](RELEASE-NOTES.md)** with:
-
-- **Date-based organization** for easy chronological tracking
-- **Detailed technical information** for each implementation
-- **Impact assessment** on users and developers
-- **Related files and components** affected by changes
-
-This approach provides:
-- ✅ **Single source of truth** for all project changes
-- ✅ **Better organization** than scattered individual files
-- ✅ **Historical context** for understanding project evolution
-- ✅ **Easier maintenance** with centralized change tracking
-
-## 📝 **Documentation Guidelines**
-
-When adding new documentation:
-
-1. **Major Changes**: Add detailed entries to [Release Notes](RELEASE-NOTES.md)
-2. **Implementation Details**: Create focused guides in this `doc/` folder
-3. **User-Facing Changes**: Update main [README.md](../README.md)
-4. **API Changes**: Update relevant implementation guides
-5. **Breaking Changes**: Highlight in both Release Notes and Changelog
-
----
-
-*For the most up-to-date information about recent changes and new features, always check the [Release Notes](RELEASE-NOTES.md) first.*
+**Documentation Version**: 2.1  
+**Recent Updates**: Added comprehensive backend API testing documentation and updated file organization structure
