@@ -56,6 +56,12 @@ Most services offer free API keys:
 | BLS | 500 calls/day | https://www.bls.gov/developers/api_signature_v2.htm |
 | NASDAQ Data Link | 50 calls/day | https://data.nasdaq.com/sign-up |
 
+
+## 🔑 Getting API Keys
+
+For step-by-step instructions on obtaining free API keys for FRED, BLS, Alpha Vantage, Census Bureau, and NASDAQ Data Link, see the [API Keys Guide](./getting-api-keys.md).
+
+
 ## 🚀 Running Integration Tests
 
 ### Quick Health Check
