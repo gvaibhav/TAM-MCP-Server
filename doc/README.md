@@ -1,6 +1,6 @@
 # TAM MCP Server Documentation Hub
 
-Welcome to the comprehensive documentation for the TAM MCP Server - a professional Model Context Protocol server for market sizing analysis and business intelligence.
+Welcome to the comprehensive documentation for the TAM MCP Server - a Model Context Protocol server for market sizing analysis and business intelligence.
 
 ## 📚 **Documentation Categories**
 
@@ -101,8 +101,8 @@ doc/
 
 ## 📞 **Support & Contact**
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/TAM-MCP-Server/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/TAM-MCP-Server/discussions)
+- **Issues**: [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/gvaibhav/TAM-MCP-Server/discussions)
 - **Security**: See [Security Policy](guides/SECURITY.md)
 
 ---
