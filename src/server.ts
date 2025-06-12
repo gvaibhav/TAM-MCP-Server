@@ -10,8 +10,12 @@ import {
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
+  // ToolDefinition, // Removed, will use local definition
+  // z, // Removed, z is imported in tool-definitions now
 } from "@modelcontextprotocol/sdk/types.js";
-import { MarketAnalysisTools } from './tools/market-tools.js';
+import { z } from 'zod'; // Added: Import z directly for validationError typing
+import { getAllToolDefinitions, getToolDefinition, getToolValidationSchema } from './tools/tool-definitions.js'; // Changed: Import local ToolDefinition
+import { DataService } from './services/DataService.js'; // Added
 import { logger, CacheManager, checkRateLimit } from './utils/index.js';
 import { NotificationService } from './notifications/notification-service.js';
 
@@ -20,6 +24,7 @@ export async function createServer() {
     {
       name: "tam-mcp-server",
       version: "1.0.0",
+      toolDefinitionPath: './tools/tool-definitions.js' // Added: Inform SDK where to potentially load definitions if it supports it
     },
     {
       capabilities: {
@@ -33,6 +38,7 @@ export async function createServer() {
 
   // Initialize notification service
   const notificationService = new NotificationService(server);
+  const dataService = new DataService(); // Added: Initialize DataService
 
   // Rate limiting configuration
   const RATE_LIMIT_REQUESTS = parseInt(process.env.RATE_LIMIT_REQUESTS || '100');
@@ -51,7 +57,7 @@ export async function createServer() {
 
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const tools = MarketAnalysisTools.getToolDefinitions();
+    const tools = getAllToolDefinitions(); // Changed: Use new function
     logger.info(`Listed ${tools.length} available tools`);
     
     return {
@@ -62,6 +68,32 @@ export async function createServer() {
   // Handle tool calls
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
+    const toolDefinition = getToolDefinition(name); // Added: Get tool definition
+
+    if (!toolDefinition) {
+      logger.warn(`Attempted to call unknown tool: ${name}`);
+      return {
+        content: [{ type: "text", text: `Error: Unknown tool: ${name}` }],
+        isError: true,
+      };
+    }
+
+    // Validate arguments using the tool's input schema
+    try {
+      const validationSchema = getToolValidationSchema(name);
+      if (validationSchema) {
+        validationSchema.parse(args);
+      }
+    } catch (validationError) {
+      logger.warn(`Invalid arguments for tool ${name}:`, { args, error: validationError });
+      return {
+        content: [{
+          type: "text",
+          text: `Error: Invalid arguments for tool ${name}. ${ (validationError as z.ZodError).errors.map((e:any) => e.message).join(', ')}`
+        }],
+        isError: true
+      };
+    }
     
     // Rate limiting check
     const clientId = 'default'; // In production, this would be based on authentication
@@ -92,108 +124,131 @@ export async function createServer() {
     }
 
     try {
-      let result;
+      let result: any; // Using any for now, should be typed based on tool output schemas
       
       // Send notification that tool execution started
       await notificationService.sendMessage('info', `Starting execution of ${name}`);
       
+      // Refactored tool dispatching to use DataService
+      // This switch will now primarily call methods on dataService
       switch (name) {
+        case 'alphaVantage_getCompanyOverview':
+          await notificationService.sendDataFetchStatus('AlphaVantage Company Overview', 'started');
+          result = await dataService.getAlphaVantageData('OVERVIEW', args as any);
+          await notificationService.sendDataFetchStatus('AlphaVantage Company Overview', result ? 'completed' : 'failed', result);
+          break;
+        case 'alphaVantage_searchSymbols':
+          await notificationService.sendDataFetchStatus('AlphaVantage Symbol Search', 'started');
+          result = await dataService.getAlphaVantageData('SYMBOL_SEARCH', args as any); // Assuming DataService handles this
+          await notificationService.sendDataFetchStatus('AlphaVantage Symbol Search', result ? 'completed' : 'failed', result);
+          break;
+        case 'bls_getSeriesData':
+          await notificationService.sendDataFetchStatus('BLS Series Data', 'started');
+          result = await dataService.getBlsData('fetchSeriesData', args as any);
+          await notificationService.sendDataFetchStatus('BLS Series Data', result ? 'completed' : 'failed', result);
+          break;
+        case 'census_fetchIndustryData':
+          await notificationService.sendDataFetchStatus('Census Industry Data', 'started');
+          result = await dataService.getCensusData('fetchIndustryData', args as any);
+          await notificationService.sendDataFetchStatus('Census Industry Data', result ? 'completed' : 'failed', result);
+          break;
+        case 'census_fetchMarketSize':
+          await notificationService.sendDataFetchStatus('Census Market Size', 'started');
+          result = await dataService.getCensusData('fetchMarketSize', args as any);
+          await notificationService.sendDataFetchStatus('Census Market Size', result ? 'completed' : 'failed', result);
+          break;
+        case 'fred_getSeriesObservations':
+          await notificationService.sendDataFetchStatus('FRED Series Observations', 'started');
+          result = await dataService.getFredData(args as any); // To be implemented in DataService
+          await notificationService.sendDataFetchStatus('FRED Series Observations', result ? 'completed' : 'failed', result);
+          break;
+        case 'imf_getDataset':
+          await notificationService.sendDataFetchStatus('IMF Dataset', 'started');
+          result = await dataService.getImfData('fetchImfDataset', args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('IMF Dataset', result ? 'completed' : 'failed', result);
+          break;
+        case 'imf_getLatestObservation':
+          await notificationService.sendDataFetchStatus('IMF Latest Observation', 'started');
+          result = await dataService.getImfData('fetchMarketSize', args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('IMF Latest Observation', result ? 'completed' : 'failed', result);
+          break;
+        case 'nasdaq_getDatasetTimeSeries':
+          await notificationService.sendDataFetchStatus('Nasdaq Timeseries', 'started');
+          result = await dataService.getNasdaqData('fetchIndustryData', args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('Nasdaq Timeseries', result ? 'completed' : 'failed', result);
+          break;
+        case 'nasdaq_getLatestDatasetValue':
+          await notificationService.sendDataFetchStatus('Nasdaq Latest Value', 'started');
+          result = await dataService.getNasdaqData('fetchMarketSize', args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('Nasdaq Latest Value', result ? 'completed' : 'failed', result);
+          break;
+        case 'oecd_getDataset':
+          await notificationService.sendDataFetchStatus('OECD Dataset', 'started');
+          result = await dataService.getOecdData('fetchOecdDataset', args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('OECD Dataset', result ? 'completed' : 'failed', result);
+          break;
+        case 'oecd_getLatestObservation':
+          await notificationService.sendDataFetchStatus('OECD Latest Observation', 'started');
+          result = await dataService.getOecdData('fetchMarketSize', args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('OECD Latest Observation', result ? 'completed' : 'failed', result);
+          break;
+        case 'worldBank_getIndicatorData':
+          await notificationService.sendDataFetchStatus('World Bank Indicator Data', 'started');
+          result = await dataService.getWorldBankData(args as any); // To be implemented
+          await notificationService.sendDataFetchStatus('World Bank Indicator Data', result ? 'completed' : 'failed', result);
+          break;
         case 'industry_search':
-          await notificationService.sendDataFetchStatus('Industry Database', 'started');
-          result = await MarketAnalysisTools.industrySearch(args as any);
-          await notificationService.sendDataFetchStatus('Industry Database', 
-            result.success ? 'completed' : 'failed', result.data);
+          await notificationService.sendDataFetchStatus('Industry Search', 'started');
+          result = await dataService.searchIndustries(args as any);
+          await notificationService.sendDataFetchStatus('Industry Search', result ? 'completed' : 'failed', result);
           break;
-          
-        case 'industry_data':
-          await notificationService.sendDataFetchStatus('Industry Data', 'started');
-          result = await MarketAnalysisTools.industryData(args as any);
-          await notificationService.sendDataFetchStatus('Industry Data', 
-            result.success ? 'completed' : 'failed', result.data);
-          break;
-          
-        case 'market_size':
-          await notificationService.sendCalculationStatus('Market Size', 'started');
-          result = await MarketAnalysisTools.marketSize(args as any);
-          await notificationService.sendCalculationStatus('Market Size', 
-            result.success ? 'completed' : 'failed', result.data);
-          break;
-          
         case 'tam_calculator':
           await notificationService.sendCalculationStatus('TAM Calculation', 'started');
-          result = await MarketAnalysisTools.tamCalculator(args as any);
-          await notificationService.sendCalculationStatus('TAM Calculation', 
-            result.success ? 'completed' : 'failed', result.data);
+          result = await dataService.calculateTam(args as any);
+          await notificationService.sendCalculationStatus('TAM Calculation', result ? 'completed' : 'failed', result);
           break;
-          
-        case 'sam_calculator':
-          await notificationService.sendCalculationStatus('SAM Calculation', 'started');
-          result = await MarketAnalysisTools.samCalculator(args as any);
-          await notificationService.sendCalculationStatus('SAM Calculation', 
-            result.success ? 'completed' : 'failed', result.data);
+        case 'market_size_calculator':
+          await notificationService.sendCalculationStatus('Market Size Calculation', 'started');
+          result = await dataService.calculateMarketSize(args as any);
+          await notificationService.sendCalculationStatus('Market Size Calculation', result ? 'completed' : 'failed', result);
           break;
-          
-        case 'market_segments':
-          await notificationService.sendDataFetchStatus('Market Segments', 'started');
-          result = await MarketAnalysisTools.marketSegments(args as any);
-          await notificationService.sendDataFetchStatus('Market Segments', 
-            result.success ? 'completed' : 'failed', result.data);
+        case 'company_financials_retriever':
+          await notificationService.sendDataFetchStatus('Company Financials', 'started');
+          // This tool maps to multiple AlphaVantage functions based on statementType
+          result = await dataService.getCompanyFinancials(args as any); // New method in DataService
+          await notificationService.sendDataFetchStatus('Company Financials', result ? 'completed' : 'failed', result);
           break;
-          
-        case 'market_forecasting':
-          await notificationService.sendCalculationStatus('Market Forecasting', 'started');
-          result = await MarketAnalysisTools.marketForecasting(args as any);
-          await notificationService.sendCalculationStatus('Market Forecasting', 
-            result.success ? 'completed' : 'failed', result.data);
-          break;
-          
-        case 'market_comparison':
-          await notificationService.sendDataFetchStatus('Market Comparison', 'started');
-          result = await MarketAnalysisTools.marketComparison(args as any);
-          await notificationService.sendDataFetchStatus('Market Comparison', 
-            result.success ? 'completed' : 'failed', result.data);
-          break;
-          
-        case 'data_validation':
-          await notificationService.sendValidationStatus('Data Validation', 'started');
-          result = await MarketAnalysisTools.dataValidation(args as any);
-          await notificationService.sendValidationStatus('Data Validation', 
-            result.success ? 'completed' : 'failed', result.data);
-          break;
-          
-        case 'market_opportunities':
-          await notificationService.sendDataFetchStatus('Market Opportunities', 'started');
-          result = await MarketAnalysisTools.marketOpportunities(args as any);
-          await notificationService.sendDataFetchStatus('Market Opportunities', 
-            result.success ? 'completed' : 'failed', result.data);
-          break;
-          
+        // Cases for old tools like 'industry_data', 'market_size', etc. are removed as they are replaced by specific tools.
+        // Ensure all tools from AllToolDefinitions are handled or have a default error.
         default:
-          throw new Error(`Unknown tool: ${name}`);
+          // This case should ideally not be reached if toolDefinition check is done correctly.
+          throw new Error(`Unknown or unhandled tool: ${name}`);
       }
 
       // Log successful tool execution
-      logger.info(`Tool executed successfully: ${name}`, { 
-        success: result.success,
-        cached: result.metadata.cached 
+      logger.info(`Tool executed: ${name}`, { 
+        args,
+        // success: result.success, // Assuming result structure might change
+        // cached: result.metadata?.cached 
       });
 
       // Send completion notification
-      if (result.success) {
-        await notificationService.sendMessage('info', `Successfully completed ${name}`);
-      } else {
+      // Assuming 'result' is the direct data or an object with an error property
+      if (!result || (typeof result === 'object' && result.hasOwnProperty('error'))) { // Basic error check
         await notificationService.sendError({
-          error: result.error || 'Unknown error',
+          error: result?.error || 'Unknown error during tool execution',
           tool: name,
           timestamp: new Date().toISOString(),
-          details: result.data
+          details: result
         });
+      } else {
+        await notificationService.sendMessage('info', `Successfully completed ${name}`);
       }
 
       // Format response for MCP
-      const responseText = result.success 
-        ? JSON.stringify(result.data, null, 2)
-        : `Error: ${result.error}`;
+      // The raw JSON from data source tools is returned directly.
+      // For analytical tools, the structured object is returned.
+      const responseText = JSON.stringify(result, null, 2);
 
       return {
         content: [
@@ -319,7 +374,7 @@ export async function createServer() {
   // Log server startup
   logger.info('TAM MCP Server initialized', {
     version: '1.0.0',
-    tools: MarketAnalysisTools.getToolDefinitions().length,
+    tools: getAllToolDefinitions().length, // Changed: Use new function
     resources: 3, // README, CONTRIBUTING, Release Notes
     capabilities: ['tools', 'resources', 'logging', 'notifications'],
     rateLimit: {

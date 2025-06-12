@@ -6,14 +6,17 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MarketAnalysisTools } from '../../src/tools/market-tools.js';
+// Corrected import path for MarketAnalysisTools
+import { MarketAnalysisTools } from '../../dist/tools/market-tools.js'; 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { NotificationService } from '../../src/notifications/notification-service.js';
+// Corrected import path for NotificationService
+import { NotificationService } from '../../dist/notifications/notification-service.js'; 
 // Import the logger mock
 import { logger } from '../setup.js';
 
 // Mock the DataService - we'll spy on the static instance later
-vi.mock('../../src/services/dataService.js', () => {
+// Corrected import path for DataService mock
+vi.mock('../../dist/services/dataService.js', () => {
   return {
     DataService: vi.fn().mockImplementation(() => ({
       searchIndustries: vi.fn(),
@@ -27,13 +30,16 @@ vi.mock('../../src/services/dataService.js', () => {
       compareMarkets: vi.fn(),
       validateMarketData: vi.fn(),
       forecastMarket: vi.fn(),
-      getMarketSegments: vi.fn()
+      getMarketSegments: vi.fn(),
+      // Added getSpecificDataSourceData to the mock
+      getSpecificDataSourceData: vi.fn() 
     }))
   };
 });
 
 // Mock utils functions
-vi.mock('../../src/utils/index.js', () => {
+// Corrected import path for utils mock
+vi.mock('../../dist/utils/index.js', () => {
   return {
     logger: {
       info: vi.fn(),
@@ -42,27 +48,37 @@ vi.mock('../../src/utils/index.js', () => {
       debug: vi.fn()
     },
     createAPIResponse: vi.fn((data, source) => ({
-      data,
+      success: true, // Assuming createAPIResponse implies success
+      content: data, // Changed 'data' to 'content' to match tool output
       metadata: {
         source,
         timestamp: '2025-06-06T12:00:00Z'
       }
     })),
-    createErrorResponse: vi.fn((message) => ({
-      error: { message },
-      metadata: {
-        timestamp: '2025-06-06T12:00:00Z'
+    createErrorResponse: vi.fn((message, code) => { // Added code parameter
+      return {
+        success: false, // Assuming createErrorResponse implies failure
+        error: { message, code }, // Added code to error object
+        metadata: {
+          timestamp: '2025-06-06T12:00:00Z'
+        }
       }
-    })),
-    handleToolError: vi.fn((error, toolName) => ({
-      error: {
-        message: error instanceof Error ? error.message : String(error),
-        toolName
-      },
-      metadata: {
-        timestamp: '2025-06-06T12:00:00Z'
+    }),
+    handleToolError: vi.fn((error, toolName) => {
+      return {
+        success: false, // Assuming handleToolError implies failure
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+          toolName,
+          // Propagate Zod validation error details if present
+          details: error.issues ? error.issues.map(issue => ({ path: issue.path, message: issue.message })) : undefined,
+          code: error.issues ? 'VALIDATION_ERROR' : 'TOOL_ERROR' // Add a code for validation errors
+        },
+        metadata: {
+          timestamp: '2025-06-06T12:00:00Z'
+        }
       }
-    })),
+    }),
     validatePositiveNumber: vi.fn(),
     validatePercentage: vi.fn(),
     validateYear: vi.fn(),
@@ -264,10 +280,12 @@ describe('Market Analysis Tools Tests', () => {
       });
       
       expect(mockSearchIndustries).toHaveBeenCalledWith('software', 10);
-      expect(result?.data?.industries).toBeDefined();
-      expect(result?.data?.industries.length).toBe(1);
-      expect(result?.data?.industries[0].id).toBe('tech-software');
-      expect(result?.data?.industries[0].subIndustries).toBeDefined();
+      // Adjusted expectations to match the new createAPIResponse structure
+      expect(result?.success).toBe(true);
+      expect(result?.content?.industries).toBeDefined();
+      expect(result?.content?.industries.length).toBe(1);
+      expect(result?.content?.industries[0].id).toBe('tech-software');
+      expect(result?.content?.industries[0].subIndustries).toBeDefined();
     });
     
     it('should exclude subIndustries when not requested', async () => {

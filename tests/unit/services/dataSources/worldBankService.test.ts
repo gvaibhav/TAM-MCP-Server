@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { WorldBankService } from '../../../../src/services/dataSources/worldBankService';
+import { WorldBankService } from '../../../../src/services/datasources/WorldBankService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import * as envHelper from '../../../../src/utils/envHelper';

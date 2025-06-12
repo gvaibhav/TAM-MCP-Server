@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
-import { ImfService } from '../../../../src/services/dataSources/imfService';
+import { ImfService } from '../../../../src/services/datasources/ImfService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { PersistenceService } from '../../../../src/services/cache/persistenceService';
 import * as path from 'path';

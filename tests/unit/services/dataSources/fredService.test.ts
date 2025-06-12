@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { FredService } from '../../../../src/services/dataSources/fredService';
+import { FredService } from '../../../../src/services/datasources/FredService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import * as envHelper from '../../../../src/utils/envHelper';

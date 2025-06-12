@@ -4,6 +4,7 @@ import request from 'supertest';
 import { logger } from '../setup';
 
 // Create mock app instance that will be returned by express()
+// Moved mockApp declaration before vi.mock('express', ...)
 const mockApp = {
   use: vi.fn(),
   get: vi.fn(),

@@ -1,9 +1,9 @@
 // Unit tests for Market Analysis Tools
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MarketAnalysisTools } from '../../src/tools/market-tools.js';
+import { MarketAnalysisTools } from '../../dist/tools/market-tools.js';
 
 // Mock the DataService - we'll spy on the static instance later
-vi.mock('../../src/services/dataService.js', () => {
+vi.mock('../../dist/services/dataService.js', () => {
   return {
     DataService: vi.fn().mockImplementation(() => ({
       searchIndustries: vi.fn(),
@@ -23,8 +23,17 @@ vi.mock('../../src/services/dataService.js', () => {
 });
 
 // Mock utils functions
-vi.mock('../../src/utils/index.js', () => {
+vi.mock('../../dist/utils/index.js', () => {
   return {
+    CacheManager: {
+      get: vi.fn(),
+      set: vi.fn(),
+      del: vi.fn(),
+      has: vi.fn(),
+      flush: vi.fn(),
+      stats: vi.fn(),
+      generateKey: vi.fn()
+    },
     logger: {
       info: vi.fn(),
       warn: vi.fn(),

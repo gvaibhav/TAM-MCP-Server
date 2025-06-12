@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { AlphaVantageService } from '../../../../src/services/dataSources/alphaVantageService';
+import { AlphaVantageService } from '../../../../src/services/datasources/AlphaVantageService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { alphaVantageApi } from '../../../../src/config/apiConfig';

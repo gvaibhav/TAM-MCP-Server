@@ -25,6 +25,15 @@ vi.mock('../../src/services/dataService.js', () => {
 // Mock utils functions
 vi.mock('../../src/utils/index.js', () => {
   return {
+    CacheManager: {
+      get: vi.fn(),
+      set: vi.fn(),
+      del: vi.fn(),
+      has: vi.fn(),
+      flush: vi.fn(),
+      stats: vi.fn(),
+      generateKey: vi.fn()
+    },
     logger: {
       info: vi.fn(),
       warn: vi.fn(),

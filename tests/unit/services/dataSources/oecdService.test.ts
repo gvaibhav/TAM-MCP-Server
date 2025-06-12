@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { OecdService } from '../../../../src/services/dataSources/oecdService';
+import { OecdService } from '../../../../src/services/datasources/OecdService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { oecdApi } from '../../../../src/config/apiConfig';

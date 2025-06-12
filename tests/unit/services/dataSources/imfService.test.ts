@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { ImfService } from '../../../../src/services/dataSources/imfService';
+import { ImfService } from '../../../../src/services/datasources/ImfService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { imfApi } from '../../../../src/config/apiConfig';

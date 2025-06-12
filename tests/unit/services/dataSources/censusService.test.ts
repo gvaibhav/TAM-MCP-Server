@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { CensusService } from '../../../../src/services/dataSources/censusService';
+import { CensusService } from '../../../../src/services/datasources/CensusService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 // Import real config to get its baseUrl for constructing mockApiUrl,

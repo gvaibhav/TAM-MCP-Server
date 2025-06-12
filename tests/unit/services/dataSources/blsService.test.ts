@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { BlsService } from '../../../../src/services/dataSources/blsService';
+import { BlsService } from '../../../../src/services/datasources/BlsService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { blsApi } from '../../../../src/config/apiConfig';
