@@ -1,0 +1,224 @@
+import axios from 'axios';
+import { logger } from '../../utils/index.js';
+import { CacheService } from '../cache/cacheService.js';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheStatus } from '../../types/cache.js';
+import { getEnvAsNumber } from '../../utils/envHelper.js';
+import { alphaVantageApi } from '../../config/apiConfig.js';
+
+export class AlphaVantageService implements DataSourceService {
+    private cacheService: CacheService;
+    private apiKey: string;
+
+    constructor(cacheService: CacheService, apiKey?: string) {
+        this.cacheService = cacheService;
+        this.apiKey = apiKey || process.env.ALPHA_VANTAGE_API_KEY || '';
+        
+        // Log API key status for testing
+        if (!this.apiKey) {
+            console.error("ℹ️  Alpha Vantage: API key not configured - service disabled (set ALPHA_VANTAGE_API_KEY to enable)");
+        }
+    }
+
+    private async fetchApiData(functionName: string, symbol: string, seriesType?: string): Promise<any> {
+        // Build cache key in expected format
+        const cacheKey = seriesType 
+            ? `alphavantage_${functionName}_${symbol}_${seriesType}`
+            : `alphavantage_${functionName}_${symbol}`;
+            
+        const cachedData = await this.cacheService.get(cacheKey);
+        if (cachedData) {
+            logger.info('AlphaVantageService: Cache hit', { cacheKey });
+            return cachedData;
+        }
+        logger.info('AlphaVantageService: Cache miss', { cacheKey });
+
+        if (!this.apiKey) {
+            throw new Error('Alpha Vantage API key is not configured');
+        }
+
+        try {
+            const params: Record<string, string> = {
+                function: functionName,
+                symbol: symbol,
+                apikey: this.apiKey
+            };
+            
+            if (seriesType) {
+                params.outputsize = 'compact';
+            }
+
+            const url = `${alphaVantageApi.baseUrl}${alphaVantageApi.queryPath}`;
+            logger.info('AlphaVantageService: Making API request', { url, params });
+            
+            const response = await axios.get(url, { params });
+            const data = response.data;
+
+            // Check for API rate limit
+            if (data['Note'] && data['Note'].includes('rate limit')) {
+                logger.warn('AlphaVantageService: Rate limit hit', { symbol, functionName });
+                
+                const rateLimitTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS', 60000);
+                await this.cacheService.set(cacheKey, null, rateLimitTtl);
+                throw new Error('Alpha Vantage API rate limit exceeded');
+            }
+
+            // Check for API error
+            if (data['Error Message']) {
+                logger.error('AlphaVantageService: API error', { error: data['Error Message'], symbol, functionName });
+                
+                const noDataTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_NODATA_MS', 300000);
+                await this.cacheService.set(cacheKey, null, noDataTtl);
+                throw new Error(`Alpha Vantage API error: ${data['Error Message']}`);
+            }
+
+            // Check for empty response (unknown symbol)
+            if (Object.keys(data).length === 0) {
+                logger.warn('AlphaVantageService: Empty response (unknown symbol)', { symbol, functionName });
+                
+                const noDataTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_NODATA_MS', 300000);
+                await this.cacheService.set(cacheKey, null, noDataTtl);
+                return null;
+            }
+
+            // Cache successful response
+            const successTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_MS', 3600000);
+            await this.cacheService.set(cacheKey, data, successTtl);
+            
+            logger.info('AlphaVantageService: Data fetched and cached', { symbol, functionName, dataKeys: Object.keys(data) });
+            return data;
+
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                // Handle specific network errors
+                if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+                    logger.error('AlphaVantageService: Request timeout', { symbol, functionName, error: error.message });
+                    
+                    const noDataTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_NODATA_MS', 300000);
+                    await this.cacheService.set(cacheKey, null, noDataTtl);
+                    throw new Error('Alpha Vantage API request timeout');
+                }
+            }
+            
+            logger.error('AlphaVantageService: API request failed', { 
+                error: error instanceof Error ? error.message : error, 
+                symbol, 
+                functionName 
+            });
+            
+            const noDataTtl = getEnvAsNumber('CACHE_TTL_ALPHA_VANTAGE_NODATA_MS', 300000);
+            await this.cacheService.set(cacheKey, null, noDataTtl);
+            throw error;
+        }
+    }
+
+    async isAvailable(): Promise<boolean> {
+        return !!this.apiKey;
+    }
+
+    async getDataFreshness(...args: any[]): Promise<Date | null> {
+        const [symbol, functionName = 'OVERVIEW', seriesType] = args;
+        if (!symbol) return null;
+        
+        const cacheKey = seriesType 
+            ? `alphavantage_${functionName}_${symbol}_${seriesType}`
+            : `alphavantage_${functionName}_${symbol}`;
+        
+        const cacheEntry = await this.cacheService.getEntry(cacheKey);
+        return cacheEntry?.timestamp ? new Date(cacheEntry.timestamp) : null;
+    }
+
+    getCacheStatus(): CacheStatus {
+        return this.cacheService.getStats();
+    }
+
+    async searchSymbols(keywords: string): Promise<any> {
+        logger.info('AlphaVantageService.searchSymbols called', { keywords });
+
+        try {
+            const data = await this.fetchApiData('SYMBOL_SEARCH', keywords);
+            
+            if (data && data['bestMatches']) {
+                return data['bestMatches'];
+            }
+            
+            return [];
+        } catch (error) {
+            logger.error('AlphaVantageService.searchSymbols failed', { error: error instanceof Error ? error.message : error, keywords });
+            throw error;
+        }
+    }
+
+    async fetchMarketSize(symbol: string): Promise<any> {
+        logger.info('AlphaVantageService.fetchMarketSize called', { symbol });
+        
+        try {
+            const data = await this.fetchApiData('OVERVIEW', symbol);
+            
+            if (data && data.MarketCapitalization && data.MarketCapitalization !== "None") {
+                return {
+                    symbol: data.Symbol,
+                    marketCapitalization: data.MarketCapitalization,
+                    name: data.Name,
+                    sector: data.Sector,
+                    industry: data.Industry,
+                    description: data.Description,
+                    currency: 'USD',
+                    lastUpdated: new Date().toISOString()
+                };
+            }
+            
+            logger.warn('AlphaVantageService.fetchMarketSize: No market cap data available', { symbol });
+            return null;
+        } catch (error) {
+            logger.error('AlphaVantageService.fetchMarketSize failed', { error: error instanceof Error ? error.message : error, symbol });
+            throw error;
+        }
+    }
+
+    async fetchIndustryData(params: any): Promise<any> {
+        logger.info('AlphaVantageService.fetchIndustryData called', { params });
+
+        const { symbol, seriesType = 'DAILY' } = params;
+        
+        if (!symbol) {
+            throw new Error('Symbol is required for Alpha Vantage time series data');
+        }
+
+        try {
+            const functionName = `TIME_SERIES_${seriesType}`;
+            const data = await this.fetchApiData(functionName, symbol, seriesType);
+            
+            if (!data) {
+                return null;
+            }
+
+            // Find the time series data key (varies by series type)
+            const timeSeriesKeys = Object.keys(data).filter(key => 
+                key.includes('Time Series') || key.includes('Weekly') || key.includes('Monthly')
+            );
+            
+            if (timeSeriesKeys.length === 0) {
+                logger.warn('AlphaVantageService.fetchIndustryData: No time series data found', { symbol, seriesType });
+                return null;
+            }
+
+            const timeSeriesData = data[timeSeriesKeys[0]];
+            
+            const transformedData = Object.entries(timeSeriesData).map(([date, values]: [string, any]) => ({
+                date,
+                open: parseFloat(values['1. open']),
+                high: parseFloat(values['2. high']),
+                low: parseFloat(values['3. low']),
+                close: parseFloat(values['4. close']),
+                volume: parseInt(values['5. volume'])
+            }));
+
+            return transformedData;
+
+        } catch (error) {
+            logger.error('AlphaVantageService.fetchIndustryData failed', { error: error instanceof Error ? error.message : error, params });
+            throw error;
+        }
+    }
+}

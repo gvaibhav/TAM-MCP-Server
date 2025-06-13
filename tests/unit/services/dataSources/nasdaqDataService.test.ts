@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { NasdaqDataService } from '../../../../src/services/datasources/NasdaqService';
+import { NasdaqService as NasdaqDataService } from '../../../../src/services/datasources/NasdaqService';
 import { CacheService } from '../../../../src/services/cache/cacheService';
 import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { nasdaqDataApi } from '../../../../src/config/apiConfig';

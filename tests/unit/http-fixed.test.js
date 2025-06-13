@@ -3,27 +3,25 @@ import { Request, Response } from 'express';
 import request from 'supertest';
 import { logger } from '../setup';
 
-// Create mock app instance that will be returned by express()
-// Moved mockApp declaration before vi.mock('express', ...)
-const mockApp = {
-  use: vi.fn(),
-  get: vi.fn(),
-  post: vi.fn(),
-  delete: vi.fn(),
-  listen: vi.fn().mockImplementation((port, callback) => {
-    if (callback) callback();
-    return { 
-      close: vi.fn((callback) => {
-        if (callback) callback();
-      })
-    };
-  }),
-  set: vi.fn(),
-  disable: vi.fn()
-};
-
 // Mock Express
 vi.mock('express', () => {
+  // Define mockApp inside the factory to ensure it's in scope
+  const mockApp = {
+    use: vi.fn(),
+    get: vi.fn(),
+    post: vi.fn(),
+    delete: vi.fn(),
+    listen: vi.fn().mockImplementation((port, callback) => {
+      if (callback) callback();
+      return { 
+        close: vi.fn((closeCallback) => { // Renamed callback to closeCallback
+          if (closeCallback) closeCallback();
+        })
+      };
+    }),
+    set: vi.fn(),
+    disable: vi.fn()
+  };
   const mockExpress = vi.fn().mockReturnValue(mockApp);
   mockExpress.json = vi.fn().mockReturnValue(vi.fn());
   mockExpress.urlencoded = vi.fn().mockReturnValue(vi.fn());
@@ -69,6 +67,7 @@ describe('HTTP Server Transport', () => {
   let randomUUID;
   let createServer;
   let express;
+  let mockApp;
 
   beforeEach(async () => {
     // Clear all mocks

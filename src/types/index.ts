@@ -131,9 +131,10 @@ export const IndustrySearchSchema = z.object({
 });
 
 export const IndustryDataSchema = z.object({
-  industryId: z.string().describe("Industry identifier or NAICS/SIC code"),
-  includeMetrics: z.boolean().default(true).describe("Include market metrics and KPIs"),
-  region: z.string().optional().describe("Geographic region to focus on"),
+  industry_id: z.string().describe("Industry identifier or NAICS/SIC code"),
+  include_trends: z.boolean().default(false).describe("Include industry trends in the response"),
+  include_players: z.boolean().default(false).describe("Include key market players in the response"),
+  include_esg: z.boolean().default(false).describe("Include ESG scoring data in the response"),
 });
 
 export const MarketSizeSchema = z.object({
@@ -197,6 +198,115 @@ export const MarketOpportunitiesSchema = z.object({
   maxCompetition: z.enum(['low', 'medium', 'high']).default('high').describe("Maximum acceptable competition level"),
   timeframe: z.string().default("1-3 years").describe("Time horizon for opportunities"),
 });
+
+// Enhanced ESG Analysis Interface for Phase 3 Refinement
+export interface EnhancedESGAnalysis {
+  environmental_trends: ESGTrend[];
+  social_impact_factors: SocialImpactFactor[];
+  governance_risk_assessment: GovernanceRisk[];
+  esg_benchmark_comparison: ESGBenchmark[];
+  regulatory_compliance_score: number;
+  overall_esg_momentum: 'improving' | 'stable' | 'declining';
+  material_esg_issues: string[];
+}
+
+export interface ESGTrend {
+  category: 'environmental' | 'social' | 'governance';
+  trend_name: string;
+  direction: 'accelerating' | 'decelerating' | 'stable';
+  impact_score: number; // 0-100
+  time_horizon: string;
+  regulatory_driver: boolean;
+}
+
+export interface SocialImpactFactor {
+  factor: string;
+  impact_level: 'high' | 'medium' | 'low';
+  stakeholder_groups: string[];
+  mitigation_strategies: string[];
+}
+
+export interface GovernanceRisk {
+  risk_type: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  likelihood: number; // 0-1
+  industry_exposure: number; // 0-1
+}
+
+export interface ESGBenchmark {
+  peer_industry: string;
+  environmental_score_diff: number;
+  social_score_diff: number;
+  governance_score_diff: number;
+  competitive_advantage: string[];
+}
+
+// Enhanced Trend Analysis for Business Analysts
+export interface AdvancedTrendAnalysis {
+  trend_strength: number; // 0-100
+  trend_direction: 'accelerating' | 'decelerating' | 'stable';
+  correlation_factors: CorrelationFactor[];
+  predictive_indicators: PredictiveIndicator[];
+  sentiment_analysis: SentimentScore;
+  market_disruption_probability: number; // 0-1
+}
+
+export interface CorrelationFactor {
+  factor: string;
+  correlation_coefficient: number; // -1 to 1
+  significance_level: number;
+  time_lag_months: number;
+}
+
+export interface PredictiveIndicator {
+  indicator: string;
+  current_value: number;
+  predicted_value_6m: number;
+  predicted_value_12m: number;
+  confidence_interval: [number, number];
+}
+
+export interface SentimentScore {
+  overall_sentiment: number; // -1 to 1
+  news_sentiment: number;
+  analyst_sentiment: number;
+  regulatory_sentiment: number;
+  trend_consistency: number; // 0-1
+}
+
+// Enhanced Industry Data Response Interface for Phase 3
+export interface IndustryData {
+  industry: {
+    id: string;
+    name: string;
+    description: string;
+    naics_code?: string;
+    sic_code?: string;
+  };
+  market_size_usd: number;
+  key_metrics: {
+    growth_rate: number;
+    cagr_5y: number;
+    volatility_index: number;
+    competitive_intensity: 'low' | 'medium' | 'high';
+    market_maturity: 'emerging' | 'growth' | 'mature' | 'declining';
+    regulatory_complexity: 'low' | 'medium' | 'high';
+  };
+  trends?: AdvancedTrendAnalysis;
+  key_players?: Array<{
+    name: string;
+    market_share: number;
+    revenue: number;
+    headquarters: string;
+    public_company: boolean;
+  }>;
+  esg_data?: EnhancedESGAnalysis;
+  last_updated: string;
+  data_sources: string[];
+  confidence_score: number;
+}
+
+// ...existing code...
 
 export type IndustrySearchInput = z.infer<typeof IndustrySearchSchema>;
 export type IndustryDataInput = z.infer<typeof IndustryDataSchema>;

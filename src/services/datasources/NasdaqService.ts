@@ -1,19 +1,28 @@
 import axios from 'axios';
-import { CacheManager, logger } from '../../utils/index.js';
+import { logger } from '../../utils/index.js';
+import { CacheService } from '../cache/cacheService.js';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheStatus } from '../../types/cache.js';
 
-const API_KEY = process.env.NASDAQ_DATA_LINK_API_KEY || 'YOUR_API_KEY';
 const BASE_URL = 'https://data.nasdaq.com/api/v3';
 
-export class NasdaqService {
-    private cache: typeof CacheManager;
+export class NasdaqService implements DataSourceService {
+    private cacheService: CacheService;
+    private apiKey?: string;
 
-    constructor() {
-        this.cache = CacheManager;
+    constructor(cacheService: CacheService, apiKey?: string) {
+        this.cacheService = cacheService;
+        this.apiKey = apiKey || process.env.NASDAQ_API_KEY || '';
+        
+        // Log API key status for testing
+        if (!this.apiKey) {
+            console.error("ℹ️  Nasdaq Data Link: API key not configured - service disabled (set NASDAQ_DATA_LINK_API_KEY to enable)");
+        }
     }
 
     private async fetchApiData(endpoint: string, params: Record<string, any> = {}): Promise<any> {
         const cacheKey = `nasdaq:${endpoint}:${JSON.stringify(params)}`;
-        const cachedData = this.cache.get(cacheKey);
+        const cachedData = await this.cacheService.get(cacheKey);
         if (cachedData) {
             logger.info('NasdaqService: Cache hit', { cacheKey });
             return cachedData;
@@ -21,15 +30,14 @@ export class NasdaqService {
         logger.info('NasdaqService: Cache miss', { cacheKey });
 
         try {
-            const response = await axios.get(`${BASE_URL}/${endpoint}`, {
-                params: { ...params, api_key: API_KEY }
-            });
-            
-            if (response.data.quandl_error) {
-                throw new Error(`Nasdaq Data Link API Error: ${response.data.quandl_error.message}`);
+            const apiParams = { ...params };
+            if (this.apiKey) {
+                apiParams.api_key = this.apiKey;
             }
             
-            this.cache.set(cacheKey, response.data);
+            const response = await axios.get(`${BASE_URL}/${endpoint}`, { params: apiParams });
+            
+            await this.cacheService.set(cacheKey, response.data, 3600000); // 1 hour TTL
             return response.data;
         } catch (error) {
             logger.error('NasdaqService: API call failed', { 
@@ -41,68 +49,102 @@ export class NasdaqService {
         }
     }
 
-    async fetchDatasetTimeSeries(params: {
-        databaseCode: string;
-        datasetCode: string;
-        apiParams?: any;
-    }): Promise<any> {
-        const endpoint = `datasets/${params.databaseCode}/${params.datasetCode}/data.json`;
-        return this.fetchApiData(endpoint, params.apiParams || {});
+    async getDatasetData(databaseCode: string, datasetCode: string, params?: any): Promise<any> {
+        const endpoint = `datasets/${databaseCode}/${datasetCode}/data`;
+        return this.fetchApiData(endpoint, params);
     }
 
-    async fetchIndustryData(params: {
-        databaseCode: string;
-        datasetCode: string;
-        apiParams?: any;
-    }): Promise<any> {
-        logger.info('NasdaqService.fetchIndustryData called', params);
-        return this.fetchDatasetTimeSeries(params);
-    }
-
-    async fetchMarketSize(params: {
-        databaseCode: string;
-        datasetCode: string;
-        valueColumn?: string;
-        date?: string;
-    }): Promise<any> {
-        logger.info('NasdaqService.fetchMarketSize called', params);
+    async fetchDatasetTimeSeries(databaseCode: string, datasetCode: string, params?: any): Promise<any> {
+        logger.info('NasdaqService.fetchDatasetTimeSeries called', { databaseCode, datasetCode, params });
         
-        const apiParams: any = {};
-        if (params.date) {
-            apiParams.start_date = params.date;
-            apiParams.end_date = params.date;
-        } else {
-            apiParams.rows = 1; // Get latest observation
-        }
-        
-        const result = await this.fetchDatasetTimeSeries({
-            databaseCode: params.databaseCode,
-            datasetCode: params.datasetCode,
-            apiParams
-        });
-        
-        // Extract specific value if valueColumn is specified
-        if (params.valueColumn && result.dataset_data?.data?.length > 0) {
-            const columnNames = result.dataset_data.column_names;
-            const columnIndex = columnNames.indexOf(params.valueColumn);
-            if (columnIndex >= 0) {
-                const latestRow = result.dataset_data.data[0];
-                return {
-                    ...result,
-                    extractedValue: latestRow[columnIndex],
-                    extractedColumn: params.valueColumn
-                };
+        try {
+            const response = await this.getDatasetData(databaseCode, datasetCode, params);
+            
+            if (!response?.dataset_data?.data) {
+                return null;
             }
+            
+            const { column_names, data } = response.dataset_data;
+            
+            // Transform to array of objects
+            return data.map((row: any[]) => {
+                const item: Record<string, any> = {};
+                column_names.forEach((col: string, index: number) => {
+                    item[col] = row[index];
+                });
+                return item;
+            });
+        } catch (error) {
+            logger.error('NasdaqService.fetchDatasetTimeSeries failed', { error: error instanceof Error ? error.message : error, databaseCode, datasetCode, params });
+            return null;
         }
-        
-        return result;
+    }
+
+    async fetchMarketSize(databaseCode: string, datasetCode: string, valueColumn?: string): Promise<any> {
+        try {
+            const data = await this.fetchDatasetTimeSeries(databaseCode, datasetCode, { limit: 1 });
+            
+            if (!data || data.length === 0) {
+                return null;
+            }
+            
+            const latestData = data[0];
+            const column = valueColumn || 'Value';
+            
+            if (!(column in latestData)) {
+                console.warn(`Value column "${column}" not found in dataset. Available columns: ${Object.keys(latestData).join(', ')}`);
+                return null;
+            }
+            
+            return latestData[column];
+        } catch (error) {
+            logger.error('NasdaqService.fetchMarketSize failed', { error: error instanceof Error ? error.message : error, databaseCode, datasetCode, valueColumn });
+            return null;
+        }
     }
 
     // Placeholder for search functionality
-    async searchDataset(searchQuery: string, params?: any): Promise<any> {
-        logger.info('NasdaqService.searchDataset called', { searchQuery, params });
-        const endpoint = 'datasets.json';
-        const searchParams = { query: searchQuery, ...params };
-        return this.fetchApiData(endpoint, searchParams);
+    async searchDatasets(searchQuery: string, params?: any): Promise<any> {
+        logger.warn('NasdaqService.searchDatasets is a placeholder and needs specific implementation.', { searchQuery, params });
+        return { message: 'Search functionality not yet implemented for Nasdaq service', query: searchQuery };
+    }
+
+    // DataSourceService interface implementation
+    async isAvailable(): Promise<boolean> {
+        // Nasdaq API is available without key for some basic functionality
+        return true;
+    }
+
+    async getDataFreshness(...args: any[]): Promise<Date | null> {
+        // Try to get freshness based on cache entry
+        const [databaseCode, datasetCode, params] = args;
+        if (!databaseCode || !datasetCode) {
+            return null;
+        }
+
+        const endpoint = `datasets/${databaseCode}/${datasetCode}/data`;
+        const cacheKey = `nasdaq:${endpoint}:${JSON.stringify(params || {})}`;
+        
+        const entry = await this.cacheService.getEntry(cacheKey);
+        return entry ? new Date(entry.timestamp) : null;
+    }
+
+    getCacheStatus(): CacheStatus {
+        return this.cacheService.getStats();
+    }
+
+    async fetchIndustryData(...args: any[]): Promise<any> {
+        const [databaseCode, datasetCode, params] = args;
+        if (!databaseCode || !datasetCode) {
+            logger.warn('NasdaqService.fetchIndustryData: Missing required parameters');
+            return null;
+        }
+
+        try {
+            return await this.fetchDatasetTimeSeries(databaseCode, datasetCode, params);
+        } catch (error) {
+            logger.error('NasdaqService.fetchIndustryData failed', { error: error instanceof Error ? error.message : error, args });
+            return null;
+        }
     }
 }

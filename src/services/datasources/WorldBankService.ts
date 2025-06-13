@@ -1,18 +1,21 @@
 import axios from 'axios';
-import { CacheManager, logger } from '../../utils/index.js';
+import { logger } from '../../utils/index.js';
+import { CacheService } from '../cache/cacheService.js';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheStatus } from '../../types/cache.js';
 
 const BASE_URL = 'https://api.worldbank.org/v2';
 
-export class WorldBankService {
-    private cache: typeof CacheManager;
+export class WorldBankService implements DataSourceService {
+    private cacheService: CacheService;
 
-    constructor() {
-        this.cache = CacheManager;
+    constructor(cacheService: CacheService) {
+        this.cacheService = cacheService;
     }
 
     private async fetchApiData(endpoint: string, params: Record<string, any> = {}): Promise<any> {
         const cacheKey = `worldbank:${endpoint}:${JSON.stringify(params)}`;
-        const cachedData = this.cache.get(cacheKey);
+        const cachedData = await this.cacheService.get(cacheKey);
         if (cachedData) {
             logger.info('WorldBankService: Cache hit', { cacheKey });
             return cachedData;
@@ -20,16 +23,16 @@ export class WorldBankService {
         logger.info('WorldBankService: Cache miss', { cacheKey });
 
         try {
-            const response = await axios.get(`${BASE_URL}/${endpoint}`, {
-                params: { format: 'json', ...params }
-            });
+            const apiParams = { format: 'json', ...params };
             
-            if (response.data[0]?.message) {
-                throw new Error(`World Bank API Error: ${response.data[0].message[0].value}`);
-            }
+            const response = await axios.get(`${BASE_URL}/${endpoint}`, { params: apiParams });
             
-            this.cache.set(cacheKey, response.data);
-            return response.data;
+            // World Bank API returns array with metadata and data
+            // [0] is metadata, [1] is actual data
+            const data = Array.isArray(response.data) && response.data.length > 1 ? response.data[1] : response.data;
+            
+            await this.cacheService.set(cacheKey, data, 3600000); // 1 hour TTL
+            return data;
         } catch (error) {
             logger.error('WorldBankService: API call failed', { 
                 error: error instanceof Error ? error.message : error, 
@@ -40,59 +43,91 @@ export class WorldBankService {
         }
     }
 
-    async getIndicatorData(params: {
-        countryCode: string;
-        indicator: string;
-        date?: string;
-        mrv?: number; // Most recent values
-        gapfill?: string;
-        frequency?: string;
-    }): Promise<any> {
-        const endpoint = `country/${params.countryCode}/indicator/${params.indicator}`;
+    async getIndicatorData(countryCode: string, indicatorCode: string, params?: any): Promise<any> {
+        logger.info('WorldBankService.getIndicatorData called', { countryCode, indicatorCode, params });
         
-        const apiParams: Record<string, any> = {};
-        if (params.date) apiParams.date = params.date;
-        if (params.mrv) apiParams.mrv = params.mrv;
-        if (params.gapfill) apiParams.gapfill = params.gapfill;
-        if (params.frequency) apiParams.frequency = params.frequency;
-        
-        return this.fetchApiData(endpoint, apiParams);
+        const endpoint = `country/${countryCode}/indicator/${indicatorCode}`;
+        return this.fetchApiData(endpoint, params);
     }
 
-    async fetchMarketSize(params: {
-        countryCode: string;
-        indicator?: string;
-        date?: string;
-        mrv?: number;
-    }): Promise<any> {
-        logger.info('WorldBankService.fetchMarketSize called', params);
-        
-        // Default to GDP if no indicator specified
-        const indicator = params.indicator || 'NY.GDP.MKTP.CD';
-        
-        return this.getIndicatorData({
-            countryCode: params.countryCode,
-            indicator,
-            ...(params.date && { date: params.date }),
-            mrv: params.mrv || 1 // Get most recent value by default
-        });
+    async fetchMarketSize(countryCode: string, indicatorCode: string, params?: any): Promise<any> {
+        try {
+            const data = await this.getIndicatorData(countryCode, indicatorCode, { 
+                date: params?.year || new Date().getFullYear() - 1, // Default to previous year
+                ...params 
+            });
+            
+            if (!data || data.length === 0) {
+                return null;
+            }
+            
+            // Return the most recent data point
+            const latestData = data.find((item: any) => item.value !== null) || data[0];
+            return latestData ? {
+                country: latestData.country?.value,
+                indicator: latestData.indicator?.value,
+                date: latestData.date,
+                value: latestData.value
+            } : null;
+        } catch (error) {
+            logger.error('WorldBankService.fetchMarketSize failed', { error: error instanceof Error ? error.message : error, countryCode, indicatorCode });
+            return null;
+        }
     }
 
-    // Placeholder for industry data - World Bank doesn't have direct industry classifications
-    async fetchIndustryData(params: any): Promise<any> {
-        logger.warn('WorldBankService.fetchIndustryData is a placeholder.', params);
-        return { message: 'Industry data functionality not available for World Bank service', params };
-    }
-
-    // Placeholder for search functionality
+    // Search functionality for indicators
     async searchIndicators(searchQuery: string, params?: any): Promise<any> {
-        logger.info('WorldBankService.searchIndicators called', { searchQuery, params });
+        try {
+            const endpoint = 'indicator';
+            const searchParams = { 
+                ...params,
+                per_page: params?.limit || 50
+            };
+            
+            const data = await this.fetchApiData(endpoint, searchParams);
+            
+            if (!data) {
+                return [];
+            }
+            
+            // Filter results based on search query
+            return data.filter((indicator: any) => 
+                indicator.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                indicator.id?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        } catch (error) {
+            logger.error('WorldBankService.searchIndicators failed', { error: error instanceof Error ? error.message : error, searchQuery });
+            return [];
+        }
+    }
+
+    // DataSourceService interface implementation
+    async isAvailable(): Promise<boolean> {
+        // World Bank API is publicly available
+        return true;
+    }
+
+    async getDataFreshness(...args: any[]): Promise<Date | null> {
+        // Try to get freshness based on cache entry
+        const [countryCode, indicatorCode, params] = args;
+        if (!countryCode || !indicatorCode) {
+            return null;
+        }
+
+        const endpoint = `country/${countryCode}/indicator/${indicatorCode}`;
+        const cacheKey = `worldbank:${endpoint}:${JSON.stringify(params || {})}`;
         
-        const endpoint = 'indicator';
-        const searchParams = { ...params };
-        
-        // World Bank API doesn't have direct search, but we can list indicators
-        // In a real implementation, we'd filter the results based on searchQuery
-        return this.fetchApiData(endpoint, searchParams);
+        const entry = await this.cacheService.getEntry(cacheKey);
+        return entry ? new Date(entry.timestamp) : null;
+    }
+
+    getCacheStatus(): CacheStatus {
+        return this.cacheService.getStats();
+    }
+
+    async fetchIndustryData(...args: any[]): Promise<any> {
+        // World Bank doesn't have direct industry data, but we can proxy to indicator data
+        logger.warn('WorldBankService.fetchIndustryData not yet implemented', { args });
+        throw new Error('WorldBankService.fetchIndustryData not yet implemented');
     }
 }

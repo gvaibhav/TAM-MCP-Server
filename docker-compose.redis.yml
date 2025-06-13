@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # TAM MCP Server with Redis Cache
+  tam-mcp-server:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-tam_secure_password}
+      - REDIS_DB=0
+      
+      # Cache TTL Settings (in milliseconds)
+      - CACHE_TTL_ALPHA_VANTAGE_MS=3600000
+      - CACHE_TTL_ALPHA_VANTAGE_NODATA_MS=300000
+      - CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS=60000
+      - CACHE_TTL_FRED_MS=1800000
+      - CACHE_TTL_WORLD_BANK_MS=7200000
+      
+      # API Keys (set these in your .env file)
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+      - FRED_API_KEY=${FRED_API_KEY}
+      - CENSUS_API_KEY=${CENSUS_API_KEY}
+      - BLS_API_KEY=${BLS_API_KEY}
+      - NASDAQ_API_KEY=${NASDAQ_API_KEY}
+      
+      # Application Settings
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - tam-network
+
+  # Redis Cache Server
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server 
+      --requirepass ${REDIS_PASSWORD:-tam_secure_password}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - tam-network
+
+  # Redis Commander - Web UI for Redis Management (Development)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD:-tam_secure_password}
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-admin123}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    profiles:
+      - development
+    networks:
+      - tam-network
+
+  # Prometheus for metrics collection (Optional)
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    networks:
+      - tam-network
+
+  # Grafana for metrics visualization (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    networks:
+      - tam-network
+
+  # Redis Exporter for Prometheus metrics (Optional)
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    ports:
+      - "9121:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-tam_secure_password}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    networks:
+      - tam-network
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  tam-network:
+    driver: bridge
+
+# Development profile: docker-compose --profile development up
+# Monitoring profile: docker-compose --profile monitoring up
+# Production: docker-compose up tam-mcp-server redis

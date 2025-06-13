@@ -1,18 +1,21 @@
 import axios from 'axios';
-import { CacheManager, logger } from '../../utils/index.js';
+import { logger } from '../../utils/index.js';
+import { CacheService } from '../cache/cacheService.js';
+import { DataSourceService } from '../../types/dataSources.js';
+import { CacheStatus } from '../../types/cache.js';
 
 const BASE_URL = 'https://stats.oecd.org/SDMX-JSON/data';
 
-export class OecdService {
-    private cache: typeof CacheManager;
+export class OecdService implements DataSourceService {
+    private cacheService: CacheService;
 
-    constructor() {
-        this.cache = CacheManager;
+    constructor(cacheService: CacheService) {
+        this.cacheService = cacheService;
     }
 
     private async fetchApiData(endpoint: string): Promise<any> {
         const cacheKey = `oecd:${endpoint}`;
-        const cachedData = this.cache.get(cacheKey);
+        const cachedData = await this.cacheService.get(cacheKey);
         if (cachedData) {
             logger.info('OecdService: Cache hit', { cacheKey });
             return cachedData;
@@ -21,7 +24,7 @@ export class OecdService {
 
         try {
             const response = await axios.get(`${BASE_URL}/${endpoint}`);
-            this.cache.set(cacheKey, response.data);
+            await this.cacheService.set(cacheKey, response.data, 3600000); // 1 hour TTL
             return response.data;
         } catch (error) {
             logger.error('OecdService: API call failed', { 
@@ -32,69 +35,131 @@ export class OecdService {
         }
     }
 
-    async fetchOecdDataset(params: {
-        datasetId: string;
-        filterExpression?: string;
-        agencyId?: string;
-        startTime?: string;
-        endTime?: string;
-        dimensionAtObservation?: string;
-    }): Promise<any> {
-        let endpoint = `${params.agencyId || 'OECD'},${params.datasetId}`;
+    async fetchOecdDataset(
+        datasetId: string,
+        filterExpression?: string,
+        agencyId: string = 'OECD',
+        startTime?: string,
+        endTime?: string,
+        dimensionAtObservation: string = 'AllDimensions'
+    ): Promise<any> {
+        logger.info('OecdService.fetchOecdDataset called', { datasetId, filterExpression, agencyId, startTime, endTime, dimensionAtObservation });
         
-        if (params.filterExpression) {
-            endpoint += `/${params.filterExpression}`;
-        } else {
-            endpoint += '/all';
+        let endpoint = `${datasetId}`;
+        
+        if (filterExpression) {
+            endpoint += `/${filterExpression}`;
         }
         
+        endpoint += `/${agencyId}`;
+        
         const queryParams: string[] = [];
-        if (params.startTime) queryParams.push(`startTime=${params.startTime}`);
-        if (params.endTime) queryParams.push(`endTime=${params.endTime}`);
-        if (params.dimensionAtObservation) queryParams.push(`dimensionAtObservation=${params.dimensionAtObservation}`);
+        if (startTime) queryParams.push(`startTime=${startTime}`);
+        if (endTime) queryParams.push(`endTime=${endTime}`);
+        queryParams.push(`dimensionAtObservation=${dimensionAtObservation}`);
         
         if (queryParams.length > 0) {
             endpoint += `?${queryParams.join('&')}`;
         }
 
-        return this.fetchApiData(endpoint);
+        try {
+            const data = await this.fetchApiData(endpoint);
+            
+            // Extract observations from OECD SDMX-JSON structure
+            if (data?.dataSets?.[0]?.observations) {
+                const observations = data.dataSets[0].observations;
+                
+                // Transform OECD observations to more usable format
+                const transformedData = Object.entries(observations).map(([key, value]: [string, any]) => ({
+                    key,
+                    value: Array.isArray(value) ? value[0] : value,
+                    attributes: Array.isArray(value) && value.length > 1 ? value.slice(1) : []
+                }));
+                
+                return transformedData.length > 0 ? transformedData : null;
+            }
+            
+            return null;
+        } catch (error) {
+            logger.error('OecdService.fetchOecdDataset failed', { error: error instanceof Error ? error.message : error, datasetId, filterExpression });
+            return null;
+        }
     }
 
-    async fetchIndustryData(params: {
-        datasetId: string;
-        filterExpression?: string;
-        agencyId?: string;
-        startTime?: string;
-        endTime?: string;
-        dimensionAtObservation?: string;
-    }): Promise<any> {
-        logger.info('OecdService.fetchIndustryData called', params);
-        return this.fetchOecdDataset(params);
-    }
-
-    async fetchMarketSize(params: {
-        datasetId: string;
-        filterExpression?: string;
-        valueAttribute?: string;
-        agencyId?: string;
-        startTime?: string;
-        endTime?: string;
-        dimensionAtObservation?: string;
-    }): Promise<any> {
-        logger.info('OecdService.fetchMarketSize called', params);
-        
-        // For market size, we typically want the latest observation
-        const dataset = await this.fetchOecdDataset(params);
-        
-        // Extract the latest observation based on valueAttribute
-        // This is a simplified implementation - actual logic would need to parse OECD SDMX structure
-        return dataset;
+    async fetchMarketSize(datasetId: string, filterExpression?: string): Promise<any> {
+        try {
+            const data = await this.fetchOecdDataset(datasetId, filterExpression);
+            
+            if (!data || data.length === 0) {
+                return null;
+            }
+            
+            // Return the most recent observation
+            return data[data.length - 1];
+        } catch (error) {
+            logger.error('OecdService.fetchMarketSize failed', { error: error instanceof Error ? error.message : error, datasetId, filterExpression });
+            return null;
+        }
     }
 
     // Placeholder for search functionality
-    async searchDataset(searchQuery: string, params?: any): Promise<any> {
-        logger.warn('OecdService.searchDataset is a placeholder and needs specific implementation.', { searchQuery, params });
-        // OECD doesn't have a direct search API, would need to implement custom logic
+    async searchDatasets(searchQuery: string, params?: any): Promise<any> {
+        logger.warn('OecdService.searchDatasets is a placeholder and needs specific implementation.', { searchQuery, params });
         return { message: 'Search functionality not yet implemented for OECD service', query: searchQuery };
+    }
+
+    // DataSourceService interface implementation
+    async isAvailable(): Promise<boolean> {
+        // OECD API is publicly available
+        return true;
+    }
+
+    async getDataFreshness(...args: any[]): Promise<Date | null> {
+        // Try to get freshness based on cache entry
+        const [datasetId, filterExpression, agencyId, startTime, endTime, dimensionAtObservation] = args;
+        if (!datasetId) {
+            return null;
+        }
+
+        let endpoint = `${datasetId}`;
+        
+        if (filterExpression) {
+            endpoint += `/${filterExpression}`;
+        }
+        
+        endpoint += `/${agencyId || 'OECD'}`;
+        
+        const queryParams: string[] = [];
+        if (startTime) queryParams.push(`startTime=${startTime}`);
+        if (endTime) queryParams.push(`endTime=${endTime}`);
+        queryParams.push(`dimensionAtObservation=${dimensionAtObservation || 'AllDimensions'}`);
+        
+        if (queryParams.length > 0) {
+            endpoint += `?${queryParams.join('&')}`;
+        }
+
+        const cacheKey = `oecd:${endpoint}`;
+        
+        const entry = await this.cacheService.getEntry(cacheKey);
+        return entry ? new Date(entry.timestamp) : null;
+    }
+
+    getCacheStatus(): CacheStatus {
+        return this.cacheService.getStats();
+    }
+
+    async fetchIndustryData(...args: any[]): Promise<any> {
+        const [datasetId, filterExpression, agencyId, startTime, endTime, dimensionAtObservation] = args;
+        if (!datasetId) {
+            logger.warn('OecdService.fetchIndustryData: Missing required datasetId');
+            return null;
+        }
+
+        try {
+            return await this.fetchOecdDataset(datasetId, filterExpression, agencyId, startTime, endTime, dimensionAtObservation);
+        } catch (error) {
+            logger.error('OecdService.fetchIndustryData failed', { error: error instanceof Error ? error.message : error, args });
+            return null;
+        }
     }
 }
