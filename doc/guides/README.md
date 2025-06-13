@@ -12,6 +12,7 @@ This directory contains comprehensive guides for developers, contributors, and u
 ### **Implementation Guides**
 - **[NOTIFICATIONS-IMPLEMENTATION.md](NOTIFICATIONS-IMPLEMENTATION.md)** - Detailed guide for implementing and using the notification system
 - **[TEST-ORGANIZATION.md](TEST-ORGANIZATION.md)** - Professional test suite structure, organization, and best practices
+- **[redis-cache-implementation.md](redis-cache-implementation.md)** - Redis-based caching solution for enhanced scalability and performance
 
 ## 🎯 **Guide Usage**
 
