@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { logger } from '../utils/index.js';
 
 /**
- * Base class for API services providing common HTTP functionality
+ * Base API service class with common HTTP functionality
  */
 export class APIService {
   protected client: AxiosInstance;
@@ -12,32 +12,34 @@ export class APIService {
     this.baseUrl = baseUrl;
     this.client = axios.create({
       baseURL: baseUrl,
-      timeout: 30000, // 30 seconds timeout
+      timeout: 30000,
       ...config
     });
 
-    // Add response interceptor for logging
-    this.client.interceptors.response.use(
-      (response) => {
-        logger.debug(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
-        return response;
-      },
-      (error) => {
-        logger.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${error.response?.status || 'Network Error'}`, {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message
-        });
-        return Promise.reject(error);
-      }
-    );
+    // Add response interceptor for logging (if interceptors exist)
+    if (this.client && this.client.interceptors) {
+      this.client.interceptors.response.use(
+        (response) => {
+          logger.debug(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
+          return response;
+        },
+        (error) => {
+          logger.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${error.response?.status || 'Network Error'}`, {
+            url: error.config?.url,
+            status: error.response?.status,
+            message: error.message
+          });
+          return Promise.reject(error);
+        }
+      );
+    }
   }
 
   /**
    * Make a GET request
    */
-  protected async get(endpoint: string, params?: any): Promise<any> {
-    const response = await this.client.get(endpoint, { params });
+  protected async get(endpoint: string, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.client.get(endpoint, config);
     return response.data;
   }
 
@@ -73,16 +75,36 @@ export class APIService {
   }
 
   /**
-   * Update default headers
+   * Set request headers
    */
-  setDefaultHeaders(headers: Record<string, string>): void {
+  setHeaders(headers: Record<string, string>): void {
     Object.assign(this.client.defaults.headers, headers);
   }
 
   /**
-   * Set authentication header
+   * Get the axios instance (for advanced usage)
    */
-  setAuthToken(token: string, type: 'Bearer' | 'Basic' | 'ApiKey' = 'Bearer'): void {
-    this.client.defaults.headers.Authorization = `${type} ${token}`;
+  getClient(): AxiosInstance {
+    return this.client;
+  }
+
+  /**
+   * Default implementation for availability check
+   */
+  async isAvailable(): Promise<boolean> {
+    return true;
+  }
+
+  /**
+   * Handle rate limiting with exponential backoff
+   */
+  protected async handleRateLimit(retryCount: number = 0, maxRetries: number = 3): Promise<void> {
+    if (retryCount >= maxRetries) {
+      throw new Error('Max retries exceeded for rate limiting');
+    }
+    
+    const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+    logger.warn(`Rate limited. Retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
 }

@@ -1,50 +1,20 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { CensusService } from '../../../../src/services/datasources/CensusService';
-import { CacheService } from '../../../../src/services/cache/cacheService';
-import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
-// Import real config to get its baseUrl for constructing mockApiUrl,
-// but the service itself will use the mocked version of censusApi.cbpYear.
-import { censusApi as realCensusApiConfig } from '../../../../src/config/apiConfig';
-import * as envHelper from '../../../../src/utils/envHelper';
+import { censusApi } from '../../../../src/config/apiConfig';
 import { envTestUtils } from '../../../utils/envTestHelper';
 
 vi.mock('axios');
-vi.mock('../../../../src/services/cache/cacheService');
-vi.mock('../../../../src/utils/envHelper');
-
-// Mock the config specifically for cbpYear to ensure consistent NAICS key generation in tests
-vi.mock('../../../../src/config/apiConfig', async (importOriginal) => {
-  const originalConfig = await importOriginal() as Record<string, any>; // Cast to allow indexing
-  return {
-    ...originalConfig,
-    censusApi: {
-      ...originalConfig.censusApi, // Spread original censusApi values
-      cbpYear: '2021', // Fixed year for predictable NAICS2017 key in fetchMarketSize test
-      cbpDataset: 'cbp',
-    },
-  };
-});
-// Re-import after mock to get the mocked version for the service to use
-import { censusApi } from '../../../../src/config/apiConfig';
-
 
 const mockedAxiosGet = vi.mocked(axios.get);
-const MockedCacheService = CacheService as unknown as ReturnType<typeof vi.fn>;
-const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
-
 
 describe('CensusService', () => {
   let censusService: CensusService;
-  let mockCacheServiceInstance: InstanceType<typeof CacheService>;
   const apiKey = 'test_census_api_key';
 
   beforeEach(() => {
     vi.resetAllMocks();
     envTestUtils.setup();
-    mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
-    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
-    // censusService instantiated in describe blocks or tests
   });
 
   afterEach(() => {
@@ -53,292 +23,194 @@ describe('CensusService', () => {
 
   describe('constructor and isAvailable', () => {
     it('isAvailable should be true if apiKey is provided via constructor', async () => {
-      censusService = new CensusService(mockCacheServiceInstance, apiKey);
+      censusService = new CensusService(apiKey);
       expect(await censusService.isAvailable()).toBe(true);
     });
 
     it('isAvailable should be true if CENSUS_API_KEY is in process.env', async () => {
       envTestUtils.mockWith({ CENSUS_API_KEY: apiKey });
-      censusService = new CensusService(mockCacheServiceInstance);
+      censusService = new CensusService();
       expect(await censusService.isAvailable()).toBe(true);
     });
 
-    it('isAvailable should be false if no API key is available', async () => {
+    it('isAvailable should be true even if no API key is available', async () => {
       envTestUtils.mockWith({ CENSUS_API_KEY: undefined });
-      censusService = new CensusService(mockCacheServiceInstance);
-      expect(await censusService.isAvailable()).toBe(false);
+      censusService = new CensusService();
+      expect(await censusService.isAvailable()).toBe(true);
     });
 
-    it('should warn if API key is not configured', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('should log info if API key is not configured', () => {
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       envTestUtils.mockWith({ CENSUS_API_KEY: undefined });
-      new CensusService(mockCacheServiceInstance);
-      expect(consoleErrorSpy).toHaveBeenCalledWith("ℹ️  Census Bureau: API key not configured - service disabled (set CENSUS_API_KEY to enable)");
-      consoleErrorSpy.mockRestore();
-    });
-  });
-
-  describe('fetchIndustryData', () => {
-    const year = censusApi.cbpYear; // Should be '2021' due to mock
-    const datasetPath = censusApi.cbpDataset; // 'cbp'
-    const variables = 'EMP,PAYANN';
-    const forGeography = 'us:1';
-    const filterParams = { NAICS2017: "23" };
-    const queryBase = { get: variables, for: forGeography, key: apiKey, ...filterParams };
-
-    const cacheKeyParamsForCacheKey = { get: variables, for: forGeography, ...filterParams };
-    const cacheKey = `census_${year}_${datasetPath}_${JSON.stringify(cacheKeyParamsForCacheKey)}`;
-
-    const mockApiUrl = `${realCensusApiConfig.baseUrl}/${year}/${datasetPath}`; // Use real baseUrl for constructing expected URL
-
-
-    beforeEach(() => {
-        censusService = new CensusService(mockCacheServiceInstance, apiKey);
-    });
-
-    it('should correctly parse mixed numeric and string data types in rows', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const headers = ["GEO_ID", "NAME", "EMP_COUNT", "ESTAB_ID", "FLAG_COL"];
-      const row = ["01000US", "United States", "150000", "00789", "true"];
-      const mockApiResponse = [ headers, row ];
-      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
-
-      const currentTestCacheKeyParams = { get: headers.join(','), for: forGeography, ...filterParams };
-      // Ensure year and datasetPath for cacheKey match what the service will use (from mocked censusApi)
-      const currentTestCacheKey = `census_${censusApi.cbpYear}_${censusApi.cbpDataset}_${JSON.stringify(currentTestCacheKeyParams)}`;
-
-      const result = await censusService.fetchIndustryData(headers.join(','), forGeography, filterParams, censusApi.cbpYear, censusApi.cbpDataset);
-      expect(result).toEqual([{ GEO_ID: "01000US", NAME: "United States", EMP_COUNT: 150000, ESTAB_ID: 789, FLAG_COL: "true" }]);
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(currentTestCacheKey, expect.any(Array), expect.any(Number));
-    });
-
-    it('should correctly construct API URL with different year and datasetPath', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = [ ["HEADER"], ["data"] ];
-      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
-
-      const customYear = '2020';
-      const customDatasetPath = 'acs/acs1';
-      const acsVariables = "NAME,B01001_001E";
-      const acsForGeo = "state:*";
-      const expectedCustomApiUrl = `${realCensusApiConfig.baseUrl}/${customYear}/${customDatasetPath}`;
-      const expectedCustomQueryBase = { get: acsVariables, for: acsForGeo, key: apiKey };
-
-      const currentTestCacheKeyParams = { get: acsVariables, for: acsForGeo };
-      const currentTestCacheKey = `census_${customYear}_${customDatasetPath}_${JSON.stringify(currentTestCacheKeyParams)}`;
-
-      await censusService.fetchIndustryData(acsVariables, acsForGeo, undefined, customYear, customDatasetPath);
-
-      expect(mockedAxiosGet).toHaveBeenCalledWith(expectedCustomApiUrl, { params: expectedCustomQueryBase });
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(currentTestCacheKey, expect.any(Array), expect.any(Number));
-    });
-
-    it('should use TTL from env var for successful fetch when CACHE_TTL_CENSUS_MS is set', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = [ ["EMP", "NAICS2017"], ["100", "23"] ];
-      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
-
-      const customSuccessTTL = 789012;
-      mockedGetEnvAsNumber.mockImplementation((key) => {
-        if (key === 'CACHE_TTL_CENSUS_MS') return customSuccessTTL;
-        return 1000;
-      });
-      censusService = new CensusService(mockCacheServiceInstance, apiKey);
-
-      await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expect.any(Array), customSuccessTTL);
-    });
-
-    it('should use TTL from env var for no data response when CACHE_TTL_CENSUS_NODATA_MS is set', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponseNoData = [ ["EMP", "NAICS2017"] ];
-      mockedAxiosGet.mockResolvedValue({ data: mockApiResponseNoData });
-
-      const customNoDataTTL = 901234;
-      mockedGetEnvAsNumber.mockImplementation((key) => {
-        if (key === 'CACHE_TTL_CENSUS_NODATA_MS') return customNoDataTTL;
-        return 1000;
-      });
-      censusService = new CensusService(mockCacheServiceInstance, apiKey);
-
-      await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
-    });
-
-    it('should throw error if API key is not configured', async () => {
-      envTestUtils.mockWith({ CENSUS_API_KEY: undefined });
-      censusService = new CensusService(mockCacheServiceInstance);
-      await expect(censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath))
-        .rejects.toThrow('Census API key is not configured or service is unavailable.');
-    });
-
-    it('should throw error if variables are missing', async () => {
-        await expect(censusService.fetchIndustryData('', forGeography, filterParams, year, datasetPath))
-            .rejects.toThrow("Variables must be provided for Census API query.");
-    });
-
-    it('should throw error if geography is missing', async () => {
-        await expect(censusService.fetchIndustryData(variables.split(','), '', filterParams, year, datasetPath))
-            .rejects.toThrow("Geography must be provided for Census API query.");
-    });
-
-    it('should return data from cache if available', async () => {
-      const cachedData = [{ EMP: 1000, PAYANN: 50000000 }];
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(cachedData);
-
-      const result = await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-      expect(result).toEqual(cachedData);
-      expect(mockCacheServiceInstance.get).toHaveBeenCalledWith(cacheKey);
-      expect(mockedAxiosGet).not.toHaveBeenCalled();
-    });
-
-    it('should fetch, transform, and cache data if not in cache', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = [
-        ["EMP", "PAYANN", "NAICS2017", "GEO_ID", "state"],
-        ["12345", "67890000", "23", "0400000US01", "01"]
-      ];
-      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
-
-      const expectedData = [{ EMP: 12345, PAYANN: 67890000, NAICS2017: "23", GEO_ID: "0400000US01", state: "01" }];
-
-      const result = await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-      expect(result).toEqual(expectedData);
-      expect(mockedAxiosGet).toHaveBeenCalledWith(mockApiUrl, { params: queryBase });
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expectedData, expect.any(Number));
-    });
-
-    it('should handle API response with no data rows and cache null', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponseNoDataRows = [ ["EMP", "PAYANN", "NAICS2017", "GEO_ID"] ];
-      mockedAxiosGet.mockResolvedValue({ data: mockApiResponseNoDataRows });
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(()=>{});
-
-      const result = await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-      expect(result).toBeNull();
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("No data rows found for query."));
-      consoleWarnSpy.mockRestore();
-    });
-
-    it('should handle unexpected API response structure (not array) and cache null', async () => {
-        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-        mockedAxiosGet.mockResolvedValue({ data: { message: "some object" } });
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(()=>{});
-
-        const result = await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-        expect(result).toBeNull();
-        expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-        expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Unexpected response structure or no data."));
-        consoleWarnSpy.mockRestore();
-    });
-
-     it('should handle null API response and cache null', async () => {
-        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-        mockedAxiosGet.mockResolvedValue({ data: null });
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(()=>{});
-
-        const result = await censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath);
-        expect(result).toBeNull();
-        expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-        expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("No data returned (null or empty array) for query."));
-        consoleWarnSpy.mockRestore();
-    });
-
-
-    it('should handle API error and cache null', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      mockedAxiosGet.mockRejectedValue(new Error('Network Error'));
-
-      await expect(censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath))
-        .rejects.toThrow('Network Error');
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-    });
-     it('should handle Census API error in response text', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const censusErrorText = "error: unknown variable 'INVALIDVAR'";
-      mockedAxiosGet.mockRejectedValue({ isAxiosError: true, response: { data: censusErrorText }, message: "Request failed" } as any);
-
-      await expect(censusService.fetchIndustryData(variables.split(','), forGeography, filterParams, year, datasetPath))
-        .rejects.toThrow(`Census API Error: ${censusErrorText}`);
+      new CensusService();
+      expect(consoleLogSpy).toHaveBeenCalledWith('ℹ️  Census: API key not configured - using public access with limited rate limits (set CENSUS_API_KEY to enable full access)');
+      consoleLogSpy.mockRestore();
     });
   });
 
   describe('fetchMarketSize', () => {
-    const naics = "23";
-    const geo = "us:1";
-    const yearCBP = censusApi.cbpYear;
-    const expectedNaicsFilterKey = `NAICS${yearCBP}`; // For 2021, service resolves this to NAICS2017
-                                                 // If test cbpYear was 2016, service would use NAICS2012.
-                                                 // The mock forces cbpYear to '2021', so service uses NAICS2017.
-                                                 // This is correct for the mocked config.
+    const naicsCode = '54';
+    const geography = 'state:*';
+    const measure = 'EMP';
 
     beforeEach(() => {
-        censusService = new CensusService(mockCacheServiceInstance, apiKey);
+      censusService = new CensusService(apiKey);
     });
 
-    it('should fetch EMP for a NAICS code and geography', async () => {
-      const mockIndustryDataResponse = [{ EMP: 5000, PAYANN: 2000000, [expectedNaicsFilterKey]: naics, GEO_ID: geo, YEAR: yearCBP, US: geo.split(':')[1] }];
-      const fetchIndustryDataSpy = vi.spyOn(censusService, 'fetchIndustryData').mockResolvedValue(mockIndustryDataResponse);
+    it('should fetch market size data from Census API', async () => {
+      const mockApiResponse = [
+        ['NAME', 'NAICS2017', 'NAICS2017_LABEL', 'EMP', 'PAYANN', 'ESTAB', 'state'],
+        ['Professional, Scientific, and Technical Services', '54', 'Professional Services', '1000', '50000000', '500', '06'],
+        ['Professional, Scientific, and Technical Services', '54', 'Professional Services', '800', '40000000', '400', '48']
+      ];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
 
-      const result = await censusService.fetchMarketSize(naics, geo, "EMP", yearCBP);
+      const result = await censusService.fetchMarketSize(naicsCode, geography, measure);
+      
       expect(result).toEqual({
-        measure: "EMP",
-        value: 5000,
-        geography: geo.split(':')[1], // Expecting just '1' for 'us:1' from 'US' property
-        naicsCode: naics,
-        year: yearCBP,
-        source: `Census CBP (${censusApi.cbpDataset} ${yearCBP})`
+        value: 1800,
+        measure,
+        naicsCode,
+        geography,
+        recordCount: 2,
+        source: 'Census Bureau',
+        dataset: 'County Business Patterns',
+        year: censusApi.cbpYear
       });
-      expect(fetchIndustryDataSpy).toHaveBeenCalledWith(["EMP", expectedNaicsFilterKey], geo, { [expectedNaicsFilterKey]: naics }, yearCBP, censusApi.cbpDataset);
-      fetchIndustryDataSpy.mockRestore();
+      expect(mockedAxiosGet).toHaveBeenCalled();
     });
 
-    it('should return null if fetchIndustryData returns no results for market size', async () => {
-      const fetchIndustryDataSpy = vi.spyOn(censusService, 'fetchIndustryData').mockResolvedValue(null);
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(()=>{});
+    it('should return null if API call fails', async () => {
+      mockedAxiosGet.mockRejectedValue(new Error('Census API Error'));
 
-      const result = await censusService.fetchMarketSize(naics, geo, "EMP", yearCBP);
+      const result = await censusService.fetchMarketSize(naicsCode, geography, measure);
       expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Could not derive market size"));
-      fetchIndustryDataSpy.mockRestore();
-      consoleWarnSpy.mockRestore();
     });
-     it('should throw error if naicsCode is missing for fetchMarketSize', async () => {
-        await expect(censusService.fetchMarketSize('', geo, "EMP", yearCBP))
-            .rejects.toThrow("NAICS code must be provided for fetchMarketSize.");
+
+    it('should return null if no data is available', async () => {
+      const mockApiResponse = [
+        ['NAME', 'NAICS2017', 'NAICS2017_LABEL', 'EMP', 'PAYANN', 'ESTAB', 'state']
+      ];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await censusService.fetchMarketSize(naicsCode, geography, measure);
+      expect(result).toBeNull();
+    });
+
+    it('should handle malformed response', async () => {
+      const mockApiResponse = [
+        ['invalid_header']
+      ];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await censusService.fetchMarketSize(naicsCode, geography, measure);
+      expect(result).toBeNull();
     });
   });
 
-  describe('getDataFreshness', () => {
-     beforeEach(() => {
-        censusService = new CensusService(mockCacheServiceInstance, apiKey);
+  describe('fetchIndustryData', () => {
+    beforeEach(() => {
+      censusService = new CensusService(apiKey);
     });
-    it('should return timestamp from cache entry', async () => {
-      const now = Date.now();
-      const cacheEntry: CacheEntry<any> = { data: [], timestamp: now, ttl: 1000 };
-      const vars = "EMP";
-      const geo = "us:1";
-      const year = censusApi.cbpYear; // from mocked config
-      const dataset = censusApi.cbpDataset; // from mocked config
-      const queryBase = { get: vars, for: geo };
-      const cacheKey = `census_${year}_${dataset}_${JSON.stringify(queryBase)}`;
-      vi.mocked(mockCacheServiceInstance.getEntry).mockResolvedValue(cacheEntry);
 
-      const freshness = await censusService.getDataFreshness(vars, geo, undefined, year, dataset);
-      expect(freshness).toEqual(new Date(now));
-      expect(mockCacheServiceInstance.getEntry).toHaveBeenCalledWith(cacheKey);
+    it('should fetch industry data from Census API', async () => {
+      const naicsCode = '54';
+      const geography = 'state:*';
+      
+      const mockApiResponse = [
+        ['NAME', 'NAICS2017', 'NAICS2017_LABEL', 'EMP', 'PAYANN', 'ESTAB', 'state'],
+        ['Professional, Scientific, and Technical Services', '54', 'Professional Services', '1000', '50000000', '500', '06']
+      ];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await censusService.fetchIndustryData(naicsCode, geography);
+      
+      expect(result).toEqual([{
+        NAME: 'Professional, Scientific, and Technical Services',
+        NAICS2017: '54',
+        NAICS2017_LABEL: 'Professional Services',
+        EMP: '1000',
+        PAYANN: '50000000',
+        ESTAB: '500',
+        state: '06'
+      }]);
+      expect(mockedAxiosGet).toHaveBeenCalled();
+    });
+
+    it('should return null if API call fails', async () => {
+      const naicsCode = '54';
+      mockedAxiosGet.mockRejectedValue(new Error('Census API Error'));
+
+      const result = await censusService.fetchIndustryData(naicsCode);
+      expect(result).toBeNull();
+    });
+
+    it('should return null if no data is available', async () => {
+      const naicsCode = '54';
+      const mockApiResponse = [];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await censusService.fetchIndustryData(naicsCode);
+      expect(result).toBeNull();
     });
   });
 
-  describe('getCacheStatus', () => {
-     beforeEach(() => {
-        censusService = new CensusService(mockCacheServiceInstance, apiKey);
+  describe('getData', () => {
+    beforeEach(() => {
+      censusService = new CensusService(apiKey);
     });
-    it('should call cacheService.getStats', () => {
-      const mockStats: CacheStatus = { hits: 1, misses: 0, size: 1, lastRefreshed: new Date() };
-      vi.mocked(mockCacheServiceInstance.getStats).mockReturnValue(mockStats);
-      expect(censusService.getCacheStatus()).toEqual(mockStats);
+
+    it('should fetch data with proper parameters', async () => {
+      const dataset = 'acs/acs1';
+      const variables = 'B01003_001E';
+      const geography = 'state:*';
+      
+      const mockApiResponse = [
+        ['B01003_001E', 'state'],
+        ['39538223', '06'],
+        ['29145505', '48']
+      ];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await censusService.getData(dataset, variables, geography);
+      
+      expect(result).toEqual(mockApiResponse);
+      expect(mockedAxiosGet).toHaveBeenCalledWith(
+        `${censusApi.baseUrl}/${censusApi.cbpYear}/${dataset}`,
+        {
+          params: {
+            get: variables,
+            for: geography,
+            key: apiKey
+          }
+        }
+      );
+    });
+
+    it('should work without API key', async () => {
+      censusService = new CensusService(); // No API key
+      const dataset = 'acs/acs1';
+      const variables = 'B01003_001E';
+      const geography = 'state:*';
+      
+      const mockApiResponse = [
+        ['B01003_001E', 'state'],
+        ['39538223', '06']
+      ];
+      mockedAxiosGet.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await censusService.getData(dataset, variables, geography);
+      
+      expect(result).toEqual(mockApiResponse);
+      expect(mockedAxiosGet).toHaveBeenCalledWith(
+        `${censusApi.baseUrl}/${censusApi.cbpYear}/${dataset}`,
+        {
+          params: {
+            get: variables,
+            for: geography
+          }
+        }
+      );
     });
   });
 });

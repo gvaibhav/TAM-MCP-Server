@@ -1,9 +1,12 @@
 {
-  "name": "@tam/mcp-server",
+  "name": "@gvaibhav/tam-mcp-server",
   "version": "1.0.0",
-  "description": "Model Context Protocol server for market sizing analysis, TAM/SAM calculations, and industry research",
+  "description": "Comprehensive Model Context Protocol server for market intelligence, business analysis, and industry research. Provides 28 MCP tools across dual architecture: raw data access + advanced analytics, integrating 8 major economic data sources (World Bank, FRED, Alpha Vantage, etc.)",
   "license": "MIT",
-  "author": "TAM MCP Server Contributors",
+  "author": {
+    "name": "Gvaibhav",
+    "url": "https://github.com/gvaibhav"
+  },
   "homepage": "https://github.com/gvaibhav/TAM-MCP-Server",
   "bugs": "https://github.com/gvaibhav/TAM-MCP-Server/issues",
   "type": "module",

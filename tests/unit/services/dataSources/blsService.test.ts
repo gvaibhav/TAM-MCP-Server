@@ -1,33 +1,20 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { BlsService } from '../../../../src/services/datasources/BlsService';
-import { CacheService } from '../../../../src/services/cache/cacheService';
-import { CacheEntry, CacheStatus } from '../../../../src/types/cache';
 import { blsApi } from '../../../../src/config/apiConfig';
-import * as envHelper from '../../../../src/utils/envHelper';
 import { envTestUtils } from '../../../utils/envTestHelper';
 
 vi.mock('axios');
-vi.mock('../../../../src/services/cache/cacheService');
-vi.mock('../../../../src/utils/envHelper');
 
 const mockedAxiosPost = vi.mocked(axios.post);
-const MockedCacheService = CacheService as unknown as ReturnType<typeof vi.fn>;
-const mockedGetEnvAsNumber = vi.mocked(envHelper.getEnvAsNumber);
 
 describe('BlsService', () => {
   let blsService: BlsService;
-  let mockCacheServiceInstance: InstanceType<typeof CacheService>;
   const apiKey = 'test_bls_api_key';
-  const seriesId1 = 'CES0000000001';
-  // const seriesId2 = 'LNS14000000'; // Unemployment rate - Not used in current tests directly
 
   beforeEach(() => {
     vi.resetAllMocks();
     envTestUtils.setup();
-    mockCacheServiceInstance = new MockedCacheService() as InstanceType<typeof CacheService>;
-    mockedGetEnvAsNumber.mockImplementation((key, defaultValue) => defaultValue);
-    // Service instantiated in tests to control API key presence or in specific describe blocks
   });
 
   afterEach(() => {
@@ -35,273 +22,215 @@ describe('BlsService', () => {
   });
 
   describe('constructor and isAvailable', () => {
-    it('isAvailable should return true', async () => {
-      blsService = new BlsService(mockCacheServiceInstance);
+    it('isAvailable should be true even without API key (public access)', async () => {
+      blsService = new BlsService();
       expect(await blsService.isAvailable()).toBe(true);
     });
-    it('constructor should log if API key is present', () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        new BlsService(mockCacheServiceInstance, apiKey);
-        expect(consoleErrorSpy).toHaveBeenCalledWith("✅ BLS: Service enabled with API key (higher limits)");
-        consoleErrorSpy.mockRestore();
-    });
-    it('constructor should log if API key is NOT present', () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        new BlsService(mockCacheServiceInstance); // No key
-        expect(consoleErrorSpy).toHaveBeenCalledWith("ℹ️  BLS: Using anonymous access (limited requests per day)");
-        consoleErrorSpy.mockRestore();
-    });
-  });
 
-  describe('fetchIndustryData', () => {
-    const startYear = '2022';
-    const endYear = '2023';
-    const catalog = false;
-    const defaultPayloadNoKey = { seriesid: [seriesId1], catalog, calculations: false, annualaverage: false, startyear: startYear, endyear: endYear };
-    const cacheKey = `bls_data_${JSON.stringify(defaultPayloadNoKey)}`;
-    const mockApiUrl = blsApi.baseUrlV2;
-
-    beforeEach(() => {
-        blsService = new BlsService(mockCacheServiceInstance);
+    it('isAvailable should be true if apiKey is provided via constructor', async () => {
+      blsService = new BlsService(apiKey);
+      expect(await blsService.isAvailable()).toBe(true);
     });
 
-    it('should include optional boolean parameters in POST body when true', async () => {
-      const blsServiceWithKey = new BlsService(mockCacheServiceInstance, apiKey);
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [] } };
-      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
-
-      const seriesIds = ['CES0000000001'];
-
-      const expectedPayload = {
-        seriesid: seriesIds, 
-        catalog: true, calculations: true, annualaverage: true,
-        startyear: startYear, endyear: endYear,
-        registrationkey: apiKey,
-      };
-      // Create cache key payload without the registrationkey
-      const cacheKeyPayload = {
-        seriesid: seriesIds, 
-        catalog: true, calculations: true, annualaverage: true,
-        startyear: startYear, endyear: endYear,
-      };
-      const expectedCacheKeyForTest = `bls_data_${JSON.stringify(cacheKeyPayload)}`;
-
-      await blsServiceWithKey.fetchIndustryData(seriesIds, startYear, endYear, true, true, true);
-
-      expect(mockedAxiosPost).toHaveBeenCalledWith(blsApi.baseUrlV2, expectedPayload, { headers: { 'Content-Type': 'application/json' } });
-      // When series array is empty, the service caches null (no data TTL)
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(expectedCacheKeyForTest, null, expect.any(Number));
+    it('isAvailable should be true if BLS_API_KEY is in process.env', async () => {
+      envTestUtils.mockWith({ BLS_API_KEY: apiKey });
+      blsService = new BlsService();
+      expect(await blsService.isAvailable()).toBe(true);
     });
 
-    it('should use TTL from env var for successful fetch when CACHE_TTL_BLS_MS is set', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [{ seriesID: seriesId1, data: [] }] } };
-      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
-
-      const customSuccessTTL = 121212;
-      mockedGetEnvAsNumber.mockImplementation((key) => {
-        if (key === 'CACHE_TTL_BLS_MS') return customSuccessTTL;
-        return 1000;
-      });
-      blsService = new BlsService(mockCacheServiceInstance);
-
-      await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, mockApiResponse.Results, customSuccessTTL);
-    });
-
-    it('should use TTL from env var for no data response when CACHE_TTL_BLS_NODATA_MS is set', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponseNoData = { status: "REQUEST_SUCCEEDED", Results: { series: [] }, message: ["No data"] };
-      mockedAxiosPost.mockResolvedValue({ data: mockApiResponseNoData });
-
-      const customNoDataTTL = 343434;
-      mockedGetEnvAsNumber.mockImplementation((key) => {
-        if (key === 'CACHE_TTL_BLS_NODATA_MS') return customNoDataTTL;
-        return 1000;
-      });
-      blsService = new BlsService(mockCacheServiceInstance);
-
-      await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
-    });
-
-    it('should use NoData TTL when API request status is not REQUEST_SUCCEEDED', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const errorStatusResponse = { status: "REQUEST_NOT_PROCESSED", message: ["Invalid SeriesID"], Results: {} };
-      mockedAxiosPost.mockResolvedValue({ data: errorStatusResponse });
-
-      const customNoDataTTL = 565656;
-       mockedGetEnvAsNumber.mockImplementation((key) => {
-        if (key === 'CACHE_TTL_BLS_NODATA_MS') return customNoDataTTL;
-        return 1000;
-      });
-      blsService = new BlsService(mockCacheServiceInstance);
-
-      await expect(blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog))
-        .rejects.toThrow('BLS API Error');
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, customNoDataTTL);
-    });
-
-    it('should throw error if no seriesIds are provided', async () => {
-        await expect(blsService.fetchIndustryData([], startYear, endYear))
-            .rejects.toThrow("BLS series IDs must be provided.");
-    });
-
-    it('should return data from cache if available', async () => {
-      const cachedResults = { series: [{ seriesID: seriesId1, data: [{ year: '2022', value: '1000' }] }] };
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(cachedResults);
-
-      const result = await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
-      expect(result).toEqual(cachedResults);
-      expect(mockCacheServiceInstance.get).toHaveBeenCalledWith(cacheKey);
-      expect(mockedAxiosPost).not.toHaveBeenCalled();
-    });
-
-    it('should fetch, transform, and cache data if not in cache (no API key)', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = {
-        status: "REQUEST_SUCCEEDED",
-        Results: { series: [{ seriesID: seriesId1, data: [{ year: '2022', value: '1000' }] }] },
-      };
-      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
-
-      const expectedResults = mockApiResponse.Results;
-
-      const result = await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
-      expect(result).toEqual(expectedResults);
-      expect(mockedAxiosPost).toHaveBeenCalledWith(mockApiUrl, defaultPayloadNoKey, { headers: { 'Content-Type': 'application/json' } });
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, expectedResults, expect.any(Number));
-    });
-
-    it('should include API key in request if provided', async () => {
-      blsService = new BlsService(mockCacheServiceInstance, apiKey);
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const mockApiResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [] } };
-      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
-
-      const payloadWithKey = { ...defaultPayloadNoKey, registrationkey: apiKey };
-
-      await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
-      expect(mockedAxiosPost).toHaveBeenCalledWith(mockApiUrl, payloadWithKey, { headers: { 'Content-Type': 'application/json' } });
-    });
-
-    it('should handle API response with status REQUEST_SUCCEEDED but no series data', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const noDataResponse = { status: "REQUEST_SUCCEEDED", Results: { series: [] }, message: ["No data"] };
-      mockedAxiosPost.mockResolvedValue({ data: noDataResponse });
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      const result = await blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog);
-      expect(result).toBeNull();
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Request succeeded but no series data returned"));
-      consoleWarnSpy.mockRestore();
-    });
-
-    it('should handle API response with non-success status and messages', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      const errorStatusResponse = { status: "REQUEST_NOT_PROCESSED", message: ["Invalid SeriesID"], Results: {} };
-      mockedAxiosPost.mockResolvedValue({ data: errorStatusResponse });
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      await expect(blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog))
-        .rejects.toThrow('BLS API Error: Invalid SeriesID (Status: REQUEST_NOT_PROCESSED)');
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("API request did not succeed"));
-      consoleWarnSpy.mockRestore();
-    });
-
-    it('should handle axios POST error and cache null', async () => {
-      vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-      mockedAxiosPost.mockRejectedValue(new Error('Network Error'));
-
-      await expect(blsService.fetchIndustryData([seriesId1], startYear, endYear, catalog))
-        .rejects.toThrow('Network Error');
-      expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(cacheKey, null, expect.any(Number));
-    });
-
-    it('should handle axios POST error with BLS error structure in response', async () => {
-        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-        const blsErrorPayload = { status: "ERROR_VALIDATION", message: ["StartYear cannot be after EndYear"] };
-        const axiosError = { isAxiosError: true, response: { data: blsErrorPayload }, message: "Request failed" };
-        
-        // Mock axios.isAxiosError to return true for our mock error
-        const isAxiosErrorSpy = vi.spyOn(axios, 'isAxiosError').mockReturnValue(true);
-        
-        mockedAxiosPost.mockRejectedValue(axiosError as any);
-
-        await expect(blsService.fetchIndustryData([seriesId1], '2023', '2022'))
-            .rejects.toThrow('BLS API Error: StartYear cannot be after EndYear (Status: ERROR_VALIDATION)');
-
-        const errorCacheKey = `bls_data_${JSON.stringify({...defaultPayloadNoKey, seriesid: [seriesId1], startyear: '2023', endyear: '2022'})}`;
-        expect(mockCacheServiceInstance.set).toHaveBeenCalledWith(errorCacheKey, null, expect.any(Number));
-        
-        isAxiosErrorSpy.mockRestore();
-    });
-
-    it('should warn if too many series IDs are requested (anonymous)', async () => {
-        const manySeries = Array.from({ length: 30 }, (_, i) => `CES${i.toString().padStart(10, '0')}`);
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-        mockedAxiosPost.mockResolvedValue({ data: { status: "REQUEST_SUCCEEDED", Results: { series: [] } } });
-
-        await blsService.fetchIndustryData(manySeries);
-        expect(consoleWarnSpy).toHaveBeenCalledWith("BLS Service: Requested 30 series. Max is 25. Truncating or erroring might occur from API.");
-        consoleWarnSpy.mockRestore();
-    });
-
-    it('should warn if too many series IDs are requested (with API key)', async () => {
-        blsService = new BlsService(mockCacheServiceInstance, apiKey);
-        const manySeries = Array.from({ length: 55 }, (_, i) => `CES${i.toString().padStart(10, '0')}`);
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        vi.mocked(mockCacheServiceInstance.get).mockResolvedValue(null);
-        mockedAxiosPost.mockResolvedValue({ data: { status: "REQUEST_SUCCEEDED", Results: { series: [] } } });
-
-        await blsService.fetchIndustryData(manySeries);
-        expect(consoleWarnSpy).toHaveBeenCalledWith("BLS Service: Requested 55 series. Max is 50. Truncating or erroring might occur from API.");
-        consoleWarnSpy.mockRestore();
+    it('should log info if API key is not configured', () => {
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      envTestUtils.mockWith({ BLS_API_KEY: undefined });
+      new BlsService();
+      expect(consoleLogSpy).toHaveBeenCalledWith("ℹ️  BLS: API key not configured - using public access with limited rate limits (set BLS_API_KEY to enable full access)");
+      consoleLogSpy.mockRestore();
     });
   });
 
   describe('fetchMarketSize', () => {
-     beforeEach(() => {
-        blsService = new BlsService(mockCacheServiceInstance);
+    const industryId = 'LAUCN04001000000';
+    const region = 'CA';
+
+    beforeEach(() => {
+      blsService = new BlsService(apiKey);
     });
-    it('should log a warning and return null', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const result = await blsService.fetchMarketSize('anyIndustry', 'anyRegion');
+
+    it('should fetch market size data using POST API with API key', async () => {
+      const mockApiResponse = {
+        status: 'REQUEST_SUCCEEDED',
+        responseTime: 100,
+        message: [],
+        Results: {
+          series: [{
+            seriesID: 'CESLAUCN04001000001',
+            data: [{
+              year: '2023',
+              period: 'M12',
+              value: '4.2',
+              footnotes: [{}]
+            }, {
+              year: '2023',
+              period: 'M11',
+              value: '4.1',
+              footnotes: [{}]
+            }]
+          }]
+        }
+      };
+      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await blsService.fetchMarketSize(industryId, region);
+      
+      expect(result).toEqual({
+        value: 4.2,
+        period: 'M12',
+        year: '2023',
+        seriesId: 'CESLAUCN040010000000001',
+        region: 'CA',
+        source: 'BLS',
+        title: undefined
+      });
+      expect(mockedAxiosPost).toHaveBeenCalledWith(
+        'https://api.bls.gov/publicAPI/v2/timeseries/data',
+        expect.objectContaining({
+          seriesid: ['CESLAUCN040010000000001'],
+          registrationkey: apiKey
+        }),
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    it('should return null if no data is available', async () => {
+      const mockApiResponse = {
+        status: 'REQUEST_SUCCEEDED',
+        responseTime: 100,
+        message: [],
+        Results: {
+          series: [{
+            seriesID: 'CESLAUCN04001000001',
+            data: []
+          }]
+        }
+      };
+      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await blsService.fetchMarketSize(industryId, region);
       expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("BLS Service: fetchMarketSize is not directly applicable. Use fetchIndustryData with specific series IDs"));
-      consoleWarnSpy.mockRestore();
+    });
+
+    it('should return null if API call fails', async () => {
+      mockedAxiosPost.mockRejectedValue(new Error('BLS API Error'));
+
+      const result = await blsService.fetchMarketSize(industryId, region);
+      expect(result).toBeNull();
+    });
+
+    it('should return null for malformed response', async () => {
+      const mockApiResponse = {
+        status: 'REQUEST_FAILED',
+        message: ['Series does not exist'],
+        Results: {}
+      };
+      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await blsService.fetchMarketSize(industryId, region);
+      expect(result).toBeNull();
     });
   });
 
-  describe('getDataFreshness', () => {
-     beforeEach(() => {
-        blsService = new BlsService(mockCacheServiceInstance);
+  describe('fetchSeriesData', () => {
+    beforeEach(() => {
+      blsService = new BlsService(apiKey);
     });
-    it('should return timestamp from cache entry', async () => {
-      const now = Date.now();
-      const cacheEntry: CacheEntry<any> = { data: {}, timestamp: now, ttl: 1000 };
-      const payload = { seriesid: [seriesId1], catalog: false, calculations: false, annualaverage: false };
-      const cacheKey = `bls_data_${JSON.stringify(payload)}`;
-      vi.mocked(mockCacheServiceInstance.getEntry).mockResolvedValue(cacheEntry);
 
-      const freshness = await blsService.getDataFreshness([seriesId1], undefined, undefined, false, false, false);
-      expect(freshness).toEqual(new Date(now));
-      expect(mockCacheServiceInstance.getEntry).toHaveBeenCalledWith(cacheKey);
+    it('should fetch series data with proper parameters', async () => {
+      const seriesIds = ['LAUCN040010000000005'];
+      const startYear = '2020';
+      const endYear = '2023';
+      const options = { catalog: true };
+      
+      const mockApiResponse = {
+        status: 'REQUEST_SUCCEEDED',
+        responseTime: 100,
+        message: [],
+        Results: {
+          series: [{
+            seriesID: 'LAUCN040010000000005',
+            data: [{
+              year: '2023',
+              period: 'M12',
+              value: '4.2',
+              footnotes: [{}]
+            }]
+          }]
+        }
+      };
+      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await blsService.fetchSeriesData(seriesIds, startYear, endYear, options);
+      
+      expect(result).toEqual(mockApiResponse);
+      expect(mockedAxiosPost).toHaveBeenCalledWith(
+        'https://api.bls.gov/publicAPI/v2/timeseries/data',
+        {
+          seriesid: seriesIds,
+          registrationkey: apiKey,
+          startyear: startYear,
+          endyear: endYear,
+          catalog: true
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+    });
+
+    it('should throw error for empty series IDs', async () => {
+      await expect(blsService.fetchSeriesData([])).rejects.toThrow('SeriesIds must be a non-empty array');
     });
   });
 
-  describe('getCacheStatus', () => {
-     beforeEach(() => {
-        blsService = new BlsService(mockCacheServiceInstance);
+  describe('fetchIndustryData', () => {
+    beforeEach(() => {
+      blsService = new BlsService(apiKey);
     });
-    it('should call cacheService.getStats', () => {
-      const mockStats: CacheStatus = { hits: 1, misses: 1, size: 1, lastRefreshed: new Date() };
-      vi.mocked(mockCacheServiceInstance.getStats).mockReturnValue(mockStats);
-      expect(blsService.getCacheStatus()).toEqual(mockStats);
+
+    it('should fetch industry data by calling fetchSeriesData', async () => {
+      const seriesIds = ['CES0000000001'];
+      const startYear = '2020';
+      const endYear = '2023';
+      const options = { calculations: true };
+      
+      const mockApiResponse = {
+        status: 'REQUEST_SUCCEEDED',
+        responseTime: 100,
+        message: [],
+        Results: {
+          series: [{
+            seriesID: 'CES0000000001',
+            data: [{
+              year: '2023',
+              period: 'M12',
+              value: '156800.0',
+              footnotes: [{}]
+            }]
+          }]
+        }
+      };
+      mockedAxiosPost.mockResolvedValue({ data: mockApiResponse });
+
+      const result = await blsService.fetchIndustryData(seriesIds, startYear, endYear, options);
+      
+      expect(result).toEqual(mockApiResponse);
+      expect(mockedAxiosPost).toHaveBeenCalledWith(
+        'https://api.bls.gov/publicAPI/v2/timeseries/data',
+        {
+          seriesid: seriesIds,
+          registrationkey: apiKey,
+          startyear: startYear,
+          endyear: endYear,
+          calculations: true
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
     });
   });
 });

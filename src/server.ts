@@ -333,7 +333,7 @@ export async function createServer() {
           content = await fs.promises.readFile(filePath, "utf-8");
           break;
         case "tam://release-notes":
-          filePath = path.join(projectRoot, 'doc', 'RELEASE-NOTES.md');
+          filePath = path.join(projectRoot, 'doc', 'reference', 'RELEASE-NOTES.md');
           content = await fs.promises.readFile(filePath, "utf-8");
           break;
         default:

@@ -11,7 +11,9 @@
 [![Docker Build](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml)
 [![CodeQL](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql)
 
-A comprehensive **Model Context Protocol (MCP)** server for market sizing analysis, TAM/SAM calculations, and industry research. Built with TypeScript, Express.js, and following the MCP 2024-11-05 specification.
+A comprehensive **Model Context Protocol (MCP)** server for market intelligence, business analysis, and industry research. Features a sophisticated dual tool architecture with 28 MCP tools spanning raw data access to advanced analytics, powered by 8 integrated economic data sources.
+
+**Designed for AI applications serving business analysts, developers, and market researchers with deep market intelligence and data access tools.**
 
 **The server now integrates 8 free data sources (World Bank, FRED, Alpha Vantage, Nasdaq Data Link, BLS, Census, OECD, IMF) providing real-time market insights. It features an advanced DataService for orchestration, comprehensive tool definitions, and configurable caching.**
 
@@ -24,26 +26,33 @@ A comprehensive **Model Context Protocol (MCP)** server for market sizing analys
 
 > 📋 **See**: [`PROJECT-STATUS.md`](./PROJECT-STATUS.md) for current project status
 
-📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [API Reference](doc/consumer/api-reference.md) | [Contributing](doc/contributor/contributing.md) | [Project Status](PROJECT-STATUS.md)
+**🔄 Recent Update**: Documentation alignment completed to address dual tool system architecture
+
+📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [Tool Selection Guide](doc/TOOL-SYSTEM-SELECTION-GUIDE.md) | [API Reference](doc/consumer/api-reference.md) | [Implementation Review](doc/COMPREHENSIVE-IMPLEMENTATION-REVIEW.md) | [Contributing](doc/contributor/contributing.md) | [Project Status](PROJECT-STATUS.md)
 
 ## 🚀 Features
 
 ### Core Capabilities
-- **17 Specialized Market Analysis Tools** for comprehensive market research and TAM calculations
+- **Dual Tool Architecture**: 28 total MCP tools (17 data access + 11 business analysis) for comprehensive market intelligence
 - **Full Integration with 8 Data Sources**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
 - **STDIO Transport Support**: Compatible with Claude Desktop, VS Code MCP extensions, and MCP Inspector
 - **Advanced DataService Orchestration**: Intelligent routing and direct data access capabilities
 - **MCP Resource Support** with documentation access through protocol
-- **Advanced Caching System**: In-memory and persistent layers with configurable TTLs
+- **Enterprise Caching System**: NodeCache-based in-memory caching with Redis/hybrid options for production
 - **Comprehensive Input Validation**: Zod-based schema validation for all tools
 - **Professional Logging**: Structured Winston logging with business metrics
 - **Enterprise Security**: Rate limiting, input validation, and error handling
 - **Production Ready**: Complete testing suite with health monitoring
 
-### Available Tools
-Access 17 comprehensive market analysis tools via the MCP protocol:
+### Dual Tool System Architecture
 
-#### Direct Data Source Access Tools (12 tools)
+The TAM MCP Server provides **28 total MCP tools** across two complementary systems:
+
+#### System 1: MCP Data Access Tools (17 tools)
+**Purpose**: Direct data source access and enhanced analytics  
+**Target Users**: Developers, data engineers, custom analytics builders
+
+**Raw Data API Tools (13 tools):**
 - **`alphaVantage_getCompanyOverview`**: Get detailed company overview and financials
 - **`alphaVantage_searchSymbols`**: Search for stock symbols and company names
 - **`bls_getSeriesData`**: Retrieve Bureau of Labor Statistics employment data
@@ -58,18 +67,29 @@ Access 17 comprehensive market analysis tools via the MCP protocol:
 - **`oecd_getLatestObservation`**: Get latest OECD economic observations
 - **`worldBank_getIndicatorData`**: Fetch World Bank development indicators
 
-#### Multi-Source Aggregation Tools (1 tool)
+**Multi-Source Aggregation Tool (1 tool):**
 - **`industry_search`**: Search across multiple data sources with intelligent aggregation
 
-#### Analytical Tools (4 tools)
-- **`tam_calculator`**: Calculate Total Addressable Market with multiple methodologies
-- **`market_size_calculator`**: Estimate current market size for industries/products
-- **`company_financials_retriever`**: Retrieve comprehensive company financial data
-7. **`market_forecasting`**: Generate market size forecasts with scenario analysis
-8. **`market_comparison`**: Compare multiple markets across various metrics
-9. **`data_validation`**: Validate market data quality and completeness
-10. **`market_opportunities`**: Identify market opportunities and growth potential
-11. **`generic_data_query`**: Direct access to any integrated data source service and method
+**Enhanced Analytical Tools (3 tools):**
+- **`tam_calculator`**: Calculate Total Addressable Market with comprehensive guidance
+- **`market_size_calculator`**: Estimate current market size with methodology explanations
+- **`company_financials_retriever`**: Retrieve company financial data with statement guidance
+
+#### System 2: Business Analysis Tools (11 tools)
+**Purpose**: Conversational market intelligence and advanced business analysis  
+**Target Users**: Business analysts, market researchers, investment teams
+
+1. **`industry_search`**: Multi-source industry search with intelligent ranking
+2. **`industry_data`**: Detailed industry intelligence with trends, ESG, and key players
+3. **`market_size`**: Market size estimation and analysis with confidence scoring
+4. **`tam_calculator`**: Total Addressable Market calculations with projections
+5. **`sam_calculator`**: Serviceable Addressable Market with constraint analysis
+6. **`market_segments`**: Hierarchical market segmentation analysis
+7. **`market_forecasting`**: Time series forecasting with scenario analysis
+8. **`market_comparison`**: Multi-market comparative analysis and rankings
+9. **`data_validation`**: Cross-source data quality validation and scoring
+10. **`market_opportunities`**: Market gap and growth opportunity identification
+11. **`generic_data_query`**: Direct access to any data source service and method
 
 ## 🛠 Installation
 
@@ -331,17 +351,46 @@ tests/
 ```
 
 ### Data Caching Strategy
-The server employs a two-tier caching strategy with per-source configurable TTLs via environment variables (see Configuration section).
-1.  **In-Memory Cache (`CacheService`)**:
-    *   Primary cache using a fast in-memory store.
-    *   Configurable Time-To-Live (TTL) for each cache entry.
-    *   Tracks cache hits, misses, and size.
-2.  **Persistent Cache (`PersistenceService`)**:
-    *   Secondary cache layer that persists data to the local filesystem (`.cache_data/` directory).
-    *   Helps retain cached data across server restarts.
-    *   Data freshness is managed by the TTL set when data is initially cached.
+The server employs a comprehensive caching system with per-source configurable TTLs via environment variables (see Configuration section).
 
-This strategy ensures that frequently accessed data is served quickly, while less frequent data can still be retrieved from persistence or fetched anew from external APIs if expired.
+#### Current Implementation
+**In-Memory Cache (`CacheService`)**:
+- Fast NodeCache-based in-memory store with comprehensive features
+- Configurable Time-To-Live (TTL) for each cache entry
+- Pattern-based cache invalidation and bulk operations
+- Cache statistics tracking (hits, misses, size, hit rate)
+- Automatic periodic cleanup and statistics logging
+- Support for get/set/delete/flush operations with advanced features
+
+#### Advanced Caching Options
+For production deployments, the server supports **enhanced caching architectures**:
+
+**Redis Cache Integration (`EnhancedDataService`)**:
+- Drop-in Redis replacement for in-memory cache
+- Distributed caching across multiple server instances
+- Persistent cache that survives server restarts
+- Advanced features: clustering, sentinel support, distributed invalidation
+- Hybrid fallback: Redis + Memory for maximum reliability
+
+**Configuration Examples**:
+```typescript
+// Basic memory cache (current default)
+const dataService = new DataService();
+
+// Redis cache (production recommended)
+const dataService = new EnhancedDataService({
+  cache: { type: 'redis' },
+  apiKeys: { /* your API keys */ }
+});
+
+// Hybrid cache (maximum reliability)
+const dataService = new EnhancedDataService({
+  cache: { type: 'hybrid' },
+  apiKeys: { /* your API keys */ }
+});
+```
+
+This architecture ensures optimal performance with configurable caching strategies suitable for development through enterprise production environments.
 
 ### Technology Stack
 - **Language**: TypeScript 5.x

@@ -10,18 +10,22 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 - **[Security Policy](guides/SECURITY.md)** - Security guidelines and vulnerability reporting
 
 ### 📖 **User Guides**
+- **[Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md)** - Choose between data access and business analysis tools
 - **[API Testing Guide](../examples/README.md)** - Postman collection and API testing
 - **[Backend API Testing](BACKEND-API-TESTING.md)** - Comprehensive backend API integration testing
 - **[Integration Guide](guides/NOTIFICATIONS-IMPLEMENTATION.md)** - Notification system and integration
 - **[Test Organization](guides/TEST-ORGANIZATION.md)** - Testing structure and practices
 
 ### 📋 **Reference Documentation**
+- **[Architecture Quick Reference](ARCHITECTURE-QUICK-REFERENCE.md)** - Corrected implementation overview
 - **[Release Notes](reference/RELEASE-NOTES.md)** - Version history and changes
 - **[Changelog](reference/CHANGELOG.md)** - Detailed technical changes
 - **[Requirements](reference/requirements.md)** - Technical specifications and requirements
 - **[Contributors](guides/CONTRIBUTORS.md)** - Project contributors
 
 ### 📊 **Technical Reports**
+- **[Documentation Alignment Summary](DOCUMENTATION-ALIGNMENT-SUMMARY.md)** - Corrections made to align docs with implementation
+- **[Comprehensive Implementation Review](COMPREHENSIVE-IMPLEMENTATION-REVIEW.md)** - Complete design vs implementation analysis
 - **[Integration Test Report](reports/INTEGRATION-TEST-FINAL-REPORT.md)** - Backend integration testing results
 - **[HTTP Streaming Report](reports/HTTP-STREAMING-TEST-REPORT.md)** - HTTP transport implementation details
 
@@ -39,11 +43,12 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 4. Check [Release Notes](reference/RELEASE-NOTES.md) for recent changes
 
 ### **🔧 For Integrators**
-1. Review [API Testing Guide](../examples/README.md) for Postman collection
-2. Check [Backend API Testing](BACKEND-API-TESTING.md) for comprehensive API integration testing
-3. Read [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
-4. Check [Technical Reports](reports/) for implementation details
-5. Reference [Requirements](reference/requirements.md) for specifications
+1. Review [Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md) for choosing the right tools
+2. Check [API Testing Guide](../examples/README.md) for Postman collection
+3. Read [Backend API Testing](BACKEND-API-TESTING.md) for comprehensive API integration testing
+4. Study [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
+5. Check [Technical Reports](reports/) for implementation details
+6. Reference [Requirements](reference/requirements.md) for specifications
 
 ### **📈 For Project Managers**
 1. Review [Release Notes](reference/RELEASE-NOTES.md) for project status
@@ -65,6 +70,10 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 ```
 doc/
 ├── README.md                          # This documentation hub
+├── TOOL-SYSTEM-SELECTION-GUIDE.md    # Tool selection guidance
+├── ARCHITECTURE-QUICK-REFERENCE.md   # Corrected implementation overview
+├── COMPREHENSIVE-IMPLEMENTATION-REVIEW.md # Complete analysis report
+├── DESIGN-ARCHITECTURE.md            # Updated technical architecture
 ├── BACKEND-API-TESTING.md             # Comprehensive backend API testing guide
 ├── DOCUMENTATION-REVAMP-SUMMARY.md    # Documentation organization summary
 ├── guides/                           # User and developer guides

@@ -1,4 +1,5 @@
 import { createLogger, format, transports } from 'winston';
+import { z } from 'zod';
 import { APIResponse } from '../types/index.js';
 
 export * from './envHelper.js'; // Add this line
@@ -188,6 +189,12 @@ export class TAMServerError extends Error {
 
 export function handleToolError(error: unknown, toolName: string): APIResponse<any> {
   logger.error(`Error in ${toolName}:`, error);
+  
+  // Handle Zod validation errors specifically
+  if (error instanceof z.ZodError) {
+    const validationErrors = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+    return createErrorResponse(`Validation error: ${validationErrors}`);
+  }
   
   if (error instanceof TAMServerError) {
     return createErrorResponse(`${toolName}: ${error.message}`);

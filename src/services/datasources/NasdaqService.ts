@@ -107,7 +107,8 @@ export class NasdaqService implements DataSourceService {
                 ...params
             };
 
-            return this.fetchApiData('datasets.json', searchParams);
+            const data = await this.fetchApiData('datasets.json', searchParams);
+            return data;
         } catch (error) {
             logger.error('NasdaqService.searchDatasets failed', { 
                 error: error instanceof Error ? error.message : error, 

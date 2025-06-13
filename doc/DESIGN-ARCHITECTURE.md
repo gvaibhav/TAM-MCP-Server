@@ -4,30 +4,50 @@ This document outlines the design and architecture of the Total Addressable Mark
 
 ## 1. Introduction
 
-The Total Addressable Market (TAM) Market Context Protocol (MCP) Server is a **production-ready** specialized backend service that provides comprehensive market and industry intelligence. The server successfully integrates 8 major data sources and offers 17 sophisticated market analysis tools through the MCP protocol.
+The Total Addressable Market (TAM) Market Context Protocol (MCP) Server is a **production-ready** specialized backend service that provides comprehensive market and industry intelligence. The server successfully integrates 8 major data sources and implements a **dual tool system** providing both direct data access and advanced business analysis capabilities.
 
 **Implementation Status: ✅ PRODUCTION READY**
 - **Full Backend Integration**: All 8 data sources operational with API keys
-- **Complete Tool Suite**: 17 tools including enhanced help information and examples
+- **Dual Tool Architecture**: 28 total MCP tools (17 data access + 11 business analysis tools)
 - **Transport Support**: Both STDIO and HTTP Streaming protocols fully functional
 - **Comprehensive Testing**: 100% tool functionality verified through automated testing
 - **Enhanced User Experience**: Key tools include detailed help, examples, and enum guidance
 
+**Dual Tool System Architecture (28 Total MCP Tools):**
+*   **MCP Data Access Layer**: 17 tools comprising 13 raw data APIs, 1 multi-source aggregation, and 3 enhanced analytical tools
+*   **Business Analysis Layer**: 11 conversational market intelligence tools for advanced analysis and business insights
+*   **Unified Backend**: Single DataService orchestrates both tool systems with intelligent routing
+*   **Flexible Integration**: Applications can use either tool system based on their needs
+
 **Core Capabilities Achieved:**
 *   **Unified Data Access:** Single, consistent MCP API accessing Alpha Vantage, BLS, Census Bureau, FRED, IMF, Nasdaq Data Link, OECD, and World Bank with intelligent routing and caching.
 *   **Advanced Data Orchestration:** DataService layer provides intelligent source selection, cross-validation, and direct data access capabilities for maximum flexibility.
-*   **Comprehensive Tool Suite:** 17 tools spanning direct data access (12), multi-source aggregation (1), and advanced analytics (4) with enhanced user guidance.
-*   **Enhanced User Experience:** Three key analytical tools (`tam_calculator`, `market_size_calculator`, `company_financials_retriever`) feature comprehensive help information, practical examples, and detailed parameter guidance.
+*   **Dual Tool Architecture:** 28 MCP tools total - 17 data access tools (13 raw data APIs + 1 multi-source aggregation + 3 enhanced analytical) + 11 conversational business analysis tools with enhanced user guidance.
+*   **Enhanced User Experience:** Business analysis tools feature comprehensive help information, practical examples, and detailed parameter guidance.
 *   **Production Architecture:** Robust error handling, multi-layer caching, rate limiting, structured logging, and enterprise-ready security features.
 *   **Protocol Compliance:** Full MCP 2024-11-05 specification support with tools, resources, logging, and notifications capabilities.
 
-This document details the server's current architecture, implemented tool suite, operational status, and the comprehensive enhancements that have been completed.
+This document details the server's current architecture, implemented dual tool system, operational status, and the comprehensive enhancements that have been completed.
 
 ## 1.1. Current Implementation Status
 
-**✅ PRODUCTION READY - Full Integration Complete**
+**✅ PRODUCTION READY - Dual Tool System Complete**
 
-The TAM MCP Server has achieved complete production readiness with the following accomplishments:
+The TAM MCP Server has achieved complete production readiness with a sophisticated dual tool architecture:
+
+### Tool System Architecture
+
+**System 1: MCP Data Access Tools (17 tools)**
+- **Purpose**: Direct access to data sources with minimal processing
+- **Usage**: Applications needing raw data from specific sources
+- **Definition**: Implemented in `src/tools/tool-definitions.ts`
+- **Access**: Available via MCP protocol for data source integration
+
+**System 2: Business Analysis Tools (11 tools)**  
+- **Purpose**: Advanced market analysis and business intelligence
+- **Usage**: Business analysts, market researchers, investment teams
+- **Definition**: Implemented in `src/tools/market-tools.ts`
+- **Access**: Available via MCP protocol for analytical workflows
 
 ### Backend Integration Status
 - **✅ Alpha Vantage**: Company overviews, symbol search, financial statements - API key integrated
@@ -40,9 +60,11 @@ The TAM MCP Server has achieved complete production readiness with the following
 - **✅ World Bank**: Economic indicators by country - Public API access
 
 ### Tool Implementation Status
-**Total: 17 tools across 3 categories**
 
-**Direct Data Source Access (12 tools):**
+**MCP Data Access Tools: 17 tools (Direct data source access)**
+Located in `src/tools/tool-definitions.ts`:
+
+**Direct Data Source Access (13 tools):**
 - `alphaVantage_getCompanyOverview` ✅
 - `alphaVantage_searchSymbols` ✅
 - `bls_getSeriesData` ✅
@@ -58,13 +80,27 @@ The TAM MCP Server has achieved complete production readiness with the following
 - `worldBank_getIndicatorData` ✅
 
 **Multi-Source Aggregation (1 tool):**
-- `industry_search` ✅ - Searches across all 8 data sources with intelligent aggregation
+- `industry_search` ✅
 
-**Analytical Tools (4 tools):**
-- `tam_calculator` ✅ **ENHANCED** - With comprehensive help and examples
-- `market_size_calculator` ✅ **ENHANCED** - With methodology explanations and geography guides
-- `company_financials_retriever` ✅ **ENHANCED** - With statement type guidance and pro tips
-- `market_opportunities` ✅ - Identifies growth opportunities with risk assessment
+**Enhanced Analytical Tools (3 tools):**
+- `tam_calculator` ✅ (Enhanced with comprehensive help and examples)
+- `market_size_calculator` ✅ (Enhanced with methodology guidance)
+- `company_financials_retriever` ✅ (Enhanced with statement type explanations)
+
+**Business Analysis Tools: 11 tools (Advanced market intelligence)**
+Located in `src/tools/market-tools.ts`:
+
+1. `industry_search` ✅ (Multi-source industry search)
+2. `industry_data` ✅ (Detailed industry intelligence with trends, ESG, players)
+3. `market_size` ✅ (Market size estimation and analysis)
+4. `tam_calculator` ✅ (Total Addressable Market calculations)
+5. `sam_calculator` ✅ (Serviceable Addressable Market with constraints)
+6. `market_segments` ✅ (Hierarchical market segmentation analysis)
+7. `market_forecasting` ✅ (Time series forecasting with scenarios)
+8. `market_comparison` ✅ (Multi-market comparative analysis)
+9. `data_validation` ✅ (Cross-source data quality validation)
+10. `market_opportunities` ✅ (Market gap and opportunity identification)
+11. `generic_data_query` ✅ (Direct data source service access)
 
 ### Enhancement Status
 **User Experience Improvements Completed:**
@@ -84,10 +120,86 @@ The TAM MCP Server has achieved complete production readiness with the following
 ### Architecture Status
 - **✅ DataService Orchestration**: Intelligent routing and direct data access capabilities
 - **✅ Tool Definitions**: JSON Schema format with enhanced descriptions and examples
-- **✅ Caching Layer**: In-memory and persistent caching with configurable TTLs
+- **✅ Caching Layer**: NodeCache-based in-memory caching with Redis/hybrid options for production
 - **✅ Logging System**: Structured Winston logging with business metrics
 - **✅ Security**: Input validation, rate limiting, and API key management
 - **✅ Documentation**: Comprehensive guides, API documentation, and usage examples
+
+## 1.2. Dual Tool System Architecture
+
+The TAM MCP Server implements a sophisticated **dual tool system** to serve different use cases and user types:
+
+### System 1: MCP Data Access Tools
+**File**: `src/tools/tool-definitions.ts`  
+**Count**: 17 tools  
+**Purpose**: Direct data source access with minimal processing
+
+**Target Users:**
+- Application developers
+- Data engineers
+- Systems requiring raw data
+- Custom analytics builders
+
+**Tool Categories:**
+- **Direct Data Source Access (13 tools)**: Raw data from specific sources
+- **Multi-Source Aggregation (1 tool)**: Cross-source data consolidation  
+- **Enhanced Analytical (3 tools)**: Calculations with comprehensive help
+
+**Usage Pattern:**
+```typescript
+// Example: Direct Alpha Vantage company data
+await client.callTool("alphaVantage_getCompanyOverview", { symbol: "AAPL" });
+```
+
+### System 2: Business Analysis Tools
+**File**: `src/tools/market-tools.ts`  
+**Count**: 11 tools  
+**Purpose**: Advanced market intelligence and business analysis
+
+**Target Users:**
+- Business analysts
+- Market researchers
+- Investment teams
+- Strategic planners
+
+**Tool Categories:**
+- **Industry Intelligence**: Detailed industry data with trends and ESG
+- **Market Analysis**: TAM/SAM calculations and size estimation
+- **Comparative Analysis**: Market comparison and forecasting
+- **Data Quality**: Validation and opportunity identification
+
+**Usage Pattern:**
+```typescript
+// Example: Business analyst market research
+await client.callTool("industry_data", { 
+  industry_id: "tech-software", 
+  include_trends: true, 
+  include_esg: true 
+});
+```
+
+### Unified Backend Architecture
+Both tool systems share the same backend infrastructure:
+
+1. **DataService Layer**: Single orchestration layer serving both tool systems
+2. **Data Source Integration**: All 8 sources accessible by both systems
+3. **Caching Strategy**: Shared caching layer optimized for both use cases
+4. **Error Handling**: Consistent error responses across both systems
+5. **MCP Protocol**: Both systems fully compliant with MCP 2024-11-05 specification
+
+### Tool System Selection Guide
+
+**Use MCP Data Access Tools when:**
+- You need raw data from specific sources
+- Building custom analytics or visualizations
+- Integrating data into existing systems
+- Requiring maximum flexibility in data processing
+
+**Use Business Analysis Tools when:**
+- Performing market research and analysis
+- Need processed insights and intelligence
+- Creating business reports and presentations
+- Requiring guided analysis with built-in expertise
 
 ## 2. Tool Catalog and Architecture
 This section details the available MCP tools, categorized by their function.

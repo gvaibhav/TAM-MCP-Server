@@ -53,7 +53,7 @@ describe('SSE Transport', () => {
 
   it('should create an SSE transport', async () => {
     // Import the SSE module
-    await import('../../src/sse-new.js');
+    await import('../../src/sse-new.ts');
     
     // Verify express was called to create app
     expect(mockExpress).toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe('SSE Transport', () => {
 
   it('should handle GET /sse for new client connection', async () => {
     // Import the SSE module
-    await import('../../src/sse-new.js');
+    await import('../../src/sse-new.ts');
     
     // Simulate endpoint handler for GET /sse
     const getCalls = mockApp.get.mock.calls;
@@ -98,7 +98,7 @@ describe('SSE Transport', () => {
 
   it('should handle POST /message with valid session ID', async () => {
     // Import the SSE module  
-    await import('../../src/sse-new.js');
+    await import('../../src/sse-new.ts');
     
     // Simulate endpoint handler for POST /message
     const postCalls = mockApp.post.mock.calls;

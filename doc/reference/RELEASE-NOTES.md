@@ -272,11 +272,11 @@ This update introduces the initial phase of integrating multiple free data sourc
 - **Environment Configuration**: Added support for API keys for these services via `.env` variables (e.g., `FRED_API_KEY`, `BLS_API_KEY`).
 
 #### ⚙️ **Enhanced Caching System**
-- **Two-Tier Caching Strategy**:
-    - **`CacheService` (`src/services/cache/cacheService.ts`)**: Implemented an in-memory cache with Time-To-Live (TTL) support for fast access to frequently used data.
-    - **`PersistenceService` (`src/services/cache/persistenceService.ts`)**: Implemented a persistent cache layer using JSON files stored in the `.cache_data/` directory, allowing cached data to survive server restarts.
-- **Cache Management**: Cache entries include timestamps and TTLs. Services now integrate with `CacheService` for getting and setting data.
-- **Configuration**: Added `.cache_data/` to `.gitignore`.
+- **NodeCache-Based In-Memory Caching**:
+    - **`CacheService` (`src/services/cacheService.ts`)**: Implemented comprehensive in-memory cache with Time-To-Live (TTL) support, statistics tracking, pattern-based invalidation, and advanced features for fast access to frequently used data.
+    - **Advanced Features**: Multi-key operations, cache statistics, pattern matching, and configurable TTL management.
+- **Production Options**: Redis and hybrid caching architectures available through `EnhancedDataService` for scalable production deployments.
+- **Cache Management**: Cache entries include timestamps and TTLs. Services integrate with `CacheService` for comprehensive caching capabilities.
 
 #### 🔄 **Core Service Updates**
 - **`DataService` Orchestration (`src/services/dataService.ts`)**:
@@ -291,7 +291,7 @@ This update introduces the initial phase of integrating multiple free data sourc
 - **`README.md` Overhaul**:
     - Documented the newly integrated free data sources and their respective APIs.
     - Added detailed instructions for configuring API keys via `.env` variables.
-    - Explained the new two-tier caching strategy (in-memory and persistent).
+    - Explained the NodeCache-based caching system with comprehensive features and production options.
     - Updated the project structure diagram to reflect the new `services/cache`, `services/dataSources`, and `types` directories.
 - **User Feedback Incorporation (Planned for next phase)**:
     - Plan to move API URLs and constants to a dedicated config file.
