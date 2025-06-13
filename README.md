@@ -24,11 +24,7 @@ A comprehensive **Model Context Protocol (MCP)** server for market intelligence,
 ✅ **Postman Scripts Enhanced** - Comprehensive automation with Newman CLI and CI/CD integration  
 ✅ **Core Development Complete** - Ready for deployment with comprehensive testing automation
 
-> 📋 **See**: [`PROJECT-STATUS.md`](./PROJECT-STATUS.md) for current project status
-
-**🔄 Recent Update**: Documentation alignment completed to address dual tool system architecture
-
-📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [Tool Selection Guide](doc/TOOL-SYSTEM-SELECTION-GUIDE.md) | [API Reference](doc/consumer/api-reference.md) | [Implementation Review](doc/COMPREHENSIVE-IMPLEMENTATION-REVIEW.md) | [Contributing](doc/contributor/contributing.md) | [Project Status](PROJECT-STATUS.md)
+📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [Tool Selection Guide](doc/TOOL-SYSTEM-SELECTION-GUIDE.md) | [API Reference](doc/consumer/api-reference.md) | [Contributing](doc/contributor/contributing.md)
 
 ## 🚀 Features
 
@@ -595,7 +591,7 @@ The server can be deployed using Docker (recommended) or directly via Node.js. R
 
 ### Getting Help
 If you encounter issues not covered here:
-1. Check the [Release Notes](doc/RELEASE-NOTES.md) for recent fixes
+1. Check the [Release Notes](doc/reference/RELEASE-NOTES.md) for recent fixes
 2. Search existing [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
 3. Create a new issue with:
    - Error messages and logs
@@ -604,7 +600,7 @@ If you encounter issues not covered here:
    - Configuration (without sensitive API keys)
 
 ## 🤝 Contributing
-Contributions are welcome! Please see [Contributing Guide](doc/guides/CONTRIBUTING.md) and adhere to the Code of Conduct.
+Contributions are welcome! Please see [Contributing Guide](doc/contributor/contributing.md) and adhere to the Code of Conduct.
 
 ## 📜 Documentation
 - **API Documentation**: Available at the `/docs` endpoint when the server is running (if Swagger/OpenAPI is integrated).
@@ -625,7 +621,7 @@ If you encounter any issues or have questions, please open an issue on the [GitH
 ### Complete Documentation
 - **[Documentation Hub](doc/README.md)** - Complete guide to all project documentation
 - **[Release Notes](doc/reference/RELEASE-NOTES.md)** - Detailed change history and version information
-- **[Contributing Guide](doc/guides/CONTRIBUTING.md)** - Guidelines for contributors and developers
+- **[Contributing Guide](doc/contributor/contributing.md)** - Guidelines for contributors and developers
 - **[API Testing](examples/TAM-MCP-Server-Postman-Collection.json)** - Postman collection for comprehensive API testing
 
 ### Testing Documentation
@@ -640,7 +636,7 @@ If you encounter any issues or have questions, please open an issue on the [GitH
 ### Implementation Guides
 - **[HTTP Streaming Report](doc/reports/HTTP-STREAMING-TEST-REPORT.md)** - HTTP transport implementation details
 - **[Notifications Guide](doc/guides/NOTIFICATIONS-IMPLEMENTATION.md)** - Real-time notification system
-- **[Security Policy](doc/guides/SECURITY.md)** - Security guidelines and vulnerability reporting
+- **[Security Policy](doc/contributor/security.md)** - Security guidelines and vulnerability reporting
 
 ## ✨ Acknowledgments
 - Thanks to the Model Context Protocol community.

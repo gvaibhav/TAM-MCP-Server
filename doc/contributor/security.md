@@ -1,1 +1,1 @@
-../guides/SECURITY.md
+../../SECURITY.md

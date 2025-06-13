@@ -1,21 +1,14 @@
 # TAM MCP Server Tests
 
-This directory contains the complete test suite for the TAM MCP Server, organized in a professional structure following industry best practices.
+This directory contains the complete test suite for the TAM MCP Server, organized following industry best practices.
 
-**Status:** Recently cleaned and organized (June 11, 2025)  
-**Total Test Files:** 37 (reduced from ~49 after removing duplicates and broken tests)  
-**Working Integration Scripts:** 3/3 (100% functional)
+## Test Coverage
 
-## Quick Test Status
-
-### ✅ Verified Working
-- **Basic MCP Protocol:** STDIO transport and JSON-RPC interface
-- **Tool Functionality:** All 11 tools verified through MCP interface
-- **Integration Scripts:** 3 working scripts for core functionality testing
-
-### 📋 Available Documentation
-- `FUNCTIONAL-TEST-COVERAGE-BIBLE.md` - Comprehensive test scenario documentation
-- `TEST-CLEANUP-STATUS.md` - Cleanup results and current status
+### ✅ Verified Functionality
+- **MCP Protocol:** STDIO transport and JSON-RPC interface
+- **Tool Functionality:** All market analysis tools verified through MCP interface
+- **Integration Scripts:** Working scripts for core functionality testing
+- **Data Sources:** All 8 external data source integrations tested
 
 ## Test Structure
 

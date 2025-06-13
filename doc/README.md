@@ -6,8 +6,8 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 
 ### 🚀 **Getting Started**
 - **[Main README](../README.md)** - Project overview, installation, and quick start
-- **[Contributing Guide](guides/CONTRIBUTING.md)** - How to contribute to the project
-- **[Security Policy](guides/SECURITY.md)** - Security guidelines and vulnerability reporting
+- **[Contributing Guide](contributor/contributing.md)** - How to contribute to the project
+- **[Security Policy](contributor/security.md)** - Security guidelines and vulnerability reporting
 
 ### 📖 **User Guides**
 - **[Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md)** - Choose between data access and business analysis tools
@@ -23,12 +23,6 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 - **[Requirements](reference/requirements.md)** - Technical specifications and requirements
 - **[Contributors](guides/CONTRIBUTORS.md)** - Project contributors
 
-### 📊 **Technical Reports**
-- **[Documentation Alignment Summary](DOCUMENTATION-ALIGNMENT-SUMMARY.md)** - Corrections made to align docs with implementation
-- **[Comprehensive Implementation Review](COMPREHENSIVE-IMPLEMENTATION-REVIEW.md)** - Complete design vs implementation analysis
-- **[Integration Test Report](reports/INTEGRATION-TEST-FINAL-REPORT.md)** - Backend integration testing results
-- **[HTTP Streaming Report](reports/HTTP-STREAMING-TEST-REPORT.md)** - HTTP transport implementation details
-
 ### 🗃️ **Archive**
 - **[Historical Documents](archive/)** - Outdated summaries and development history
 
@@ -38,7 +32,7 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 
 ### **👩‍💻 For Developers**
 1. Start with [Main README](../README.md) for project overview
-2. Follow [Contributing Guide](guides/CONTRIBUTING.md) for development setup
+2. Follow [Contributing Guide](contributor/contributing.md) for development setup
 3. Review [Test Organization](guides/TEST-ORGANIZATION.md) for testing practices
 4. Check [Release Notes](reference/RELEASE-NOTES.md) for recent changes
 
