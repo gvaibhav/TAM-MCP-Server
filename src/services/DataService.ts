@@ -3,11 +3,9 @@ import { FredService } from './datasources/FredService.js';
 import { ImfService } from './datasources/ImfService.js';
 import { NasdaqService } from './datasources/NasdaqService.js';
 import { OecdService } from './datasources/OecdService.js';
-import { WorldBankService } from './datasources/WorldBankService.js';
+import WorldBankService from './datasources/WorldBankService.js';
 import { BlsService } from './datasources/BlsService.js';
 import { CensusService } from './datasources/CensusService.js';
-import { CacheService } from './cache/cacheService.js';
-import { PersistenceService } from './cache/persistenceService.js';
 import { IndustryDataInput, IndustryData, AdvancedTrendAnalysis, EnhancedESGAnalysis } from '../types/index.js';
 import { logger } from '../utils/index.js';
 
@@ -20,22 +18,16 @@ export class DataService {
     private worldBankService: WorldBankService;
     private blsService: BlsService;
     private censusService: CensusService;
-    private cacheService: CacheService;
 
     constructor() {
-        // Initialize cache service with persistence
-        const persistenceService = new PersistenceService();
-        this.cacheService = new CacheService(persistenceService);
-        
-        // Initialize all data source services with cache
-        this.alphaVantageService = new AlphaVantageService(this.cacheService);
-        this.fredService = new FredService(this.cacheService);
-        this.imfService = new ImfService(this.cacheService);
-        this.nasdaqService = new NasdaqService(this.cacheService);
-        this.oecdService = new OecdService(this.cacheService);
-        this.worldBankService = new WorldBankService(this.cacheService);
-        this.blsService = new BlsService(this.cacheService);
-        this.censusService = new CensusService(this.cacheService);
+        this.alphaVantageService = new AlphaVantageService();
+        this.fredService = new FredService();
+        this.imfService = new ImfService();
+        this.nasdaqService = new NasdaqService();
+        this.oecdService = new OecdService();
+        this.worldBankService = new WorldBankService();
+        this.blsService = new BlsService();
+        this.censusService = new CensusService();
     }
 
     // Alpha Vantage methods
@@ -77,7 +69,7 @@ export class DataService {
     async getNasdaqData(apiFunction: string, params: any): Promise<any> {
         switch (apiFunction) {
             case 'fetchIndustryData':
-                return this.nasdaqService.fetchIndustryData(params);
+                return this.nasdaqService.fetchIndustryData(params.databaseCode || 'ZILLOW', params.datasetCode || 'Z77006_A', params);
             case 'fetchMarketSize':
                 return this.nasdaqService.fetchMarketSize(params.databaseCode, params.datasetCode, params.valueColumn);
             default:
@@ -99,7 +91,7 @@ export class DataService {
 
     // World Bank methods
     async getWorldBankData(params: any): Promise<any> {
-        return this.worldBankService.fetchMarketSize(params.countryCode, params.indicatorCode, params);
+        return this.worldBankService.fetchMarketSize(params.industryId || params.countryCode);
     }
 
     // BLS methods
@@ -121,10 +113,10 @@ export class DataService {
         switch (apiFunction) {
             case 'fetchIndustryData':
                 return this.censusService.fetchIndustryData(params);
-            case 'fetchMarketSize':
+                        case 'fetchMarketSize':
                 return this.censusService.fetchMarketSize(params);
             case 'getData':
-                return this.censusService.getData(params);
+                return this.censusService.getData(params.dataset || 'pep', params.variables || 'POP', params.geography || 'us', params);
             default:
                 throw new Error(`Function ${apiFunction} not implemented for CensusService`);
         }
@@ -529,8 +521,8 @@ export class DataService {
                     }
                     break;
                 case 'worldbankservice':
-                    if (methodName === 'getIndicatorData') {
-                        return this.worldBankService.getIndicatorData(params[0], params[1], params[2]);
+                    if (methodName === 'fetchMarketSize') {
+                        return this.worldBankService.fetchMarketSize(params[0]);
                     }
                     break;
                 case 'imfservice':

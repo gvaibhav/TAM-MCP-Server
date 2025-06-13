@@ -1,16 +1,12 @@
 import axios from 'axios';
 import { logger } from '../../utils/index.js';
-import { CacheService } from '../cache/cacheService.js';
 import { DataSourceService } from '../../types/dataSources.js';
-import { CacheStatus } from '../../types/cache.js';
-import { getEnvAsNumber } from '../../utils/envHelper.js';
 import { imfApi } from '../../config/apiConfig.js';
+import { APIService } from '../APIService.js';
 
-export class ImfService implements DataSourceService {
-    private cacheService: CacheService;
-
-    constructor(cacheService: CacheService) {
-        this.cacheService = cacheService;
+export class ImfService extends APIService implements DataSourceService {
+    constructor(_apiKey?: string) {
+        super('https://dataservices.imf.org/REST/SDMX_JSON.svc');
         console.error('ImfService: Constructor - API Configuration:', { available: true });
     }
 
@@ -21,21 +17,6 @@ export class ImfService implements DataSourceService {
         }
 
         logger.info('ImfService.fetchImfDataset called', { dataflowId, key, startPeriod, endPeriod });
-
-        // Create cache key
-        const cacheKeyObj: any = { dataflowId, key };
-        if (startPeriod) cacheKeyObj.startPeriod = startPeriod;
-        if (endPeriod) cacheKeyObj.endPeriod = endPeriod;
-        const cacheKey = `imf_${JSON.stringify(cacheKeyObj)}`;
-
-        // Check cache first
-        const cachedData = await this.cacheService.get(cacheKey);
-        if (cachedData) {
-            logger.info('ImfService: Cache hit', { cacheKey });
-            return cachedData;
-        }
-
-        logger.info('ImfService: Cache miss', { cacheKey });
 
         try {
             // Build URL and query parameters
@@ -50,13 +31,6 @@ export class ImfService implements DataSourceService {
             // Parse SDMX JSON format
             const parsedData = this.parseSdmxCompactData(data);
             
-            // Determine TTL
-            const ttl = parsedData === null 
-                ? getEnvAsNumber('CACHE_TTL_IMF_NODATA_MS', 300000) // 5 min for no data
-                : getEnvAsNumber('CACHE_TTL_IMF_MS', 3600000); // 1 hour for data
-
-            // Cache the result
-            await this.cacheService.set(cacheKey, parsedData, ttl);
             return parsedData;
 
         } catch (error: any) {
@@ -72,9 +46,6 @@ export class ImfService implements DataSourceService {
                 throw new Error(`IMF API Error: ${status} - ${JSON.stringify(errorData)}`);
             }
 
-            // Cache null result for other errors
-            const noDataTtl = getEnvAsNumber('CACHE_TTL_IMF_NODATA_MS', 300000);
-            await this.cacheService.set(cacheKey, null, noDataTtl);
             throw error;
         }
     }
@@ -222,31 +193,15 @@ export class ImfService implements DataSourceService {
         return { message: 'Search functionality not yet implemented for IMF service', query: searchQuery };
     }
 
-    // DataSourceService interface implementation
+        // DataSourceService interface implementation
     async isAvailable(): Promise<boolean> {
         // IMF API is publicly available
         return true;
     }
 
-    async getDataFreshness(...args: any[]): Promise<Date | null> {
-        // Try to get freshness based on cache entry
-        const [dataflowId, key, startPeriod, endPeriod] = args;
-        if (!dataflowId || !key) {
-            return null;
-        }
-
-        // Build cache key same way as fetchImfDataset
-        const cacheKeyObj: any = { dataflowId, key };
-        if (startPeriod) cacheKeyObj.startPeriod = startPeriod;
-        if (endPeriod) cacheKeyObj.endPeriod = endPeriod;
-        const cacheKey = `imf_${JSON.stringify(cacheKeyObj)}`;
-        
-        const entry = await this.cacheService.getEntry(cacheKey);
-        return entry ? new Date(entry.timestamp) : null;
-    }
-
-    getCacheStatus(): CacheStatus {
-        return this.cacheService.getStats();
+    async getDataFreshness(_params: any): Promise<any> {
+        // Placeholder implementation
+        return { lastUpdated: "N/A", nextUpdate: "N/A" };
     }
 
     async fetchIndustryData(...args: any[]): Promise<any> {
@@ -280,3 +235,5 @@ export class ImfService implements DataSourceService {
         }
     }
 }
+
+export default ImfService;

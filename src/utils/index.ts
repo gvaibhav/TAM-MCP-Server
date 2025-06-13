@@ -1,15 +1,7 @@
-import NodeCache = require('node-cache');
 import { createLogger, format, transports } from 'winston';
 import { APIResponse } from '../types/index.js';
 
 export * from './envHelper.js'; // Add this line
-
-// Cache configuration
-const cache = new NodeCache({
-  stdTTL: 3600, // 1 hour default TTL
-  checkperiod: 120, // Check for expired keys every 2 minutes
-  useClones: false
-});
 
 // Logger configuration - Only log to files and stderr for MCP compatibility
 export const logger = createLogger({
@@ -33,72 +25,48 @@ export const logger = createLogger({
   ]
 });
 
-// Cache utility functions
-export class CacheManager {
-  static set<T>(key: string, value: T, ttl?: number): boolean {
-    return ttl ? cache.set(key, value, ttl) : cache.set(key, value);
-  }
-
-  static get<T>(key: string): T | undefined {
-    return cache.get<T>(key);
-  }
-
-  static del(key: string): number {
-    return cache.del(key);
-  }
-
-  static has(key: string): boolean {
-    return cache.has(key);
-  }
-
-  static flush(): void {
-    cache.flushAll();
-  }
-
-  static stats() {
-    return cache.getStats();
-  }
-
-  static generateKey(prefix: string, params: Record<string, any>): string {
-    const sortedParams = Object.keys(params)
-      .sort()
-      .map(key => `${key}:${params[key]}`)
-      .join('|');
-    return `${prefix}:${sortedParams}`;
-  }
-}
-
 // API Response wrapper
 export function createAPIResponse<T>(
   data: T,
-  source: string = 'internal',
-  cached: boolean = false,
-  ttl?: number
+  dataSource: string = 'unknown',
+  error?: any
 ): APIResponse<T> {
+  if (error) {
+    return {
+      success: false,
+      error: error.message || String(error),
+      metadata: {
+        timestamp: new Date().toISOString(),
+        source: dataSource,
+        cached: false,
+      },
+    };
+  }
+  
   return {
     success: true,
     data,
     metadata: {
       timestamp: new Date().toISOString(),
-      source,
-      cached,
-      ...(ttl && { ttl })
-    }
+      source: dataSource,
+      cached: false,
+    },
   };
 }
 
 export function createErrorResponse(
-  error: string,
-  source: string = 'internal'
-): APIResponse<never> {
+  message: string,
+  details?: any,
+  dataSource: string = 'error-handler'
+): APIResponse<any> {
   return {
     success: false,
-    error,
+    error: details ? `${message}: ${JSON.stringify(details)}` : message,
     metadata: {
       timestamp: new Date().toISOString(),
-      source,
-      cached: false
-    }
+      source: dataSource,
+      cached: false,
+    },
   };
 }
 
@@ -218,7 +186,7 @@ export class TAMServerError extends Error {
   }
 }
 
-export function handleToolError(error: unknown, toolName: string): APIResponse<never> {
+export function handleToolError(error: unknown, toolName: string): APIResponse<any> {
   logger.error(`Error in ${toolName}:`, error);
   
   if (error instanceof TAMServerError) {

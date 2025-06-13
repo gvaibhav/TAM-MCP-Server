@@ -16,7 +16,7 @@ import {
 import { z } from 'zod'; // Added: Import z directly for validationError typing
 import { getAllToolDefinitions, getToolDefinition, getToolValidationSchema } from './tools/tool-definitions.js'; // Changed: Import local ToolDefinition
 import { DataService } from './services/DataService.js'; // Added
-import { logger, CacheManager, checkRateLimit } from './utils/index.js';
+import { logger, checkRateLimit } from './utils/index.js';
 import { NotificationService } from './notifications/notification-service.js';
 
 export async function createServer() {
@@ -360,13 +360,6 @@ export async function createServer() {
   // Cleanup function
   const cleanup = async () => {
     logger.info('Shutting down TAM MCP Server...');
-    
-    // Log cache statistics
-    const cacheStats = CacheManager.stats();
-    logger.info('Cache statistics:', cacheStats);
-    
-    // Clear cache
-    CacheManager.flush();
     
     logger.info('TAM MCP Server shutdown complete');
   };

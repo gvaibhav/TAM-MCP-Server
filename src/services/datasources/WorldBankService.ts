@@ -1,133 +1,176 @@
 import axios from 'axios';
 import { logger } from '../../utils/index.js';
-import { CacheService } from '../cache/cacheService.js';
 import { DataSourceService } from '../../types/dataSources.js';
-import { CacheStatus } from '../../types/cache.js';
 
-const BASE_URL = 'https://api.worldbank.org/v2';
+const BASE_URL = 'https://www.alphavantage.co/query';
 
-export class WorldBankService implements DataSourceService {
-    private cacheService: CacheService;
+export class AlphaVantageService implements DataSourceService {
+    private apiKey?: string;
 
-    constructor(cacheService: CacheService) {
-        this.cacheService = cacheService;
+    constructor(apiKey?: string) {
+        this.apiKey = apiKey || process.env.ALPHA_VANTAGE_API_KEY || '';
+        
+        if (!this.apiKey) {
+            console.error("ℹ️  AlphaVantage: API key not configured - service disabled (set ALPHA_VANTAGE_API_KEY to enable)");
+        }
     }
 
-    private async fetchApiData(endpoint: string, params: Record<string, any> = {}): Promise<any> {
-        const cacheKey = `worldbank:${endpoint}:${JSON.stringify(params)}`;
-        const cachedData = await this.cacheService.get(cacheKey);
-        if (cachedData) {
-            logger.info('WorldBankService: Cache hit', { cacheKey });
-            return cachedData;
+    private async fetchApiData(functionName: string, symbol: string, _isTimeSeries: boolean = false): Promise<any> {
+        if (!this.apiKey) {
+            throw new Error('Alpha Vantage API key not configured');
         }
-        logger.info('WorldBankService: Cache miss', { cacheKey });
 
         try {
-            const apiParams = { format: 'json', ...params };
-            
-            const response = await axios.get(`${BASE_URL}/${endpoint}`, { params: apiParams });
-            
-            // World Bank API returns array with metadata and data
-            // [0] is metadata, [1] is actual data
-            const data = Array.isArray(response.data) && response.data.length > 1 ? response.data[1] : response.data;
-            
-            await this.cacheService.set(cacheKey, data, 3600000); // 1 hour TTL
+            const params = {
+                function: functionName,
+                symbol: symbol,
+                apikey: this.apiKey
+            };
+
+            const response = await axios.get(BASE_URL, { params });
+            const data = response.data;
+
+            // Check for API errors
+            if (data.Note) {
+                throw new Error(`Alpha Vantage API Note: ${data.Note}`);
+            }
+
+            if (data['Error Message']) {
+                throw new Error(`Alpha Vantage API Error: ${data['Error Message']}`);
+            }
+
+            if (data['Information']) {
+                throw new Error(`Alpha Vantage API Information: ${data['Information']}`);
+            }
+
             return data;
-        } catch (error) {
-            logger.error('WorldBankService: API call failed', { 
-                error: error instanceof Error ? error.message : error, 
-                endpoint, 
-                params 
+        } catch (error: any) {
+            logger.error('AlphaVantageService: API call failed', { 
+                error: error.message, 
+                functionName, 
+                symbol 
             });
             throw error;
         }
     }
 
-    async getIndicatorData(countryCode: string, indicatorCode: string, params?: any): Promise<any> {
-        logger.info('WorldBankService.getIndicatorData called', { countryCode, indicatorCode, params });
-        
-        const endpoint = `country/${countryCode}/indicator/${indicatorCode}`;
-        return this.fetchApiData(endpoint, params);
+    async isAvailable(): Promise<boolean> {
+        return !!this.apiKey;
     }
 
-    async fetchMarketSize(countryCode: string, indicatorCode: string, params?: any): Promise<any> {
-        try {
-            const data = await this.getIndicatorData(countryCode, indicatorCode, { 
-                date: params?.year || new Date().getFullYear() - 1, // Default to previous year
-                ...params 
-            });
-            
-            if (!data || data.length === 0) {
-                return null;
-            }
-            
-            // Return the most recent data point
-            const latestData = data.find((item: any) => item.value !== null) || data[0];
-            return latestData ? {
-                country: latestData.country?.value,
-                indicator: latestData.indicator?.value,
-                date: latestData.date,
-                value: latestData.value
-            } : null;
-        } catch (error) {
-            logger.error('WorldBankService.fetchMarketSize failed', { error: error instanceof Error ? error.message : error, countryCode, indicatorCode });
-            return null;
+    async getDataFreshness(...args: any[]): Promise<Date | null> {
+        const [symbol, dataType = 'overview'] = args;
+        if (!symbol) return null;
+
+        if (dataType === 'overview') {
+            return new Date(); // Company overview data is generally updated daily
+        } else if (dataType === 'timeseries') {
+            return new Date(); // Time series data varies by market hours
         }
+
+        return null;
     }
 
-    // Search functionality for indicators
-    async searchIndicators(searchQuery: string, params?: any): Promise<any> {
+    async searchSymbols(keywords: string): Promise<any> {
+        logger.info('AlphaVantageService.searchSymbols called', { keywords });
+
         try {
-            const endpoint = 'indicator';
-            const searchParams = { 
-                ...params,
-                per_page: params?.limit || 50
-            };
-            
-            const data = await this.fetchApiData(endpoint, searchParams);
-            
-            if (!data) {
-                return [];
+            const data = await this.fetchApiData('SYMBOL_SEARCH', keywords, false);
+
+            if (data && data['bestMatches']) {
+                return data['bestMatches'];
             }
-            
-            // Filter results based on search query
-            return data.filter((indicator: any) => 
-                indicator.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                indicator.id?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+
+            return [];
         } catch (error) {
-            logger.error('WorldBankService.searchIndicators failed', { error: error instanceof Error ? error.message : error, searchQuery });
+            logger.error('AlphaVantageService.searchSymbols failed', { error: error instanceof Error ? error.message : error, keywords });
             return [];
         }
     }
 
-    // DataSourceService interface implementation
-    async isAvailable(): Promise<boolean> {
-        // World Bank API is publicly available
-        return true;
+    async fetchMarketSize(symbol: string): Promise<any> {
+        logger.info('AlphaVantageService.fetchMarketSize called', { symbol });
+
+        try {
+            const overview = await this.fetchApiData('OVERVIEW', symbol, false);
+            
+            if (!overview || overview['Symbol'] !== symbol) {
+                return null;
+            }
+
+            const marketCap = parseFloat(overview['MarketCapitalization']);
+            
+            return {
+                value: isNaN(marketCap) ? null : marketCap,
+                symbol: overview['Symbol'],
+                name: overview['Name'],
+                sector: overview['Sector'],
+                industry: overview['Industry'],
+                description: overview['Description'],
+                source: 'Alpha Vantage',
+                lastUpdated: new Date().toISOString().split('T')[0]
+            };
+        } catch (error) {
+            logger.error('AlphaVantageService.fetchMarketSize failed', { 
+                error: error instanceof Error ? error.message : error, 
+                symbol 
+            });
+            return null;
+        }
     }
 
-    async getDataFreshness(...args: any[]): Promise<Date | null> {
-        // Try to get freshness based on cache entry
-        const [countryCode, indicatorCode, params] = args;
-        if (!countryCode || !indicatorCode) {
+    async fetchIndustryData(symbol: string, seriesType: string = 'DAILY'): Promise<any> {
+        logger.info('AlphaVantageService.fetchIndustryData called', { symbol, seriesType });
+
+        if (!symbol) {
+            logger.warn('AlphaVantageService.fetchIndustryData: Symbol is required');
             return null;
         }
 
-        const endpoint = `country/${countryCode}/indicator/${indicatorCode}`;
-        const cacheKey = `worldbank:${endpoint}:${JSON.stringify(params || {})}`;
-        
-        const entry = await this.cacheService.getEntry(cacheKey);
-        return entry ? new Date(entry.timestamp) : null;
+        const functionName = seriesType.startsWith('TIME_SERIES_') 
+            ? seriesType 
+            : `TIME_SERIES_${seriesType}_ADJUSTED`;
+
+        try {
+            const data = await this.fetchApiData(functionName, symbol, true);
+            
+            if (!data) {
+                return null;
+            }
+
+            return data;
+        } catch (error) {
+            logger.error('AlphaVantageService.fetchIndustryData failed', { 
+                error: error instanceof Error ? error.message : error, 
+                symbol, 
+                seriesType 
+            });
+            return null;
+        }
     }
 
-    getCacheStatus(): CacheStatus {
-        return this.cacheService.getStats();
+    async getCompanyOverview(symbol: string): Promise<any> {
+        logger.info('AlphaVantageService.getCompanyOverview called', { symbol });
+        return this.fetchApiData('OVERVIEW', symbol, false);
     }
 
-    async fetchIndustryData(...args: any[]): Promise<any> {
-        // World Bank doesn't have direct industry data, but we can proxy to indicator data
-        logger.warn('WorldBankService.fetchIndustryData not yet implemented', { args });
-        throw new Error('WorldBankService.fetchIndustryData not yet implemented');
+    async getIncomeStatement(symbol: string, period: 'annual' | 'quarterly' = 'annual'): Promise<any> {
+        logger.info('AlphaVantageService.getIncomeStatement called', { symbol, period });
+        const data = await this.fetchApiData('INCOME_STATEMENT', symbol, false);
+        return period === 'annual' ? data.annualReports : data.quarterlyReports;
+    }
+
+    async getBalanceSheet(symbol: string, period: 'annual' | 'quarterly' = 'annual'): Promise<any> {
+        logger.info('AlphaVantageService.getBalanceSheet called', { symbol, period });
+        const data = await this.fetchApiData('BALANCE_SHEET', symbol, false);
+        return period === 'annual' ? data.annualReports : data.quarterlyReports;
+    }
+
+    async getCashFlow(symbol: string, period: 'annual' | 'quarterly' = 'annual'): Promise<any> {
+        logger.info('AlphaVantageService.getCashFlow called', { symbol, period });
+        const data = await this.fetchApiData('CASH_FLOW', symbol, false);
+        return period === 'annual' ? data.annualReports : data.quarterlyReports;
     }
 }
+
+export default AlphaVantageService;
