@@ -3,7 +3,7 @@ import { FredService } from './datasources/FredService.js';
 import { ImfService } from './datasources/ImfService.js';
 import { NasdaqService } from './datasources/NasdaqService.js';
 import { OecdService } from './datasources/OecdService.js';
-import WorldBankService from './datasources/WorldBankService.js';
+import { WorldBankService } from './datasources/WorldBankService.js';
 import { BlsService } from './datasources/BlsService.js';
 import { CensusService } from './datasources/CensusService.js';
 import { IndustryDataInput, IndustryData, AdvancedTrendAnalysis, EnhancedESGAnalysis } from '../types/index.js';
