@@ -5,7 +5,7 @@ vi.mock('../../../src/services/DataService');
 
 import { MarketAnalysisTools } from '../../../src/tools/market-tools';
 import { DataService } from '../../../src/services/DataService';
-import { APIResponse } from '../../../src/types';
+import { APIResponse, TAMCalculatorSchema, MarketSizeSchema } from '../../../src/types';
 import { z } from "zod";
 // Utils are not mocked for tool integration tests, tools use them directly
 import { formatCurrency, formatPercentage } from '../../../src/utils';
@@ -25,20 +25,6 @@ const GenericDataQuerySchema = z.object({
   dataSourceName: z.string(),
   dataSourceMethod: z.string(),
   dataSourceParams: z.array(z.any())
-});
-const MarketSizeSchema = z.object({ // For marketSize tool param typing
-    industryId: z.string(),
-    region: z.string(),
-    year: z.number().optional(),
-    currency: z.string().optional().default('USD')
-});
-const TAMCalculatorSchema = z.object({ // For tamCalculator tool param typing
-    industryId: z.string(),
-    region: z.string(),
-    population: z.number().optional(),
-    penetrationRate: z.number().optional(),
-    averageSpending: z.number().optional(),
-    includeScenarios: z.boolean().optional(),
 });
 
 

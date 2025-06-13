@@ -4,7 +4,7 @@
   "description": "Comprehensive Model Context Protocol server for market intelligence, business analysis, and industry research. Provides 28 MCP tools across dual architecture: raw data access + advanced analytics, integrating 8 major economic data sources (World Bank, FRED, Alpha Vantage, etc.)",
   "license": "MIT",
   "author": {
-    "name": "Gvaibhav",
+    "name": "Vaibhav Gupta",
     "url": "https://github.com/gvaibhav"
   },
   "homepage": "https://github.com/gvaibhav/TAM-MCP-Server",
