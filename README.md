@@ -1,99 +1,139 @@
 # Market Sizing MCP Server
 
-[![GitHub stars](https://img.shields.io/github/stars/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/gvaibhav/TAM-MCP-Server?style=social)](https://github.com/gvaibhav/TAM-MCP-Server/network/members)
-[![GitHub issues](https://img.shields.io/github/issues/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/issues)
 [![License](https://img.shields.io/github/license/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/blob/main/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-green.svg)](https://nodejs.org/)
-[![Express.js](https://img.shields.io/badge/Express.js-4.x-orange.svg)](https://expressjs.com/)
-[![MCP Version](https://img.shields.io/badge/MCP%20Spec-2024--11--05-brightgreen.svg)](https://modelcontextprotocol.org/)
-[![Docker Build](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml)
-[![CodeQL](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql)
+[![MCP Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-brightgreen.svg)](https://modelcontextprotocol.org/)
 
-A comprehensive **Model Context Protocol (MCP)** server for market intelligence, business analysis, and industry research. Features sophisticated **MCP Prompts**, dual tool architecture with 28 MCP tools, **intelligent default values for instant use**, and **15 professional business analysis prompts** powered by 8 integrated economic data sources.
+A Model Context Protocol server providing market research and business analysis capabilities through 28 tools, 15 business prompts, and integration with 8 economic data sources.
 
-**Designed for AI applications serving business analysts, venture capitalists, consultants, and market researchers with zero-friction business intelligence workflows and deep market data access.**
+## Overview
 
-## 🎯 **NEW: MCP Prompts - Business Intelligence Templates**
+This MCP server provides comprehensive market research capabilities including:
 
-**Transform market analysis with discoverable, professional-grade business prompts:**
+- **28 Tools**: Market analysis, data access, and business intelligence tools
+- **15 Prompts**: Professional business analysis templates for funding, strategy, and research
+- **Data Integration**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
+- **Smart Defaults**: Pre-configured parameters for immediate use without setup
+- **Multiple Transports**: STDIO, HTTP, and SSE support
 
-🚀 **15 Professional Business Analysis Prompts** - From startup funding pitches to crisis management  
-📊 **Investment-Grade Templates** - Designed for VCs, private equity, and corporate strategy teams  
-🎯 **Contextual Analysis Frameworks** - Each prompt provides complete business scenario context  
-🔍 **Native MCP Discovery** - All prompts discoverable through `prompts/list` in any MCP client
+### Capabilities
 
-### Featured Business Scenarios:
-- **🚀 Startup Funding Presentations** - Series A-C pitch preparation with TAM/SAM analysis
-- **📊 Private Equity Research** - Investment committee packages with due diligence frameworks
-- **🏢 Corporate Strategy Analysis** - Fortune 500 market entry and acquisition evaluation
-- **🚨 Crisis Management Intelligence** - Emergency market analysis for rapid response teams
-- **🌍 International Expansion** - Global market entry strategy with regulatory analysis
-- **💰 Investment Thesis Development** - VC and asset management research templates
-- **⚡ Technology Disruption Analysis** - Innovation impact assessment for technology teams
+**Market Analysis Tools**
+- Total Addressable Market (TAM) and Serviceable Addressable Market (SAM) calculations
+- Market size estimation and forecasting
+- Industry analysis and competitive intelligence
+- Market segmentation and opportunity identification
+- Data validation and cross-source verification
 
-**Designed for AI applications serving business analysts, developers, and market researchers with deep market intelligence and data access tools.**
+**Business Intelligence Prompts**
+- Startup funding pitch preparation
+- Private equity investment analysis
+- Corporate strategy and market entry
+- Crisis management and regulatory impact assessment
+- ESG and sustainability analysis
 
-**The server now integrates 8 free data sources (World Bank, FRED, Alpha Vantage, Nasdaq Data Link, BLS, Census, OECD, IMF) providing real-time market insights. It features an advanced DataService for orchestration, comprehensive tool definitions, and configurable caching.**
+**Data Access**
+- Real-time financial and economic data retrieval
+- Multi-source data aggregation and comparison
+- Intelligent routing based on data type and availability
+- Comprehensive caching for performance optimization
 
-## 🎉 **Project Complete & Ready for Use**
+## Installation
 
-✅ **Default Values Implementation Complete** - All 28 tools now support intelligent defaults for immediate use  
-✅ **MCP Prompts Implementation Complete** - 15 professional business analysis prompts with contextual templates  
-✅ **Test Coverage Enhanced** - 95% improvement in test detection, critical infrastructure fixes  
-✅ **Documentation Reorganized** - Role-based structure with consumer/contributor navigation  
-✅ **Postman Scripts Enhanced** - Comprehensive automation with Newman CLI and CI/CD integration  
-✅ **Core Development Complete** - Ready for deployment with comprehensive testing automation
+### Prerequisites
+- Node.js 20.x or later
+- npm or yarn
+- API keys for data sources (optional, see Configuration)
 
-📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [Default Values Guide](doc/consumer/default-values-guide.md) | [Business Prompts Guide](doc/guides/mcp-prompts-guide.md) | [Tool Selection Guide](doc/TOOL-SYSTEM-SELECTION-GUIDE.md) | [API Reference](doc/consumer/api-reference.md) | [Contributing](doc/contributor/contributing.md)
+### Quick Setup
 
-## 🚀 Features
+```bash
+# Clone repository
+git clone https://github.com/gvaibhav/TAM-MCP-Server.git
+cd TAM-MCP-Server
 
-### Core Capabilities
-- **🎯 MCP Prompts Support**: 15 professional business analysis prompts with contextual templates
-- **⚡ Smart Default Values**: All 28 tools pre-configured with professional defaults - start analyzing immediately without parameter research
-- **Dual Tool Architecture**: 28 total MCP tools (17 data access + 11 business analysis) for comprehensive market intelligence
-- **Full Integration with 8 Data Sources**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
-- **STDIO Transport Support**: Compatible with Claude Desktop, VS Code MCP extensions, and MCP Inspector
-- **Advanced DataService Orchestration**: Intelligent routing and direct data access capabilities
-- **MCP Resource Support** with documentation access through protocol
-- **Enterprise Caching System**: NodeCache-based in-memory caching with Redis/hybrid options for production
-- **Comprehensive Input Validation**: Zod-based schema validation for all tools and prompts
-- **Professional Logging**: Structured Winston logging with business metrics
-- **Enterprise Security**: Rate limiting, input validation, and error handling
-- **Production Ready**: Complete testing suite with health monitoring
+# Install dependencies
+npm install
 
-### MCP Prompts - Business Intelligence Templates
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys
 
-**15 Professional Business Analysis Prompts** designed for real-world business scenarios:
+# Build and start (HTTP - recommended)
+npm run build
+npm run start:http
+```
 
-#### 🏦 **Strategic Business Analysis**
-- **startup_funding_pitch** - Series A-C funding presentations with TAM/SAM analysis
-- **private_equity_research** - Investment committee packages for PE deals
-- **corporate_strategy_entry** - Fortune 500 market entry strategy analysis
-- **venture_capital_thesis** - VC investment thesis development
-- **asset_management_research** - Institutional asset management research
+### Development Setup
 
-#### 🚨 **Crisis & Specialized Analysis**
-- **crisis_management_analysis** - Emergency market analysis for crisis response
-- **regulatory_impact_assessment** - Regulatory change impact analysis
-- **international_expansion** - Global market entry strategy analysis
-- **technology_disruption_analysis** - Technology disruption impact assessment
-- **esg_sustainability_analysis** - ESG and sustainability market analysis
+```bash
+# Use development script
+chmod +x scripts/dev-setup.sh
+./scripts/dev-setup.sh
 
-#### ⚡ **Quick Analysis & Guidance**
-- **market_opportunity_scan** - Rapid market opportunity identification
-- **competitive_intelligence** - Competitive landscape analysis
-- **investment_screening** - Investment opportunity screening
-- **tool_guidance** - Interactive guide to TAM MCP Server tools
-- **best_practices_guide** - Best practices for market analysis
+# Or manual setup
+npm install
+npm run build
+npm run start  # HTTP server
+npm run start:stdio  # STDIO transport
+```
 
-### ⚡ Smart Default Values - Zero-Friction Start
+### Docker Deployment
 
-**Get professional market insights instantly - no parameter research required!**
+```bash
+# Build image
+docker build -t tam-mcp-server .
 
-All 28 tools now include **intelligent default values** that let you start analyzing immediately:
+# Run container (HTTP)
+docker run -p 3000:3000 --env-file .env tam-mcp-server
+```
+
+### MCP Integration
+
+**HTTP Transport (Recommended)**
+For Claude Desktop, add to your configuration:
+
+```json
+{
+  "mcpServers": {
+    "tam": {
+      "command": "npm",
+      "args": ["run", "start:http"],
+      "cwd": "/path/to/TAM-MCP-Server"
+    }
+  }
+}
+```
+
+**STDIO Transport (Alternative)**
+```json
+{
+  "mcpServers": {
+    "tam": {
+      "command": "npm",
+      "args": ["run", "start:stdio"],
+      "cwd": "/path/to/TAM-MCP-Server"
+    }
+  }
+}
+```
+
+For MCP Inspector:
+```bash
+# HTTP mode
+npm run start:http
+
+# STDIO mode  
+npx @modelcontextprotocol/inspector npm run start:stdio
+```
+
+## Usage
+
+### Smart Default Values - Zero-Friction Start
+
+Get professional market insights instantly - no parameter research required!
+
+All 28 tools include intelligent default values that let you start analyzing immediately:
 
 ```javascript
 // Call any tool with empty parameters - defaults automatically applied
@@ -109,19 +149,65 @@ All 28 tools now include **intelligent default values** that let you start analy
 ```
 
 **Professional Defaults Include:**
-- **📊 Stock Analysis**: AAPL, MSFT, GOOGL (Fortune 500 companies)
-- **🌍 Economic Data**: US GDP, Global indicators, 2020-2024 timeframes  
-- **🏭 Industry Codes**: Technology sector, Professional Services (NAICS 54)
-- **💰 Market Calculations**: $10B base market, 15% growth rates, 5-year projections
+- Stock Analysis: AAPL, MSFT, GOOGL (Fortune 500 companies)
+- Economic Data: US GDP, Global indicators, 2020-2024 timeframes  
+- Industry Codes: Technology sector, Professional Services (NAICS 54)
+- Market Calculations: $10B base market, 15% growth rates, 5-year projections
 
 **Perfect for:**
-- **First-time users** getting immediate results without parameter research
-- **Demo environments** showcasing professional market analysis capabilities  
-- **Rapid prototyping** with realistic business data and scenarios
+- First-time users getting immediate results without parameter research
+- Demo environments showcasing professional market analysis capabilities  
+- Rapid prototyping with realistic business data and scenarios
 
-📖 **[Complete Default Values Guide →](doc/consumer/default-values-guide.md)** | **[Semantic Validation Report →](doc/reports/SEMANTIC-VALIDATION-COMPLETE.md)**
+### Basic Tool Usage
 
-### Dual Tool System Architecture
+```javascript
+// Market analysis with defaults
+{
+  "name": "tam_calculator",
+  "arguments": {}
+}
+
+// Company overview with default symbol (AAPL)
+{
+  "name": "alphaVantage_getCompanyOverview", 
+  "arguments": {}
+}
+
+// Custom parameters
+{
+  "name": "market_size",
+  "arguments": {
+    "industryId": "technology",
+    "region": "north-america"
+  }
+}
+```
+
+### Business Analysis Prompts
+
+Access professional templates through the prompts interface:
+
+```javascript
+// List available prompts
+{
+  "method": "prompts/list"
+}
+
+// Get startup funding prompt
+{
+  "method": "prompts/get",
+  "params": {
+    "name": "startup_funding_pitch",
+    "arguments": {
+      "company_name": "TechCorp",
+      "industry": "SaaS"
+    }
+  }
+}
+```
+
+### MCP Tools - Dual Architecture System
 
 The TAM MCP Server provides **28 total MCP tools** across two complementary systems:
 
@@ -168,119 +254,125 @@ The TAM MCP Server provides **28 total MCP tools** across two complementary syst
 10. **`market_opportunities`**: Market gap and growth opportunity identification
 11. **`generic_data_query`**: Direct access to any data source service and method
 
-## 🛠 Installation
+### Data Sources
 
-### Prerequisites
-- Node.js (v20.x recommended)
-- npm (v10.x recommended) or yarn
-- Docker (optional, for containerized deployment)
+The server integrates with 8 data sources:
+- **Alpha Vantage**: Company financials, stock data
+- **BLS**: Employment and labor statistics  
+- **Census**: Industry and demographic data
+- **FRED**: Federal Reserve economic data
+- **IMF**: International economic data
+- **Nasdaq Data Link**: Financial datasets
+- **OECD**: International statistics
+- **World Bank**: Development indicators
 
-### Quick Start
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/gvaibhav/TAM-MCP-Server.git
-    cd TAM-MCP-Server
-    ```
-2.  **Quick setup (recommended):**
-    ```bash
-    # Automated development setup
-    chmod +x scripts/dev-setup.sh
-    ./scripts/dev-setup.sh
-    
-    # Or use the development helper
-    chmod +x scripts/dev.sh
-    ./scripts/dev.sh setup
-    ```
-    
-    Or manual setup:
-    
-3.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-4.  **Set up environment variables:**
-    Create a `.env` file in the root directory by copying `.env.example`:
-    ```bash
-    cp .env.example .env
-    ```
-    Update the variables in `.env` as needed (see Configuration section).
-5.  **Build the project:**
-    ```bash
-    npm run build
-    # or use the build script
-    ./scripts/build.sh
-    ```
-6.  **Run the server:**
-    ```bash
-    npm start
-    ```
-    The server will typically be available at `http://localhost:3000`.
+### Transport Methods
 
-    It can be started with inspector as:
-    ```bash
-    npx @modelcontextprotocol/inspector node dist/stdio-simple.js
-    ```
-
-### Development Helper Script
-
-For common development tasks, use the helper script:
-
+**HTTP Server (Recommended)**
 ```bash
-# Make executable (first time only)
-chmod +x scripts/dev.sh
-
-# Show available commands
-./scripts/dev.sh help
-
-# Common commands
-./scripts/dev.sh setup      # Setup development environment
-./scripts/dev.sh build      # Build the project
-./scripts/dev.sh test       # Run all tests
-./scripts/dev.sh start      # Start STDIO server
-./scripts/dev.sh start:http # Start HTTP server
+npm run start:http
+# Server available at http://localhost:3000
 ```
 
-### Docker Installation
-1.  **Build the Docker image:**
-    ```bash
-    docker build -t tam-mcp-server .
-    ```
-2.  **Run the Docker container:**
-    ```bash
-    docker run -p 3000:3000 --env-file .env tam-mcp-server
-    ```
-    Ensure your `.env` file is correctly populated before running.
+**STDIO Transport**
+```bash
+npm run start:stdio
+```
 
-## 📁 Project Structure
+**Server-Sent Events**
+```bash
+npm run start:sse
+```
+
+## Configuration
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure as needed:
+
+```bash
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+LOG_LEVEL=info
+
+# API Keys (Optional - tools work without keys but with limited data)
+ALPHA_VANTAGE_API_KEY=your_key_here
+CENSUS_API_KEY=your_key_here
+FRED_API_KEY=your_key_here
+NASDAQ_DATA_LINK_API_KEY=your_key_here
+BLS_API_KEY=your_key_here
+
+# Cache Configuration (Optional)
+CACHE_TTL_DEFAULT_MS=86400000
+CACHE_TTL_ALPHA_VANTAGE_MS=86400000
+CACHE_TTL_FRED_MS=86400000
+```
+
+### Data Source Setup
+
+**Required Keys:**
+- **Alpha Vantage**: Free tier provides 25 requests/day
+- **Census Bureau**: Free API access
+- **FRED**: Free API access  
+- **Nasdaq Data Link**: Free tier available
+
+**No Key Required:**
+- World Bank, OECD, IMF (public APIs)
+- BLS (optional key for higher limits)
+
+### Tool Defaults
+
+All tools include professional defaults. See [Default Values Guide](doc/consumer/default-values-guide.md) for complete parameter lists.
+
+**Example Defaults:**
+- Stock symbols: AAPL, MSFT, GOOGL
+- Industry codes: NAICS 54 (Professional Services)
+- Market sizes: $10B base with 15% growth
+- Time periods: 2020-2024
+
+### Caching Strategy
+
+**In-Memory Cache (Default)**
+- NodeCache-based with configurable TTLs
+- Automatic cleanup and statistics
+- Per-source cache invalidation
+
+**Redis Cache (Production)**
+```typescript
+const dataService = new EnhancedDataService({
+  cache: { type: 'redis' },
+  apiKeys: { /* your keys */ }
+});
+```
+
+## Project Structure
 
 ```
 TAM-MCP-Server/
 ├── config/                     # Configuration files
 │   ├── jest.config.json       # Jest test configuration  
 │   ├── vitest.config.ts       # Vitest test configuration
-│   └── .eslintrc.json         # ESLint configuration
+│   └── redis.conf             # Redis configuration
 ├── doc/                       # Documentation
 │   ├── README.md              # Documentation hub
-│   ├── guides/                # User and developer guides
-│   │   ├── CONTRIBUTING.md    # Contribution guidelines
-│   │   ├── SECURITY.md        # Security policy
-│   │   ├── DEPLOYMENT-GUIDE.md # Deployment instructions
-│   │   └── *.md               # Implementation guides
 │   ├── consumer/              # Consumer documentation
 │   │   ├── getting-started.md # Getting started guide
 │   │   ├── default-values-guide.md # Default values guide
-│   │   └── mcp-prompts-guide.md # MCP prompts guide
+│   │   ├── mcp-prompts-guide.md # MCP prompts guide
+│   │   ├── tools-guide.md     # Tools reference
+│   │   └── api-reference.md   # API documentation
+│   ├── contributor/           # Contributor documentation
+│   │   ├── contributing.md    # Development guidelines
+│   │   └── security.md        # Security policy
 │   ├── reference/             # Reference documentation
 │   │   ├── RELEASE-NOTES.md   # Version history
 │   │   ├── CHANGELOG.md       # Technical changes
 │   │   └── requirements.md    # Technical specifications
 │   ├── reports/               # Technical reports and validation
 │   │   ├── SEMANTIC-VALIDATION-COMPLETE.md # Validation results
-│   │   ├── DEFAULT-VALUES-SUMMARY.md # Default values analysis
-│   │   └── *.md               # Testing and analysis reports
+│   │   └── DEFAULT-VALUES-SUMMARY.md # Default values analysis
 │   └── archive/               # Historical documents
-│       ├── IMPLEMENTATION-COMPLETE.md # Implementation history
-│       └── PROJECT-STATUS.md  # Legacy project status
 ├── examples/                  # Examples and demos
 │   ├── README.md              # Examples documentation
 │   ├── demo-default-values.mjs # Default values demonstration
@@ -299,7 +391,9 @@ TAM-MCP-Server/
 │   ├── config/               # Configuration modules
 │   ├── services/             # Data source services
 │   ├── tools/                # MCP tool implementations
+│   ├── prompts/              # Business prompt templates
 │   ├── notifications/        # Notification system
+│   ├── types/                # TypeScript definitions
 │   └── utils/                # Utility functions
 ├── tests/                     # Test suite
 │   ├── unit/                 # Unit tests
@@ -309,6 +403,8 @@ TAM-MCP-Server/
 │   │   ├── test-comprehensive.mjs # Comprehensive testing
 │   │   ├── test-semantic-validation.mjs # Semantic validation
 │   │   └── *.mjs             # Additional test utilities
+│   ├── fixtures/             # Test data and mock objects
+│   ├── utils/                # Test utilities and helpers
 │   └── setup.ts              # Test configuration
 ├── logs/                      # Application logs
 ├── dist/                      # Compiled JavaScript (built)
@@ -318,184 +414,68 @@ TAM-MCP-Server/
 └── README.md                 # Main documentation
 ```
 
-## 📋 Configuration
+## Tools Reference
 
-### Environment Variables
-Update your `.env` file. API keys are needed for some sources. Cache TTLs are in milliseconds.
+### Market Analysis Tools (11 tools)
+| Tool | Description |
+|------|-------------|
+| `industry_search` | Multi-source industry search with intelligent ranking |
+| `industry_data` | Detailed industry intelligence with trends and key players |
+| `market_size` | Market size estimation with confidence scoring |
+| `tam_calculator` | Total Addressable Market calculations |
+| `sam_calculator` | Serviceable Addressable Market analysis |
+| `market_segments` | Hierarchical market segmentation |
+| `market_forecasting` | Time series forecasting with scenarios |
+| `market_comparison` | Multi-market comparative analysis |
+| `data_validation` | Cross-source data quality validation |
+| `market_opportunities` | Market gap identification |
+| `generic_data_query` | Direct data source access |
 
-| Variable                        | Description                                         | Default             | Required                 |
-|---------------------------------|-----------------------------------------------------|---------------------|--------------------------|
-| `PORT`                          | Server port                                         | `3000`              | No                       |
-| `HOST`                          | Server host                                         | `0.0.0.0`           | No                       |
-| `NODE_ENV`                      | Environment                                         | `development`       | No                       |
-| `CORS_ORIGIN`                   | CORS origin                                         | `*`                 | No                       |
-| `RATE_LIMIT_MAX`                | Rate limit per window                               | `100`               | No                       |
-| `SESSION_SECRET`                | Session secret key                                  | -                   | **Yes**                  |
-| `LOG_LEVEL`                     | Logging level                                       | `info`              | No                       |
-|                                 |                                                     |                     |                          |
-| **API Keys (Free Sources)**     |                                                     |                     |                          |
-| `BLS_API_KEY`                   | Bureau of Labor Statistics (BLS)                    | -                   | Optional for BLS data    |
-| `CENSUS_API_KEY`                | Census Bureau                                       | -                   | **Yes** for Census data  |
-| `FRED_API_KEY`                  | Federal Reserve Economic Data (FRED)                | -                   | **Yes** for FRED data    |
-| `ALPHA_VANTAGE_API_KEY`         | Alpha Vantage                                       | -                   | **Yes** for Alpha Vantage|
-| `NASDAQ_DATA_LINK_API_KEY`      | Nasdaq Data Link (Quandl)                           | -                   | **Yes** for Nasdaq data  |
-|                                 | *World Bank, OECD, IMF: No key needed*              |                     |                          |
-|                                 |                                                     |                     |                          |
-| **Cache TTLs (Milliseconds)**   |                                                     |                     |                          |
-| `CACHE_TTL_DEFAULT_MS`          | Default general cache TTL (used by some services if specific not set) | `86400000` (1d)   | No                       |
-| `CACHE_TTL_WORLD_BANK_MS`       | TTL for World Bank successful fetches               | `86400000` (1d)   | No                       |
-| `CACHE_TTL_WORLD_BANK_NODATA_MS`| TTL for World Bank "no data" responses              | `3600000` (1h)    | No                       |
-| `CACHE_TTL_FRED_MS`             | TTL for FRED successful fetches                     | `86400000` (1d)   | No                       |
-| `CACHE_TTL_FRED_NODATA_MS`      | TTL for FRED "no data" responses                    | `3600000` (1h)    | No                       |
-| `CACHE_TTL_ALPHA_VANTAGE_MS`    | TTL for AlphaVantage successful fetches             | `86400000` (1d)   | No                       |
-| `CACHE_TTL_ALPHA_VANTAGE_NODATA_MS` | TTL for AlphaVantage "no data" responses          | `3600000` (1h)    | No                       |
-| `CACHE_TTL_ALPHA_VANTAGE_RATELIMIT_MS` | TTL for AlphaVantage rate limit responses      | `300000` (5m)     | No                       |
-| `CACHE_TTL_NASDAQ_MS`           | TTL for Nasdaq Data Link successful fetches         | `86400000` (1d)   | No                       |
-| `CACHE_TTL_NASDAQ_NODATA_MS`    | TTL for Nasdaq Data Link "no data" responses        | `3600000` (1h)    | No                       |
-| `CACHE_TTL_BLS_MS`              | TTL for BLS successful fetches                      | `86400000` (1d)   | No                       |
-| `CACHE_TTL_BLS_NODATA_MS`       | TTL for BLS "no data" responses                     | `3600000` (1h)    | No                       |
-| `CACHE_TTL_CENSUS_MS`           | TTL for Census successful fetches                   | `86400000` (1d)   | No                       |
-| `CACHE_TTL_CENSUS_NODATA_MS`    | TTL for Census "no data" responses                  | `3600000` (1h)    | No                       |
-| `CACHE_TTL_OECD_MS`             | TTL for OECD successful fetches                     | `86400000` (1d)   | No                       |
-| `CACHE_TTL_OECD_NODATA_MS`      | TTL for OECD "no data" responses                    | `3600000` (1h)    | No                       |
-| `CACHE_TTL_IMF_MS`              | TTL for IMF successful fetches                      | `86400000` (1d)   | No                       |
-| `CACHE_TTL_IMF_NODATA_MS`       | TTL for IMF "no data" responses                     | `3600000` (1h)    | No                       |
-|                                 |                                                     |                     |                          |
-| **Premium API Keys (Planned)**  |                                                     |                     |                          |
-| `MARKET_DATA_API_KEY`           | Generic key for a primary paid provider             | -                   | For future use           |
-| `IBISWORLD_API_KEY`             | For IBISWorld                                       | -                   | For future premium sources |
-| `STATISTA_API_KEY`              | For Statista                                        | -                   | For future premium sources |
+### Data Access Tools (17 tools)
+| Source | Tools | Description |
+|--------|-------|-------------|
+| Alpha Vantage | `alphaVantage_getCompanyOverview`, `alphaVantage_searchSymbols` | Company financials and stock data |
+| BLS | `bls_getSeriesData` | Bureau of Labor Statistics data |
+| Census | `census_fetchIndustryData`, `census_fetchMarketSize` | Industry and demographic data |
+| FRED | `fred_getSeriesObservations` | Federal Reserve economic data |
+| IMF | `imf_getDataset`, `imf_getLatestObservation` | International economic data |
+| Nasdaq | `nasdaq_getDatasetTimeSeries`, `nasdaq_getLatestDatasetValue` | Financial datasets |
+| OECD | `oecd_getDataset`, `oecd_getLatestObservation` | International statistics |
+| World Bank | `worldBank_getIndicatorData` | Development indicators |
+| Enhanced | `tam_calculator`, `market_size_calculator`, `company_financials_retriever` | Advanced analytics |
 
-### Data Sources and API Configuration
-The server now integrates 8 free data sources. The `DataService` attempts to route `getMarketSize` requests intelligently (e.g., using AlphaVantage for stock symbols if `industryId` matches a symbol pattern, Census for NAICS codes) and provides a `getSpecificDataSourceData` method for direct access to any data source's capabilities. This method is exposed via the new `generic_data_query` tool.
+### Business Prompts (15 templates)
 
-#### Integrated Free Data Sources:
-- **Alpha Vantage**: Company financials, stock data (market cap via `OVERVIEW`). (Requires `ALPHA_VANTAGE_API_KEY`)
-- **BLS (Bureau of Labor Statistics)**: Employment, wages, economic indicators. (Optional `BLS_API_KEY`)
-- **Census Bureau**: Demographic and economic data (e.g., County Business Patterns). (Requires `CENSUS_API_KEY`)
-- **FRED (Federal Reserve Economic Data)**: Broad economic indicators. (Requires `FRED_API_KEY`)
-- **IMF (International Monetary Fund)**: Global economic and financial data. (Public access)
-- **Nasdaq Data Link (Quandl)**: Diverse financial and economic datasets. (Requires `NASDAQ_DATA_LINK_API_KEY`)
-- **OECD**: International comparative statistics. (Public access)
-- **World Bank**: Global development and economic data. (Public access)
+**15 Professional Business Analysis Prompts** designed for real-world business scenarios:
 
-#### Planned Premium Data Sources:
-Integration with these premium sources is planned for future releases to provide even more in-depth analysis:
-- **IBISWorld**
-- **Statista**
-- **Grand View Research**
-- **Bloomberg**
-- **PitchBook**
+#### Strategic Business Analysis
+- **startup_funding_pitch** - Series A-C funding presentations with TAM/SAM analysis
+- **private_equity_research** - Investment committee packages for PE deals
+- **corporate_strategy_entry** - Fortune 500 market entry strategy analysis
+- **venture_capital_thesis** - VC investment thesis development
+- **asset_management_research** - Institutional asset management research
 
-> **💡 Tip**: If you're experiencing issues with API keys not being recognized or services showing as disabled, see the [Troubleshooting](#-troubleshooting) section for common solutions.
+#### Crisis & Specialized Analysis
+- **crisis_management_analysis** - Emergency market analysis for crisis response
+- **regulatory_impact_assessment** - Regulatory change impact analysis
+- **international_expansion** - Global market entry strategy analysis
+- **technology_disruption_analysis** - Technology disruption impact assessment
+- **esg_sustainability_analysis** - ESG and sustainability market analysis
 
-## 🏗 Architecture
+#### Quick Analysis & Guidance
+- **market_opportunity_scan** - Rapid market opportunity identification
+- **competitive_intelligence** - Competitive landscape analysis
+- **investment_screening** - Investment opportunity screening
+- **tool_guidance** - Interactive guide to TAM MCP Server tools
+- **best_practices_guide** - Best practices for market analysis
 
-### Project Structure
-The project structure includes dedicated services for each data source and a central configuration:
-```
-src/
-├── config/
-│   └── apiConfig.ts          # Centralized API endpoint configurations (New)
-├── index.ts                  # Main entry point
-├── server.ts                 # Express server setup
-├── types/
-│   ├── index.ts              # Zod schemas and core TypeScript types
-│   ├── dataSources.ts        # Data source specific interfaces
-│   └── cache.ts              # Cache-related types
-├── tools/
-│   └── market-tools.ts       # MCP tool implementations (MarketAnalysisTools class)
-├── services/
-│   ├── dataService.ts        # Main data orchestrator service
-│   ├── cache/
-│   │   ├── cacheService.ts     # In-memory caching logic
-│   │   └── persistenceService.ts # File-based persistence for cache
-│   └── dataSources/
-│       ├── alphaVantageService.ts # Alpha Vantage client
-│       ├── blsService.ts       # Bureau of Labor Statistics client
-│       ├── censusService.ts    # Census Bureau client
-│       ├── fredService.ts      # Federal Reserve client
-│       ├── imfService.ts       # IMF client
-│       ├── nasdaqDataService.ts # Nasdaq Data Link client
-│       ├── oecdService.ts      # OECD client
-│       └── worldBankService.ts # World Bank client
-└── utils/
-    ├── index.ts              # Main export for utility functions
-    ├── dataTransform.ts      # Data transformation utilities
-    ├── envHelper.ts          # Environment variable parsing (New)
-    ├── rateLimit.ts          # Rate limiting utilities
-    └── logger.ts             # Winston logging utility
+**Designed for AI applications serving business analysts, developers, and market researchers with deep market intelligence and data access tools.**
 
-tests/
-├── integration/
-│   ├── services/
-│   │   ├── dataService.integration.test.ts # (New)
-│   │   └── live/                             # (New directory)
-│   │       ├── worldBankService.live.test.ts # (New)
-│   │       ├── oecdService.live.test.ts      # (New)
-│   │       └── imfService.live.test.ts       # (New)
-│   └── tools/
-│       └── marketAnalysisTools.integration.test.ts # (New)
-# ... (rest of tests structure)
-```
+## Development
 
-### Data Caching Strategy
-The server employs a comprehensive caching system with per-source configurable TTLs via environment variables (see Configuration section).
+### Testing
 
-#### Current Implementation
-**In-Memory Cache (`CacheService`)**:
-- Fast NodeCache-based in-memory store with comprehensive features
-- Configurable Time-To-Live (TTL) for each cache entry
-- Pattern-based cache invalidation and bulk operations
-- Cache statistics tracking (hits, misses, size, hit rate)
-- Automatic periodic cleanup and statistics logging
-- Support for get/set/delete/flush operations with advanced features
-
-#### Advanced Caching Options
-For production deployments, the server supports **enhanced caching architectures**:
-
-**Redis Cache Integration (`EnhancedDataService`)**:
-- Drop-in Redis replacement for in-memory cache
-- Distributed caching across multiple server instances
-- Persistent cache that survives server restarts
-- Advanced features: clustering, sentinel support, distributed invalidation
-- Hybrid fallback: Redis + Memory for maximum reliability
-
-**Configuration Examples**:
-```typescript
-// Basic memory cache (current default)
-const dataService = new DataService();
-
-// Redis cache (production recommended)
-const dataService = new EnhancedDataService({
-  cache: { type: 'redis' },
-  apiKeys: { /* your API keys */ }
-});
-
-// Hybrid cache (maximum reliability)
-const dataService = new EnhancedDataService({
-  cache: { type: 'hybrid' },
-  apiKeys: { /* your API keys */ }
-});
-```
-
-This architecture ensures optimal performance with configurable caching strategies suitable for development through enterprise production environments.
-
-### Technology Stack
-- **Language**: TypeScript 5.x
-- **Framework**: Express.js 4.x
-- **Protocol**: MCP 2024-11-05 Specification
-- **Validation**: Zod for schema validation
-- **Logging**: Winston for structured logging
-- **Testing**: Vitest for modern ES module testing
-- **API Testing**: Postman collection for comprehensive endpoint testing
-- **Containerization**: Docker
-- **CI/CD**: GitHub Actions
-
-## 🧪 Testing
-
-### Test Organization
-The project uses a professional test structure with Vitest as the primary testing framework:
+The project uses a comprehensive test structure with Vitest as the primary testing framework:
 
 ```
 tests/
@@ -503,16 +483,16 @@ tests/
 ├── integration/            # Component interaction tests
 ├── e2e/                   # End-to-end workflow tests
 ├── scripts/               # Integration test scripts
-│   ├── test-comprehensive-integration.mjs
-│   ├── test-http-streaming.mjs
-│   ├── test-simple-mcp.mjs
-│   └── test-mcp-tool-calls.mjs
+│   ├── test-comprehensive.mjs # Comprehensive testing
+│   ├── test-http-streaming.mjs # HTTP streaming transport
+│   ├── test-simple-mcp.mjs # Basic MCP functionality
+│   └── test-mcp-tool-calls.mjs # Individual tool validation
 ├── fixtures/              # Test data and mock objects
 ├── utils/                 # Test utilities and helpers
 └── setup.ts              # Vitest global configuration
 ```
 
-### Running Tests
+#### Running Tests
 
 ```bash
 # Run all tests
@@ -537,15 +517,15 @@ npm run test:scripts:tools        # Individual tool validation
 npm run test:scripts:inspector    # MCP Inspector compatibility
 
 # Or run directly
-node tests/scripts/test-comprehensive-integration.mjs
+node tests/scripts/test-comprehensive.mjs
 node tests/scripts/test-http-streaming.mjs
 ```
 
-### API Testing with Postman
+#### API Testing with Postman
 
 Import the comprehensive Postman collection for testing both MCP endpoints and backend API integrations:
 
-#### **MCP Server Testing Collection**
+**MCP Server Testing Collection**
 1. **Import Collection**: `examples/TAM-MCP-Server-Postman-Collection.json`
 2. **Set Environment Variables**:
    - `serverUrl`: http://localhost:3000
@@ -553,30 +533,18 @@ Import the comprehensive Postman collection for testing both MCP endpoints and b
 3. **Run Tests**:
    - Health check and server status
    - MCP session initialization
-   - All 11 market analysis tools
+   - All 28 tools (11 market analysis + 17 data access)
    - Resource access endpoints
    - Session management and cleanup
 
-#### **Backend API Testing Collection**
-For comprehensive testing of external API integrations:
-
-1. **Import Collection**: `TAM-MCP-Server-Postman-Collection.json`
-2. **Import Environment**: `tests/postman/environments/TAM-MCP-Server-Environment.postman_environment.json`
-3. **Configure API Keys**: Add your API keys to the environment variables
-4. **Run Tests**:
-   - 🔑 **Premium APIs**: Alpha Vantage, Census, FRED, Nasdaq Data Link
-   - 🌍 **Public APIs**: World Bank, OECD, IMF, BLS
-   - 🔧 **Health Checks**: Service availability testing
-   - 🧪 **Test Scenarios**: Complete market analysis workflows
-
-#### **Newman CLI Testing**
+**Newman CLI Testing**
 Automate Postman tests from command line:
 ```bash
 # Install Newman
 npm install -g newman
 
 # Run backend API tests
-newman run TAM-MCP-Server-Postman-Collection.json \
+newman run examples/TAM-MCP-Server-Postman-Collection.json \
   -e tests/postman/environments/TAM-MCP-Server-Environment.postman_environment.json \
   --reporters cli,json
 
@@ -584,157 +552,192 @@ newman run TAM-MCP-Server-Postman-Collection.json \
 npm run test:postman
 ```
 
-### Test Coverage
+#### Test Coverage
 - **Unit Level**: Individual tool functionality and business logic
 - **Integration Level**: MCP protocol compliance and server behavior
 - **System Level**: Complete workflows through real transports
 - **API Level**: REST endpoints and session management
 - **Performance**: Response time and resource usage monitoring
 
-Code coverage reports are generated in the `coverage/` directory. Live API tests are separate and should be run judiciously.
+Code coverage reports are generated in the `coverage/` directory.
 
-## 📊 Monitoring & Observability
-- **Logging**: Structured logs output to console and/or `logs/` directory.
-- **Metrics**: Prometheus-compatible metrics exposed at `/metrics`.
+### Project Structure
 
-## 🔒 Security
-- **Input Validation**: Zod schemas validate all incoming requests.
-- **Rate Limiting**: Basic rate limiting is implemented.
-- **CORS**: Configurable Cross-Origin Resource Sharing.
-- **Session Management**: Secure session handling.
+```
+src/
+├── index.ts              # Main entry point
+├── server.ts             # MCP server implementation
+├── http.ts               # HTTP transport
+├── sse-new.ts           # SSE transport
+├── stdio-simple.ts      # STDIO transport
+├── config/              # Configuration modules
+│   └── apiConfig.ts     # API endpoint configurations
+├── services/            # Data source services
+│   ├── dataService.ts   # Main data orchestrator
+│   ├── cache/           # Caching services
+│   │   ├── cacheService.ts # In-memory caching
+│   │   └── persistenceService.ts # File persistence
+│   └── dataSources/     # Individual data source clients
+│       ├── alphaVantageService.ts
+│       ├── blsService.ts
+│       ├── censusService.ts
+│       ├── fredService.ts
+│       ├── imfService.ts
+│       ├── nasdaqDataService.ts
+│       ├── oecdService.ts
+│       └── worldBankService.ts
+├── tools/               # MCP tool implementations
+│   └── market-tools.ts  # MarketAnalysisTools class
+├── prompts/             # Business prompt templates
+├── notifications/       # Notification system
+├── types/               # TypeScript definitions
+│   ├── index.ts         # Core schemas and types
+│   ├── dataSources.ts   # Data source interfaces
+│   └── cache.ts         # Cache-related types
+└── utils/               # Utility functions
+    ├── dataTransform.ts # Data transformation
+    ├── envHelper.ts     # Environment parsing
+    ├── rateLimit.ts     # Rate limiting
+    └── logger.ts        # Winston logging
 
-### API Key Management
-- API keys for external data sources are configured via environment variables (see "Environment Variables" section).
-- Ensure the `.env` file is secured and not committed to version control.
-- The application is designed to function with missing optional API keys, though data availability from those sources will be impacted or disabled.
+tests/
+├── unit/                # Unit tests
+├── integration/         # Integration tests
+├── e2e/                 # End-to-end tests
+└── scripts/             # Test automation scripts
+```
 
-## 🚀 Deployment
-The server can be deployed using Docker (recommended) or directly via Node.js. Refer to platform-specific deployment guides.
+### API Testing
 
-## 🔧 Troubleshooting
+Use the included Postman collection:
+
+```bash
+# Import collection
+examples/TAM-MCP-Server-Postman-Collection.json
+
+# Or run with Newman
+npm run test:postman
+```
+
+### Technology Stack
+
+- **Language**: TypeScript 5.x
+- **Protocol**: MCP 2025-03-26
+- **Framework**: Express.js 4.x
+- **Validation**: Zod schemas
+- **Testing**: Vitest + Postman
+- **Cache**: NodeCache (Redis optional)
+- **Logging**: Winston
+
+## Troubleshooting
 
 ### Common Issues
 
-#### 🚫 Data Sources Showing as Disabled Despite Having API Keys
-**Symptom**: Status shows fewer enabled services than expected (e.g., "4/8 services enabled" instead of "8/8")
+**Services showing as disabled despite API keys**
+- Ensure `.env` file is in project root
+- Check API key variable names match exactly
+- Restart server after adding keys
+- Verify startup logs show service initialization
 
-**Cause**: Environment variable loading order issue where services are initialized before `.env` file is loaded.
+**MCP Inspector connection issues**
+- Use: `npx @modelcontextprotocol/inspector node dist/stdio-simple.js`
+- Ensure no console.log statements contaminate stdout
+- Check Winston logger uses stderr for output
 
-**Solution**: This issue was fixed in the June 11, 2025 release. Ensure you're using the latest version where `dotenv.config()` is called before any service imports.
-
-**Verification**: Check the startup logs for service status:
-```
-📊 Status: 8/8 services enabled
-✅ Enabled: Alpha Vantage, Census Bureau, FRED, Nasdaq Data Link, BLS, World Bank, OECD, IMF
-```
-
-#### 🔌 MCP Inspector Connection Issues
-**Symptom**: JSON parsing errors or "Invalid JSON" messages in MCP Inspector
-
-**Cause**: Console output contaminating stdout JSON-RPC communication
-
-**Solution**: 
-- Use the correct command: `npx @modelcontextprotocol/inspector node dist/stdio-simple.js`
-- Ensure all console.log() statements use console.error() for stderr output
-- Check that Winston logger is configured with `stderrLevels`
-
-#### 🔑 API Key Configuration Issues
-**Symptom**: Services showing as disabled despite adding API keys to `.env`
-
-**Steps to resolve**:
-1. Verify `.env` file is in the project root directory
-2. Check API key variable names match exactly:
-   ```
-   ALPHA_VANTAGE_API_KEY=your_key_here
-   CENSUS_API_KEY=your_key_here
-   FRED_API_KEY=your_key_here
-   NASDAQ_API_KEY=your_key_here
-   BLS_API_KEY=your_key_here
-   ```
-3. Restart the server after adding new API keys
-4. Check startup logs for service initialization messages
-
-#### 🏗️ Build Errors
-**Symptom**: TypeScript compilation failures
-
-**Common solutions**:
-- Run `npm install` to ensure all dependencies are installed
-- Check Node.js version (v20.x recommended)
+**Build errors**
+- Run `npm install` to update dependencies
+- Check Node.js version (20.x recommended)
 - Clear build cache: `rm -rf dist && npm run build`
-- Verify all import statements include `.js` extensions for ES modules
 
-#### 🐳 Docker Issues
-**Symptom**: Container fails to start or can't access environment variables
-
-**Solutions**:
-- Ensure `.env` file exists and is properly formatted
-- Use `--env-file .env` flag when running container
-- Check container logs: `docker logs <container-id>`
-- Verify port mapping: `-p 3000:3000`
-
-#### 📊 No Data Returned from Tools
-**Symptom**: Tools execute but return empty or error responses
-
-**Debugging steps**:
-1. Check service status in startup logs
-2. Verify API quotas haven't been exceeded
-3. Test individual data sources using `generic_data_query` tool
-4. Check network connectivity and firewall settings
-5. Review service-specific error logs
+**No data returned from tools**
+- Check service status in startup logs
+- Verify API quotas not exceeded
+- Test with `generic_data_query` tool
+- Check network connectivity
 
 ### Getting Help
-If you encounter issues not covered here:
-1. Check the [Release Notes](doc/reference/RELEASE-NOTES.md) for recent fixes
-2. Search existing [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
-3. Create a new issue with:
-   - Error messages and logs
-   - Environment details (Node.js version, OS)
-   - Steps to reproduce
-   - Configuration (without sensitive API keys)
 
-## 🤝 Contributing
-Contributions are welcome! Please see our [Contributing Guidelines](CONTRIBUTING.md) for essential requirements, or the detailed [Contributing Guide](doc/contributor/contributing.md) for comprehensive development information. Please adhere to the Code of Conduct.
+- Check [GitHub Issues](https://github.com/gvaibhav/TAM-MCP-Server/issues)
+- Review [Release Notes](doc/reference/RELEASE-NOTES.md)
+- Submit issues with error logs and environment details
 
-## 📜 Documentation
-- **API Documentation**: Available at the `/docs` endpoint when the server is running (if Swagger/OpenAPI is integrated).
-- **MCP Specification**: [MCP 2024-11-05](https://modelcontextprotocol.org/)
-- **Release Notes**: See [Release Notes](doc/reference/RELEASE-NOTES.md).
-
-## 🔄 Changelog
-See [Changelog](doc/reference/CHANGELOG.md) for a detailed history of changes.
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Support
-If you encounter any issues or have questions, please open an issue on the [GitHub repository](https://github.com/gvaibhav/TAM-MCP-Server/issues).
-
-## 📚 Documentation
+## Documentation
 
 ### Complete Documentation
+
 - **[Documentation Hub](doc/README.md)** - Complete guide to all project documentation
-- **[Release Notes](doc/reference/RELEASE-NOTES.md)** - Detailed change history and version information
+- **[Getting Started Guide](doc/consumer/getting-started.md)** - Quick setup and first-use instructions
+- **[Configuration Guide](doc/consumer/configuration.md)** - Environment setup and API key management
+- **[Tools Reference](doc/consumer/tools-guide.md)** - Complete tool documentation and usage examples
+- **[Prompts Guide](doc/consumer/mcp-prompts-guide.md)** - Business analysis prompt templates and scenarios
+- **[API Reference](doc/consumer/api-reference.md)** - Complete API documentation and integration guides
+- **[Default Values Guide](doc/consumer/default-values-guide.md)** - Smart defaults documentation
+- **[MCP Integration Guide](doc/consumer/mcp-integration.md)** - MCP resources and protocol usage
+
+### Development Documentation
+
 - **[Contributing Guide](doc/contributor/contributing.md)** - Guidelines for contributors and developers
-- **[API Testing](examples/TAM-MCP-Server-Postman-Collection.json)** - Postman collection for comprehensive API testing
+- **[Security Policy](doc/contributor/security.md)** - Security guidelines and vulnerability reporting
+- **[Release Notes](doc/reference/RELEASE-NOTES.md)** - Detailed change history and version information
+- **[Changelog](doc/reference/CHANGELOG.md)** - Technical changes and updates
 
 ### Testing Documentation
-- **[Test Organization](doc/guides/TEST-ORGANIZATION.md)** - Professional test suite structure
+
 - **[Integration Tests](tests/scripts/README.md)** - Integration test scripts documentation
 - **[Test Reports](doc/reports/INTEGRATION-TEST-FINAL-REPORT.md)** - Comprehensive testing results
+- **[Semantic Validation](doc/reports/SEMANTIC-VALIDATION-COMPLETE.md)** - Validation results and analysis
+- **[Default Values Summary](doc/reports/DEFAULT-VALUES-SUMMARY.md)** - Default values analysis report
 
 ### Examples & Scripts
+
 - **[Examples Directory](examples/README.md)** - API examples and integration resources
+- **[Postman Collection](examples/TAM-MCP-Server-Postman-Collection.json)** - Comprehensive API testing
 - **[Development Scripts](scripts/)** - Build and setup automation scripts
 
 ### Implementation Guides
+
 - **[HTTP Streaming Report](doc/reports/HTTP-STREAMING-TEST-REPORT.md)** - HTTP transport implementation details
 - **[Notifications Guide](doc/guides/NOTIFICATIONS-IMPLEMENTATION.md)** - Real-time notification system
-- **[Security Policy](doc/contributor/security.md)** - Security guidelines and vulnerability reporting
+- **[Architecture Overview](doc/DESIGN-ARCHITECTURE.md)** - System design and architecture decisions
 
-## ✨ Acknowledgments
-- Thanks to the Model Context Protocol community.
-- Gratitude to the providers of free data APIs.
+### MCP Resources Access
+
+All documentation is also accessible through the MCP protocol:
+
+```javascript
+// Discover all available documentation
+{
+  "method": "resources/list",
+  "params": {}
+}
+
+// Read specific documentation
+{
+  "method": "resources/read", 
+  "params": {
+    "uri": "file:///README.md"
+  }
+}
+```
+
+**Available Documentation Resources:**
+- README.md - Complete project overview and feature documentation
+- Getting Started Guide - Quick setup and first-use instructions
+- Configuration Guide - Environment setup and API key management
+- Tools Reference - Complete tool documentation and usage examples
+- Prompts Guide - Business analysis prompt templates and scenarios
+- API Reference - Complete API documentation and integration guides
+- Security Policy - Security guidelines and best practices
+- Contributing Guide - Development and contribution instructions
+
+## Contributing
+
+Contributions welcome! See [Contributing Guidelines](CONTRIBUTING.md) for requirements.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Created by [Vaibhav Gupta](https://github.com/gvaibhav) with ❤️ for the market research and business intelligence community**
+**Created by [Vaibhav Gupta](https://github.com/gvaibhav)**
