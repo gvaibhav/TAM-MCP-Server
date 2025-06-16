@@ -30,7 +30,7 @@ describe('Unit Resource Handlers', () => {
       
       expect(response).toBeDefined();
       expect(response.resources).toBeInstanceOf(Array);
-      expect(response.resources.length).toBe(3);
+      expect(response.resources.length).toBe(6);
       
       // Verify each resource has required properties
       response.resources.forEach((resource: any) => {

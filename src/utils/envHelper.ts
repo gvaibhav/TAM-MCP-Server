@@ -1,4 +1,4 @@
-import * as process from 'process';
+import * as process from "process";
 
 /**
  * Retrieves an environment variable and parses it as a number.
@@ -13,7 +13,9 @@ export function getEnvAsNumber(key: string, defaultValue: number): number {
     if (!isNaN(parsed)) {
       return parsed;
     }
-    console.warn(`Environment variable "${key}" is not a valid number. Using default value: ${defaultValue}.`);
+    console.warn(
+      `Environment variable "${key}" is not a valid number. Using default value: ${defaultValue}.`,
+    );
   }
   return defaultValue;
 }

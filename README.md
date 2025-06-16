@@ -11,7 +11,27 @@
 [![Docker Build](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/docker-publish.yml)
 [![CodeQL](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/gvaibhav/TAM-MCP-Server/actions/workflows/github-code-scanning/codeql)
 
-A comprehensive **Model Context Protocol (MCP)** server for market intelligence, business analysis, and industry research. Features a sophisticated dual tool architecture with 28 MCP tools spanning raw data access to advanced analytics, powered by 8 integrated economic data sources.
+A comprehensive **Model Context Protocol (MCP)** server for market intelligence, business analysis, and industry research. Features sophisticated **MCP Prompts**, dual tool architecture with 28 MCP tools, **intelligent default values for instant use**, and **15 professional business analysis prompts** powered by 8 integrated economic data sources.
+
+**Designed for AI applications serving business analysts, venture capitalists, consultants, and market researchers with zero-friction business intelligence workflows and deep market data access.**
+
+## 🎯 **NEW: MCP Prompts - Business Intelligence Templates**
+
+**Transform market analysis with discoverable, professional-grade business prompts:**
+
+🚀 **15 Professional Business Analysis Prompts** - From startup funding pitches to crisis management  
+📊 **Investment-Grade Templates** - Designed for VCs, private equity, and corporate strategy teams  
+🎯 **Contextual Analysis Frameworks** - Each prompt provides complete business scenario context  
+🔍 **Native MCP Discovery** - All prompts discoverable through `prompts/list` in any MCP client
+
+### Featured Business Scenarios:
+- **🚀 Startup Funding Presentations** - Series A-C pitch preparation with TAM/SAM analysis
+- **📊 Private Equity Research** - Investment committee packages with due diligence frameworks
+- **🏢 Corporate Strategy Analysis** - Fortune 500 market entry and acquisition evaluation
+- **🚨 Crisis Management Intelligence** - Emergency market analysis for rapid response teams
+- **🌍 International Expansion** - Global market entry strategy with regulatory analysis
+- **💰 Investment Thesis Development** - VC and asset management research templates
+- **⚡ Technology Disruption Analysis** - Innovation impact assessment for technology teams
 
 **Designed for AI applications serving business analysts, developers, and market researchers with deep market intelligence and data access tools.**
 
@@ -19,26 +39,87 @@ A comprehensive **Model Context Protocol (MCP)** server for market intelligence,
 
 ## 🎉 **Project Complete & Ready for Use**
 
+✅ **Default Values Implementation Complete** - All 28 tools now support intelligent defaults for immediate use  
+✅ **MCP Prompts Implementation Complete** - 15 professional business analysis prompts with contextual templates  
 ✅ **Test Coverage Enhanced** - 95% improvement in test detection, critical infrastructure fixes  
 ✅ **Documentation Reorganized** - Role-based structure with consumer/contributor navigation  
 ✅ **Postman Scripts Enhanced** - Comprehensive automation with Newman CLI and CI/CD integration  
 ✅ **Core Development Complete** - Ready for deployment with comprehensive testing automation
 
-📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [Tool Selection Guide](doc/TOOL-SYSTEM-SELECTION-GUIDE.md) | [API Reference](doc/consumer/api-reference.md) | [Contributing](doc/contributor/contributing.md)
+📋 **Quick Links**: [Getting Started](doc/consumer/getting-started.md) | [Default Values Guide](doc/consumer/default-values-guide.md) | [Business Prompts Guide](doc/guides/mcp-prompts-guide.md) | [Tool Selection Guide](doc/TOOL-SYSTEM-SELECTION-GUIDE.md) | [API Reference](doc/consumer/api-reference.md) | [Contributing](doc/contributor/contributing.md)
 
 ## 🚀 Features
 
 ### Core Capabilities
+- **🎯 MCP Prompts Support**: 15 professional business analysis prompts with contextual templates
+- **⚡ Smart Default Values**: All 28 tools pre-configured with professional defaults - start analyzing immediately without parameter research
 - **Dual Tool Architecture**: 28 total MCP tools (17 data access + 11 business analysis) for comprehensive market intelligence
 - **Full Integration with 8 Data Sources**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
 - **STDIO Transport Support**: Compatible with Claude Desktop, VS Code MCP extensions, and MCP Inspector
 - **Advanced DataService Orchestration**: Intelligent routing and direct data access capabilities
 - **MCP Resource Support** with documentation access through protocol
 - **Enterprise Caching System**: NodeCache-based in-memory caching with Redis/hybrid options for production
-- **Comprehensive Input Validation**: Zod-based schema validation for all tools
+- **Comprehensive Input Validation**: Zod-based schema validation for all tools and prompts
 - **Professional Logging**: Structured Winston logging with business metrics
 - **Enterprise Security**: Rate limiting, input validation, and error handling
 - **Production Ready**: Complete testing suite with health monitoring
+
+### MCP Prompts - Business Intelligence Templates
+
+**15 Professional Business Analysis Prompts** designed for real-world business scenarios:
+
+#### 🏦 **Strategic Business Analysis**
+- **startup_funding_pitch** - Series A-C funding presentations with TAM/SAM analysis
+- **private_equity_research** - Investment committee packages for PE deals
+- **corporate_strategy_entry** - Fortune 500 market entry strategy analysis
+- **venture_capital_thesis** - VC investment thesis development
+- **asset_management_research** - Institutional asset management research
+
+#### 🚨 **Crisis & Specialized Analysis**
+- **crisis_management_analysis** - Emergency market analysis for crisis response
+- **regulatory_impact_assessment** - Regulatory change impact analysis
+- **international_expansion** - Global market entry strategy analysis
+- **technology_disruption_analysis** - Technology disruption impact assessment
+- **esg_sustainability_analysis** - ESG and sustainability market analysis
+
+#### ⚡ **Quick Analysis & Guidance**
+- **market_opportunity_scan** - Rapid market opportunity identification
+- **competitive_intelligence** - Competitive landscape analysis
+- **investment_screening** - Investment opportunity screening
+- **tool_guidance** - Interactive guide to TAM MCP Server tools
+- **best_practices_guide** - Best practices for market analysis
+
+### ⚡ Smart Default Values - Zero-Friction Start
+
+**Get professional market insights instantly - no parameter research required!**
+
+All 28 tools now include **intelligent default values** that let you start analyzing immediately:
+
+```javascript
+// Call any tool with empty parameters - defaults automatically applied
+{
+  "name": "alphaVantage_getCompanyOverview",
+  "arguments": {} // Server provides: symbol="AAPL" (Apple Inc.)
+}
+
+{
+  "name": "tam_calculator", 
+  "arguments": {} // Server provides: $10B market, 15% growth, 5-year projection
+}
+```
+
+**Professional Defaults Include:**
+- **📊 Stock Analysis**: AAPL, MSFT, GOOGL (Fortune 500 companies)
+- **🌍 Economic Data**: US GDP, Global indicators, 2020-2024 timeframes  
+- **🏭 Industry Codes**: Technology sector, Professional Services (NAICS 54)
+- **💰 Market Calculations**: $10B base market, 15% growth rates, 5-year projections
+
+**Perfect for:**
+- **First-time users** getting immediate results without parameter research
+- **Demo environments** showcasing professional market analysis capabilities  
+- **Rapid prototyping** with realistic business data and scenarios
+
+📖 **[Complete Default Values Guide →](doc/consumer/default-values-guide.md)** | **[Semantic Validation Report →](doc/reports/SEMANTIC-VALIDATION-COMPLETE.md)**
 
 ### Dual Tool System Architecture
 
@@ -180,22 +261,31 @@ TAM-MCP-Server/
 │   └── .eslintrc.json         # ESLint configuration
 ├── doc/                       # Documentation
 │   ├── README.md              # Documentation hub
-├── doc/                       # Documentation
-│   ├── README.md              # Documentation hub
 │   ├── guides/                # User and developer guides
 │   │   ├── CONTRIBUTING.md    # Contribution guidelines
 │   │   ├── SECURITY.md        # Security policy
+│   │   ├── DEPLOYMENT-GUIDE.md # Deployment instructions
 │   │   └── *.md               # Implementation guides
+│   ├── consumer/              # Consumer documentation
+│   │   ├── getting-started.md # Getting started guide
+│   │   ├── default-values-guide.md # Default values guide
+│   │   └── mcp-prompts-guide.md # MCP prompts guide
 │   ├── reference/             # Reference documentation
 │   │   ├── RELEASE-NOTES.md   # Version history
 │   │   ├── CHANGELOG.md       # Technical changes
 │   │   └── requirements.md    # Technical specifications
-│   ├── reports/               # Technical reports
+│   ├── reports/               # Technical reports and validation
+│   │   ├── SEMANTIC-VALIDATION-COMPLETE.md # Validation results
+│   │   ├── DEFAULT-VALUES-SUMMARY.md # Default values analysis
 │   │   └── *.md               # Testing and analysis reports
 │   └── archive/               # Historical documents
-├── examples/                  # Examples and API resources
+│       ├── IMPLEMENTATION-COMPLETE.md # Implementation history
+│       └── PROJECT-STATUS.md  # Legacy project status
+├── examples/                  # Examples and demos
 │   ├── README.md              # Examples documentation
-│   └── TAM-MCP-Server-Postman-Collection.json
+│   ├── demo-default-values.mjs # Default values demonstration
+│   ├── demo-integration.mjs   # Integration examples
+│   └── TAM-MCP-Server-Postman-Collection.json # API testing
 ├── scripts/                   # Build and development scripts
 │   ├── build.sh               # Production build script
 │   ├── dev-setup.sh          # Development environment setup
@@ -215,7 +305,10 @@ TAM-MCP-Server/
 │   ├── unit/                 # Unit tests
 │   ├── integration/          # Integration tests
 │   ├── e2e/                  # End-to-end tests
-│   ├── scripts/              # Integration test scripts
+│   ├── scripts/              # Test and validation scripts
+│   │   ├── test-comprehensive.mjs # Comprehensive testing
+│   │   ├── test-semantic-validation.mjs # Semantic validation
+│   │   └── *.mjs             # Additional test utilities
 │   └── setup.ts              # Test configuration
 ├── logs/                      # Application logs
 ├── dist/                      # Compiled JavaScript (built)
@@ -600,7 +693,7 @@ If you encounter issues not covered here:
    - Configuration (without sensitive API keys)
 
 ## 🤝 Contributing
-Contributions are welcome! Please see [Contributing Guide](doc/contributor/contributing.md) and adhere to the Code of Conduct.
+Contributions are welcome! Please see our [Contributing Guidelines](CONTRIBUTING.md) for essential requirements, or the detailed [Contributing Guide](doc/contributor/contributing.md) for comprehensive development information. Please adhere to the Code of Conduct.
 
 ## 📜 Documentation
 - **API Documentation**: Available at the `/docs` endpoint when the server is running (if Swagger/OpenAPI is integrated).

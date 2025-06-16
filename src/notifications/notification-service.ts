@@ -1,6 +1,5 @@
-
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { logger } from '../utils/index.js';
+import { logger } from "../utils/index.js";
 
 export interface ProgressNotification {
   progressToken?: string | number;
@@ -10,7 +9,12 @@ export interface ProgressNotification {
 }
 
 export interface MarketAnalysisNotification {
-  type: 'market_analysis' | 'calculation' | 'data_fetch' | 'validation' | 'error';
+  type:
+    | "market_analysis"
+    | "calculation"
+    | "data_fetch"
+    | "validation"
+    | "error";
   message: string;
   data?: any;
   timestamp: string;
@@ -36,7 +40,7 @@ export class NotificationService {
    */
   setEnabled(enabled: boolean) {
     this.isEnabled = enabled;
-    logger.info(`Notifications ${enabled ? 'enabled' : 'disabled'}`);
+    logger.info(`Notifications ${enabled ? "enabled" : "disabled"}`);
   }
 
   /**
@@ -56,16 +60,18 @@ export class NotificationService {
         },
       });
 
-      logger.debug('Progress notification sent', notification);
+      logger.debug("Progress notification sent", notification);
     } catch (error) {
-      logger.error('Failed to send progress notification', error);
+      logger.error("Failed to send progress notification", error);
     }
   }
 
   /**
    * Send a market analysis update notification
    */
-  async sendMarketAnalysisUpdate(notification: MarketAnalysisNotification): Promise<void> {
+  async sendMarketAnalysisUpdate(
+    notification: MarketAnalysisNotification,
+  ): Promise<void> {
     if (!this.isEnabled) return;
 
     try {
@@ -79,9 +85,9 @@ export class NotificationService {
         },
       });
 
-      logger.debug('Market analysis notification sent', notification);
+      logger.debug("Market analysis notification sent", notification);
     } catch (error) {
-      logger.error('Failed to send market analysis notification', error);
+      logger.error("Failed to send market analysis notification", error);
     }
   }
 
@@ -102,16 +108,19 @@ export class NotificationService {
         },
       });
 
-      logger.debug('Error notification sent', notification);
+      logger.debug("Error notification sent", notification);
     } catch (error) {
-      logger.error('Failed to send error notification', error);
+      logger.error("Failed to send error notification", error);
     }
   }
 
   /**
    * Send a general message notification
    */
-  async sendMessage(level: 'info' | 'warning' | 'error', message: string): Promise<void> {
+  async sendMessage(
+    level: "info" | "warning" | "error",
+    message: string,
+  ): Promise<void> {
     if (!this.isEnabled) return;
 
     try {
@@ -125,9 +134,9 @@ export class NotificationService {
         },
       });
 
-      logger.debug('Message notification sent', { level, message });
+      logger.debug("Message notification sent", { level, message });
     } catch (error) {
-      logger.error('Failed to send message notification', error);
+      logger.error("Failed to send message notification", error);
     }
   }
 
@@ -136,13 +145,13 @@ export class NotificationService {
    */
   async sendCalculationStatus(
     calculationType: string,
-    status: 'started' | 'completed' | 'failed',
-    details?: any
+    status: "started" | "completed" | "failed",
+    details?: any,
   ): Promise<void> {
     if (!this.isEnabled) return;
 
     const notification: MarketAnalysisNotification = {
-      type: 'calculation',
+      type: "calculation",
       message: `${calculationType} calculation ${status}`,
       data: details,
       timestamp: new Date().toISOString(),
@@ -156,13 +165,13 @@ export class NotificationService {
    */
   async sendDataFetchStatus(
     source: string,
-    status: 'started' | 'completed' | 'failed',
-    details?: any
+    status: "started" | "completed" | "failed",
+    details?: any,
   ): Promise<void> {
     if (!this.isEnabled) return;
 
     const notification: MarketAnalysisNotification = {
-      type: 'data_fetch',
+      type: "data_fetch",
       message: `Data fetch from ${source} ${status}`,
       data: details,
       timestamp: new Date().toISOString(),
@@ -176,13 +185,13 @@ export class NotificationService {
    */
   async sendValidationStatus(
     validationType: string,
-    status: 'started' | 'completed' | 'failed',
-    results?: any
+    status: "started" | "completed" | "failed",
+    results?: any,
   ): Promise<void> {
     if (!this.isEnabled) return;
 
     const notification: MarketAnalysisNotification = {
-      type: 'validation',
+      type: "validation",
       message: `${validationType} validation ${status}`,
       data: results,
       timestamp: new Date().toISOString(),

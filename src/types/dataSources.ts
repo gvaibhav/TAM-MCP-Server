@@ -1,4 +1,3 @@
-
 export interface DataSourceService {
   fetchIndustryData(...args: any[]): Promise<any>;
   fetchMarketSize(industryId: string, region?: string): Promise<any>;

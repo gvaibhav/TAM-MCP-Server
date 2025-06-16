@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Load environment variables FIRST, before any other imports
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 dotenv.config();
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -10,30 +10,42 @@ import {
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
   // ToolDefinition, // Removed, will use local definition
   // z, // Removed, z is imported in tool-definitions now
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from 'zod'; // Added: Import z directly for validationError typing
-import { getAllToolDefinitions, getToolDefinition, getToolValidationSchema } from './tools/tool-definitions.js'; // Changed: Import local ToolDefinition
-import { DataService } from './services/DataService.js'; // Added
-import { logger, checkRateLimit } from './utils/index.js';
-import { NotificationService } from './notifications/notification-service.js';
+import { z } from "zod"; // Added: Import z directly for validationError typing
+import {
+  getAllToolDefinitions,
+  getToolDefinition,
+  getToolValidationSchema,
+} from "./tools/tool-definitions.js"; // Changed: Import local ToolDefinition
+import {
+  getAllPromptDefinitions,
+  getPromptDefinition,
+  generatePromptContent,
+} from "./prompts/prompt-definitions.js"; // Added: Import prompt definitions
+import { DataService } from "./services/DataService.js"; // Added
+import { logger, checkRateLimit } from "./utils/index.js";
+import { NotificationService } from "./notifications/notification-service.js";
 
 export async function createServer() {
   const server = new Server(
     {
       name: "tam-mcp-server",
       version: "1.0.0",
-      toolDefinitionPath: './tools/tool-definitions.js' // Added: Inform SDK where to potentially load definitions if it supports it
+      toolDefinitionPath: "./tools/tool-definitions.js", // Added: Inform SDK where to potentially load definitions if it supports it
     },
     {
       capabilities: {
         tools: {},
         resources: {},
+        prompts: {}, // Added: Prompts capability
         logging: {},
         notifications: {},
       },
-    }
+    },
   );
 
   // Initialize notification service
@@ -41,14 +53,16 @@ export async function createServer() {
   const dataService = new DataService(); // Added: Initialize DataService
 
   // Rate limiting configuration
-  const RATE_LIMIT_REQUESTS = parseInt(process.env.RATE_LIMIT_REQUESTS || '100');
-  const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW || '60000'); // 1 minute
+  const RATE_LIMIT_REQUESTS = parseInt(
+    process.env.RATE_LIMIT_REQUESTS || "100",
+  );
+  const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW || "60000"); // 1 minute
 
   // Create logs directory if it doesn't exist
-  const fs = await import('fs');
-  const path = await import('path');
-  const logsDir = path.join(process.cwd(), 'logs');
-  
+  const fs = await import("fs");
+  const path = await import("path");
+  const logsDir = path.join(process.cwd(), "logs");
+
   try {
     await fs.promises.access(logsDir);
   } catch {
@@ -59,7 +73,7 @@ export async function createServer() {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = getAllToolDefinitions(); // Changed: Use new function
     logger.info(`Listed ${tools.length} available tools`);
-    
+
     return {
       tools,
     };
@@ -78,27 +92,39 @@ export async function createServer() {
       };
     }
 
-    // Validate arguments using the tool's input schema
+    // Validate arguments using the tool's input schema and apply defaults
+    let processedArgs = args;
     try {
       const validationSchema = getToolValidationSchema(name);
       if (validationSchema) {
-        validationSchema.parse(args);
+        // Apply defaults by parsing the arguments with the schema
+        // This will fill in any missing values with their defaults
+        processedArgs = validationSchema.parse(args || {});
       }
     } catch (validationError) {
-      logger.warn(`Invalid arguments for tool ${name}:`, { args, error: validationError });
+      logger.warn(`Invalid arguments for tool ${name}:`, {
+        args,
+        error: validationError,
+      });
       return {
-        content: [{
-          type: "text",
-          text: `Error: Invalid arguments for tool ${name}. ${ (validationError as z.ZodError).errors.map((e:any) => e.message).join(', ')}`
-        }],
-        isError: true
+        content: [
+          {
+            type: "text",
+            text: `Error: Invalid arguments for tool ${name}. ${(validationError as z.ZodError).errors.map((e: any) => e.message).join(", ")}`,
+          },
+        ],
+        isError: true,
       };
     }
-    
+
     // Rate limiting check
-    const clientId = 'default'; // In production, this would be based on authentication
-    const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW);
-    
+    const clientId = "default"; // In production, this would be based on authentication
+    const rateLimitResult = checkRateLimit(
+      clientId,
+      RATE_LIMIT_REQUESTS,
+      RATE_LIMIT_WINDOW,
+    );
+
     if (!rateLimitResult.allowed) {
       logger.warn(`Rate limit exceeded for client: ${clientId}`);
       return {
@@ -111,112 +137,260 @@ export async function createServer() {
       };
     }
 
-    logger.info(`Tool called: ${name}`, { args, remaining: rateLimitResult.remaining });
-
-    if (!args) {
-      return {
-        content: [{
-          type: "text",
-          text: "Error: Missing required arguments"
-        }],
-        isError: true
-      };
-    }
+    logger.info(`Tool called: ${name}`, {
+      args: processedArgs,
+      remaining: rateLimitResult.remaining,
+    });
 
     try {
       let result: any; // Using any for now, should be typed based on tool output schemas
-      
+
       // Send notification that tool execution started
-      await notificationService.sendMessage('info', `Starting execution of ${name}`);
-      
+      await notificationService.sendMessage(
+        "info",
+        `Starting execution of ${name}`,
+      );
+
       // Refactored tool dispatching to use DataService
       // This switch will now primarily call methods on dataService
       switch (name) {
-        case 'alphaVantage_getCompanyOverview':
-          await notificationService.sendDataFetchStatus('AlphaVantage Company Overview', 'started');
-          result = await dataService.getAlphaVantageData('OVERVIEW', args as any);
-          await notificationService.sendDataFetchStatus('AlphaVantage Company Overview', result ? 'completed' : 'failed', result);
+        case "alphaVantage_getCompanyOverview":
+          await notificationService.sendDataFetchStatus(
+            "AlphaVantage Company Overview",
+            "started",
+          );
+          result = await dataService.getAlphaVantageData(
+            "OVERVIEW",
+            processedArgs as any,
+          );
+          await notificationService.sendDataFetchStatus(
+            "AlphaVantage Company Overview",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'alphaVantage_searchSymbols':
-          await notificationService.sendDataFetchStatus('AlphaVantage Symbol Search', 'started');
-          result = await dataService.getAlphaVantageData('SYMBOL_SEARCH', args as any); // Assuming DataService handles this
-          await notificationService.sendDataFetchStatus('AlphaVantage Symbol Search', result ? 'completed' : 'failed', result);
+        case "alphaVantage_searchSymbols":
+          await notificationService.sendDataFetchStatus(
+            "AlphaVantage Symbol Search",
+            "started",
+          );
+          result = await dataService.getAlphaVantageData(
+            "SYMBOL_SEARCH",
+            processedArgs as any,
+          ); // Assuming DataService handles this
+          await notificationService.sendDataFetchStatus(
+            "AlphaVantage Symbol Search",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'bls_getSeriesData':
-          await notificationService.sendDataFetchStatus('BLS Series Data', 'started');
-          result = await dataService.getBlsData('fetchSeriesData', args as any);
-          await notificationService.sendDataFetchStatus('BLS Series Data', result ? 'completed' : 'failed', result);
+        case "bls_getSeriesData":
+          await notificationService.sendDataFetchStatus(
+            "BLS Series Data",
+            "started",
+          );
+          result = await dataService.getBlsData(
+            "fetchSeriesData",
+            processedArgs as any,
+          );
+          await notificationService.sendDataFetchStatus(
+            "BLS Series Data",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'census_fetchIndustryData':
-          await notificationService.sendDataFetchStatus('Census Industry Data', 'started');
-          result = await dataService.getCensusData('fetchIndustryData', args as any);
-          await notificationService.sendDataFetchStatus('Census Industry Data', result ? 'completed' : 'failed', result);
+        case "census_fetchIndustryData":
+          await notificationService.sendDataFetchStatus(
+            "Census Industry Data",
+            "started",
+          );
+          result = await dataService.getCensusData(
+            "fetchIndustryData",
+            processedArgs as any,
+          );
+          await notificationService.sendDataFetchStatus(
+            "Census Industry Data",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'census_fetchMarketSize':
-          await notificationService.sendDataFetchStatus('Census Market Size', 'started');
-          result = await dataService.getCensusData('fetchMarketSize', args as any);
-          await notificationService.sendDataFetchStatus('Census Market Size', result ? 'completed' : 'failed', result);
+        case "census_fetchMarketSize":
+          await notificationService.sendDataFetchStatus(
+            "Census Market Size",
+            "started",
+          );
+          result = await dataService.getCensusData(
+            "fetchMarketSize",
+            processedArgs as any,
+          );
+          await notificationService.sendDataFetchStatus(
+            "Census Market Size",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'fred_getSeriesObservations':
-          await notificationService.sendDataFetchStatus('FRED Series Observations', 'started');
-          result = await dataService.getFredData(args as any); // To be implemented in DataService
-          await notificationService.sendDataFetchStatus('FRED Series Observations', result ? 'completed' : 'failed', result);
+        case "fred_getSeriesObservations":
+          await notificationService.sendDataFetchStatus(
+            "FRED Series Observations",
+            "started",
+          );
+          result = await dataService.getFredData(processedArgs as any); // To be implemented in DataService
+          await notificationService.sendDataFetchStatus(
+            "FRED Series Observations",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'imf_getDataset':
-          await notificationService.sendDataFetchStatus('IMF Dataset', 'started');
-          result = await dataService.getImfData('fetchImfDataset', args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('IMF Dataset', result ? 'completed' : 'failed', result);
+        case "imf_getDataset":
+          await notificationService.sendDataFetchStatus(
+            "IMF Dataset",
+            "started",
+          );
+          result = await dataService.getImfData(
+            "fetchImfDataset",
+            processedArgs as any,
+          ); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "IMF Dataset",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'imf_getLatestObservation':
-          await notificationService.sendDataFetchStatus('IMF Latest Observation', 'started');
-          result = await dataService.getImfData('fetchMarketSize', args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('IMF Latest Observation', result ? 'completed' : 'failed', result);
+        case "imf_getLatestObservation":
+          await notificationService.sendDataFetchStatus(
+            "IMF Latest Observation",
+            "started",
+          );
+          result = await dataService.getImfData(
+            "fetchMarketSize",
+            processedArgs as any,
+          ); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "IMF Latest Observation",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'nasdaq_getDatasetTimeSeries':
-          await notificationService.sendDataFetchStatus('Nasdaq Timeseries', 'started');
-          result = await dataService.getNasdaqData('fetchIndustryData', args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('Nasdaq Timeseries', result ? 'completed' : 'failed', result);
+        case "nasdaq_getDatasetTimeSeries":
+          await notificationService.sendDataFetchStatus(
+            "Nasdaq Timeseries",
+            "started",
+          );
+          result = await dataService.getNasdaqData(
+            "fetchIndustryData",
+            processedArgs as any,
+          ); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "Nasdaq Timeseries",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'nasdaq_getLatestDatasetValue':
-          await notificationService.sendDataFetchStatus('Nasdaq Latest Value', 'started');
-          result = await dataService.getNasdaqData('fetchMarketSize', args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('Nasdaq Latest Value', result ? 'completed' : 'failed', result);
+        case "nasdaq_getLatestDatasetValue":
+          await notificationService.sendDataFetchStatus(
+            "Nasdaq Latest Value",
+            "started",
+          );
+          result = await dataService.getNasdaqData(
+            "fetchMarketSize",
+            processedArgs as any,
+          ); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "Nasdaq Latest Value",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'oecd_getDataset':
-          await notificationService.sendDataFetchStatus('OECD Dataset', 'started');
-          result = await dataService.getOecdData('fetchOecdDataset', args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('OECD Dataset', result ? 'completed' : 'failed', result);
+        case "oecd_getDataset":
+          await notificationService.sendDataFetchStatus(
+            "OECD Dataset",
+            "started",
+          );
+          result = await dataService.getOecdData(
+            "fetchOecdDataset",
+            processedArgs as any,
+          ); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "OECD Dataset",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'oecd_getLatestObservation':
-          await notificationService.sendDataFetchStatus('OECD Latest Observation', 'started');
-          result = await dataService.getOecdData('fetchMarketSize', args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('OECD Latest Observation', result ? 'completed' : 'failed', result);
+        case "oecd_getLatestObservation":
+          await notificationService.sendDataFetchStatus(
+            "OECD Latest Observation",
+            "started",
+          );
+          result = await dataService.getOecdData(
+            "fetchMarketSize",
+            processedArgs as any,
+          ); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "OECD Latest Observation",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'worldBank_getIndicatorData':
-          await notificationService.sendDataFetchStatus('World Bank Indicator Data', 'started');
-          result = await dataService.getWorldBankData(args as any); // To be implemented
-          await notificationService.sendDataFetchStatus('World Bank Indicator Data', result ? 'completed' : 'failed', result);
+        case "worldBank_getIndicatorData":
+          await notificationService.sendDataFetchStatus(
+            "World Bank Indicator Data",
+            "started",
+          );
+          result = await dataService.getWorldBankData(processedArgs as any); // To be implemented
+          await notificationService.sendDataFetchStatus(
+            "World Bank Indicator Data",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'industry_search':
-          await notificationService.sendDataFetchStatus('Industry Search', 'started');
-          result = await dataService.searchIndustries(args as any);
-          await notificationService.sendDataFetchStatus('Industry Search', result ? 'completed' : 'failed', result);
+        case "industry_search":
+          await notificationService.sendDataFetchStatus(
+            "Industry Search",
+            "started",
+          );
+          result = await dataService.searchIndustries(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Industry Search",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'tam_calculator':
-          await notificationService.sendCalculationStatus('TAM Calculation', 'started');
-          result = await dataService.calculateTam(args as any);
-          await notificationService.sendCalculationStatus('TAM Calculation', result ? 'completed' : 'failed', result);
+        case "tam_calculator":
+          await notificationService.sendCalculationStatus(
+            "TAM Calculation",
+            "started",
+          );
+          result = await dataService.calculateTam(processedArgs as any);
+          await notificationService.sendCalculationStatus(
+            "TAM Calculation",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'market_size_calculator':
-          await notificationService.sendCalculationStatus('Market Size Calculation', 'started');
-          result = await dataService.calculateMarketSize(args as any);
-          await notificationService.sendCalculationStatus('Market Size Calculation', result ? 'completed' : 'failed', result);
+        case "market_size_calculator":
+          await notificationService.sendCalculationStatus(
+            "Market Size Calculation",
+            "started",
+          );
+          result = await dataService.calculateMarketSize(processedArgs as any);
+          await notificationService.sendCalculationStatus(
+            "Market Size Calculation",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
-        case 'company_financials_retriever':
-          await notificationService.sendDataFetchStatus('Company Financials', 'started');
+        case "company_financials_retriever":
+          await notificationService.sendDataFetchStatus(
+            "Company Financials",
+            "started",
+          );
           // This tool maps to multiple AlphaVantage functions based on statementType
-          result = await dataService.getCompanyFinancials(args as any); // New method in DataService
-          await notificationService.sendDataFetchStatus('Company Financials', result ? 'completed' : 'failed', result);
+          result = await dataService.getCompanyFinancials(processedArgs as any); // New method in DataService
+          await notificationService.sendDataFetchStatus(
+            "Company Financials",
+            result ? "completed" : "failed",
+            result,
+          );
           break;
         // Cases for old tools like 'industry_data', 'market_size', etc. are removed as they are replaced by specific tools.
         // Ensure all tools from AllToolDefinitions are handled or have a default error.
@@ -226,23 +400,30 @@ export async function createServer() {
       }
 
       // Log successful tool execution
-      logger.info(`Tool executed: ${name}`, { 
+      logger.info(`Tool executed: ${name}`, {
         args,
         // success: result.success, // Assuming result structure might change
-        // cached: result.metadata?.cached 
+        // cached: result.metadata?.cached
       });
 
       // Send completion notification
       // Assuming 'result' is the direct data or an object with an error property
-      if (!result || (typeof result === 'object' && result.hasOwnProperty('error'))) { // Basic error check
+      if (
+        !result ||
+        (typeof result === "object" && result.hasOwnProperty("error"))
+      ) {
+        // Basic error check
         await notificationService.sendError({
-          error: result?.error || 'Unknown error during tool execution',
+          error: result?.error || "Unknown error during tool execution",
           tool: name,
           timestamp: new Date().toISOString(),
-          details: result
+          details: result,
         });
       } else {
-        await notificationService.sendMessage('info', `Successfully completed ${name}`);
+        await notificationService.sendMessage(
+          "info",
+          `Successfully completed ${name}`,
+        );
       }
 
       // Format response for MCP
@@ -258,23 +439,22 @@ export async function createServer() {
           },
         ],
       };
-      
     } catch (error) {
       logger.error(`Tool execution failed: ${name}`, error);
-      
+
       // Send error notification
       await notificationService.sendError({
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         tool: name,
         timestamp: new Date().toISOString(),
-        details: error
+        details: error,
       });
-      
+
       return {
         content: [
           {
             type: "text",
-            text: `Error executing ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            text: `Error executing ${name}: ${error instanceof Error ? error.message : "Unknown error"}`,
           },
         ],
       };
@@ -288,19 +468,42 @@ export async function createServer() {
         {
           uri: "tam://readme",
           name: "TAM MCP Server Documentation",
-          description: "README documentation for the Total Addressable Market (TAM) MCP Server",
+          description:
+            "README documentation for the Total Addressable Market (TAM) MCP Server",
           mimeType: "text/markdown",
         },
         {
           uri: "tam://contributing",
           name: "Contributing Guidelines",
-          description: "Comprehensive guidelines for contributing to the TAM MCP Server project",
+          description:
+            "Comprehensive guidelines for contributing to the TAM MCP Server project",
           mimeType: "text/markdown",
         },
         {
           uri: "tam://release-notes",
           name: "Release Notes",
           description: "Chronological change tracking and release history",
+          mimeType: "text/markdown",
+        },
+        {
+          uri: "tam://prompt-strategies",
+          name: "Business Analysis Prompt Strategies",
+          description:
+            "Comprehensive guide to using MCP prompts for professional business analysis",
+          mimeType: "text/markdown",
+        },
+        {
+          uri: "tam://prompt-examples",
+          name: "MCP Prompts Usage Examples",
+          description:
+            "Practical examples and workflows for business analysis prompts",
+          mimeType: "text/markdown",
+        },
+        {
+          uri: "tam://prompt-reference",
+          name: "MCP Prompts Complete Reference",
+          description:
+            "Complete reference guide for all 15 business analysis prompts",
           mimeType: "text/markdown",
         },
       ],
@@ -310,38 +513,70 @@ export async function createServer() {
   // Read resource content
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
-    
-    const fs = await import('fs');
-    const path = await import('path');
-    const { fileURLToPath } = await import('url');
-    
+
+    const fs = await import("fs");
+    const path = await import("path");
+    const { fileURLToPath } = await import("url");
+
     try {
       let filePath: string;
       let content: string;
-      
+
       // Get the source directory path (parent of src)
       const currentDir = path.dirname(fileURLToPath(import.meta.url));
       const projectRoot = path.dirname(currentDir); // Go up from src to project root
-      
+
       switch (uri) {
         case "tam://readme":
-          filePath = path.join(projectRoot, 'README.md');
+          filePath = path.join(projectRoot, "README.md");
           content = await fs.promises.readFile(filePath, "utf-8");
           break;
         case "tam://contributing":
-          filePath = path.join(projectRoot, 'CONTRIBUTING.md');
+          filePath = path.join(projectRoot, "CONTRIBUTING.md");
           content = await fs.promises.readFile(filePath, "utf-8");
           break;
         case "tam://release-notes":
-          filePath = path.join(projectRoot, 'doc', 'reference', 'RELEASE-NOTES.md');
+          filePath = path.join(
+            projectRoot,
+            "doc",
+            "reference",
+            "RELEASE-NOTES.md",
+          );
+          content = await fs.promises.readFile(filePath, "utf-8");
+          break;
+        case "tam://prompt-strategies":
+          filePath = path.join(
+            projectRoot,
+            "doc",
+            "guides",
+            "mcp-client-prompt-strategies.md",
+          );
+          content = await fs.promises.readFile(filePath, "utf-8");
+          break;
+        case "tam://prompt-examples":
+          filePath = path.join(
+            projectRoot,
+            "doc",
+            "consumer",
+            "mcp-prompts-examples.md",
+          );
+          content = await fs.promises.readFile(filePath, "utf-8");
+          break;
+        case "tam://prompt-reference":
+          filePath = path.join(
+            projectRoot,
+            "doc",
+            "consumer",
+            "mcp-prompts-guide.md",
+          );
           content = await fs.promises.readFile(filePath, "utf-8");
           break;
         default:
           throw new Error(`Unknown resource: ${uri}`);
       }
-      
+
       logger.info(`Resource accessed: ${uri}`);
-      
+
       return {
         contents: [
           {
@@ -353,27 +588,81 @@ export async function createServer() {
       };
     } catch (error) {
       logger.error(`Failed to read resource ${uri}:`, error);
-      throw new Error(`Failed to read resource ${uri}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to read resource ${uri}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
+  });
+
+  // List available prompts
+  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    const prompts = getAllPromptDefinitions();
+    logger.info(`Listed ${prompts.length} available prompts`);
+
+    return {
+      prompts,
+    };
+  });
+
+  // Get prompt content
+  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+    const promptDefinition = getPromptDefinition(name);
+
+    if (!promptDefinition) {
+      logger.warn(`Attempted to get unknown prompt: ${name}`);
+      throw new Error(`Unknown prompt: ${name}`);
+    }
+
+    // Validate required arguments
+    const requiredArgs =
+      promptDefinition.arguments?.filter((arg) => arg.required) || [];
+    for (const requiredArg of requiredArgs) {
+      if (!args || !(requiredArg.name in args)) {
+        logger.warn(
+          `Missing required argument ${requiredArg.name} for prompt ${name}`,
+        );
+        throw new Error(`Missing required argument: ${requiredArg.name}`);
+      }
+    }
+
+    // Generate prompt content based on the prompt type
+    const promptContent = generatePromptContent(name, args || {});
+
+    logger.info(`Generated prompt: ${name}`, { args });
+
+    return {
+      description: promptDefinition.description,
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: promptContent,
+          },
+        },
+      ],
+    };
   });
 
   // Cleanup function
   const cleanup = async () => {
-    logger.info('Shutting down TAM MCP Server...');
-    
-    logger.info('TAM MCP Server shutdown complete');
+    logger.info("Shutting down TAM MCP Server...");
+
+    logger.info("TAM MCP Server shutdown complete");
   };
 
   // Log server startup
-  logger.info('TAM MCP Server initialized', {
-    version: '1.0.0',
+  logger.info("TAM MCP Server initialized", {
+    version: "1.0.0",
     tools: getAllToolDefinitions().length, // Changed: Use new function
-    resources: 3, // README, CONTRIBUTING, Release Notes
-    capabilities: ['tools', 'resources', 'logging', 'notifications'],
+    prompts: getAllPromptDefinitions().length, // Added: Prompts count
+    resources: 6, // README, CONTRIBUTING, Release Notes, Prompt Strategies, Prompt Examples, Prompt Reference
+    capabilities: ["tools", "prompts", "resources", "logging", "notifications"], // Added prompts capability
     rateLimit: {
       requests: RATE_LIMIT_REQUESTS,
-      window: RATE_LIMIT_WINDOW
-    }
+      window: RATE_LIMIT_WINDOW,
+    },
   });
 
   return { server, cleanup, notificationService };

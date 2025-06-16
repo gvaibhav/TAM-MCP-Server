@@ -46,6 +46,12 @@ npm run start:sse
 - **17 Data Access Tools**: Raw data from external APIs
 - **11 Business Analysis Tools**: Advanced market calculations
 
+### Prompts (15 available) ⭐ **NEW**
+Professional business analysis templates organized in three categories:
+- **Strategic Business Analysis** (5 prompts): Startup funding, PE research, corporate strategy, VC thesis, asset management
+- **Crisis & Specialized Analysis** (5 prompts): Crisis management, regulatory impact, international expansion, technology disruption, ESG analysis  
+- **Quick Analysis & Guidance** (5 prompts): Market opportunity scan, competitive intelligence, investment screening, tool guidance, best practices
+
 ### Resources (3 available)
 - Server health monitoring
 - Configuration status

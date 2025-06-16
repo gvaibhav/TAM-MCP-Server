@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 // Load environment variables FIRST, before any other imports
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 dotenv.config();
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer } from "./server.js";
 
-console.error('Starting TAM MCP Server (STDIO transport)...');
+console.error("Starting TAM MCP Server (STDIO transport)...");
 
 async function main() {
   const transport = new StdioServerTransport();

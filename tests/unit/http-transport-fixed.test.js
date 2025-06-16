@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mockProcess = {
   on: vi.fn(),
   exit: vi.fn(),
+  cwd: vi.fn().mockReturnValue('/mock/project/directory'),
   env: { PORT: '3000' }
 };
 

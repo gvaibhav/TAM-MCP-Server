@@ -10,6 +10,8 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 - **[Security Policy](contributor/security.md)** - Security guidelines and vulnerability reporting
 
 ### 📖 **User Guides**
+- **[MCP Prompts Guide](consumer/mcp-prompts-guide.md)** ⭐ **NEW** - Professional business analysis templates
+- **[MCP Prompts Examples](consumer/mcp-prompts-examples.md)** - Practical usage workflows and patterns
 - **[Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md)** - Choose between data access and business analysis tools
 - **[API Testing Guide](../examples/README.md)** - Postman collection and API testing
 - **[Backend API Testing](BACKEND-API-TESTING.md)** - Comprehensive backend API integration testing
@@ -30,6 +32,12 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 
 ## 🎯 **Quick Navigation by Role**
 
+### **💼 For Business Analysts & Investment Professionals** ⭐ **NEW**
+1. **Start Here**: [MCP Prompts Guide](consumer/mcp-prompts-guide.md) - 15 professional business analysis templates
+2. **See Examples**: [MCP Prompts Examples](consumer/mcp-prompts-examples.md) - Real-world workflows and patterns
+3. **Integration**: [MCP Integration Guide](consumer/mcp-integration.md) - Connect with Claude Desktop and other clients
+4. **Tools Overview**: [Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md) - Market data and analysis tools
+
 ### **👩‍💻 For Developers**
 1. Start with [Main README](../README.md) for project overview
 2. Follow [Contributing Guide](contributor/contributing.md) for development setup
@@ -37,12 +45,14 @@ Welcome to the comprehensive documentation for the TAM MCP Server - a Model Cont
 4. Check [Release Notes](reference/RELEASE-NOTES.md) for recent changes
 
 ### **🔧 For Integrators**
-1. Review [Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md) for choosing the right tools
-2. Check [API Testing Guide](../examples/README.md) for Postman collection
-3. Read [Backend API Testing](BACKEND-API-TESTING.md) for comprehensive API integration testing
-4. Study [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
-5. Check [Technical Reports](reports/) for implementation details
-6. Reference [Requirements](reference/requirements.md) for specifications
+1. **Get Started**: [MCP Prompts Guide](consumer/mcp-prompts-guide.md) for business analysis templates ⭐ **NEW**
+2. **See Examples**: [MCP Prompts Examples](consumer/mcp-prompts-examples.md) for practical workflows
+3. Review [Tool System Selection Guide](TOOL-SYSTEM-SELECTION-GUIDE.md) for choosing the right tools
+4. Check [API Testing Guide](../examples/README.md) for Postman collection
+5. Read [Backend API Testing](BACKEND-API-TESTING.md) for comprehensive API integration testing
+6. Study [Notifications Implementation](guides/NOTIFICATIONS-IMPLEMENTATION.md) for real-time features
+7. Check [Technical Reports](reports/) for implementation details
+8. Reference [Requirements](reference/requirements.md) for specifications
 
 ### **📈 For Project Managers**
 1. Review [Release Notes](reference/RELEASE-NOTES.md) for project status

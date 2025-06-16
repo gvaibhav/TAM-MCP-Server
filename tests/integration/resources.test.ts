@@ -31,7 +31,7 @@ describe('Resource Integration Tests', () => {
       expect(listHandler).toBeDefined();
       
       const listResponse: any = await listHandler(listRequest);
-      expect(listResponse.resources).toHaveLength(3);
+      expect(listResponse.resources).toHaveLength(6);
 
       // Step 2: Read each discovered resource
       const readHandler = server._requestHandlers.get('resources/read');

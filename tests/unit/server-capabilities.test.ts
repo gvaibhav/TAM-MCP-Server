@@ -76,8 +76,8 @@ describe('Server Capabilities and Resource Support', () => {
       expect(resourceUris).toContain('tam://contributing');
       expect(resourceUris).toContain('tam://release-notes');
       
-      // Should be exactly 3 resources as documented
-      expect(response.resources).toHaveLength(3);
+      // Should be exactly 6 resources as documented
+      expect(response.resources).toHaveLength(6);
     });
 
     it('should provide meaningful resource descriptions', async () => {
@@ -179,7 +179,7 @@ describe('Server Capabilities and Resource Support', () => {
       
       expect(responses).toHaveLength(10);
       responses.forEach(response => {
-        expect(response.resources).toHaveLength(3);
+        expect(response.resources).toHaveLength(6);
       });
       
       // Should complete reasonably quickly

@@ -69,3 +69,21 @@ config/secrets.json
 
 # Cache files
 .cache_data/
+
+# Internal development files (not for public release)
+doc/archive/
+doc/reports/*-INTERNAL.md
+tests/scripts/test-manual-*.mjs
+tests/scripts/test-debug-*.mjs
+
+# Development artifacts
+*.local.mjs
+*.dev.mjs
+*.internal.md
+*-INTERNAL.*
+*-DEBUG.*
+
+# Backup files
+*.bak
+*.backup
+*~

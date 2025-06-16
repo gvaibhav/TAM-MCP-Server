@@ -65,6 +65,29 @@ npm run start:http     # HTTP transport
 
 Visit `http://localhost:3000/health` to check server status.
 
+## ⚡ First Tool Call - Zero Setup Required!
+
+**Start analyzing immediately with intelligent defaults - no parameter research needed!**
+
+```javascript
+// Call any tool with empty parameters - defaults are automatically applied
+const result = await client.callTool('alphaVantage_getCompanyOverview', {});
+// Returns: Apple Inc. (AAPL) company overview
+
+const tamResult = await client.callTool('tam_calculator', {});
+// Returns: $10B base market analysis with 15% growth over 5 years
+
+const marketData = await client.callTool('marketSize_calculator', {});
+// Returns: Software as a Service industry analysis for the US market
+```
+
+**Why This Works:**
+- **Professional Defaults**: All tools include real-world business examples (Apple, Google, Technology sector)
+- **Instant Results**: Get meaningful market insights without studying parameter requirements
+- **Progressive Enhancement**: Add specific parameters as you learn the tools
+
+📖 **[Complete Default Values Guide →](default-values-guide.md)**
+
 ## 🔧 Basic Usage
 
 ### Using with MCP Clients
