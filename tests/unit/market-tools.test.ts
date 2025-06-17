@@ -93,10 +93,9 @@ describe('MarketAnalysisTools - Tool Definitions', () => {
     });
     
     // Verify specific tools exist
-    const toolNames = tools.map((tool) => tool.name);
-    expect(toolNames).toContain('industry_search');
+    const toolNames = tools.map((tool) => tool.name);    expect(toolNames).toContain('industry_analysis');
     expect(toolNames).toContain('market_size');
-    expect(toolNames).toContain('tam_calculator');
+    expect(toolNames).toContain('tam_analysis');
   });
 });
 

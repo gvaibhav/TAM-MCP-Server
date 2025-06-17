@@ -74,7 +74,7 @@ Visit `http://localhost:3000/health` to check server status.
 const result = await client.callTool('alphaVantage_getCompanyOverview', {});
 // Returns: Apple Inc. (AAPL) company overview
 
-const tamResult = await client.callTool('tam_calculator', {});
+const tamResult = await client.callTool('tam_analysis', {});
 // Returns: $10B base market analysis with 15% growth over 5 years
 
 const marketData = await client.callTool('marketSize_calculator', {});

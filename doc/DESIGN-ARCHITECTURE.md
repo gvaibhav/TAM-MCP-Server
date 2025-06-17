@@ -14,7 +14,7 @@ The Total Addressable Market (TAM) Market Context Protocol (MCP) Server is a **p
 - **Enhanced User Experience**: Key tools include detailed help, examples, and enum guidance
 
 **Dual Tool System Architecture (28 Total MCP Tools):**
-*   **MCP Data Access Layer**: 17 tools comprising 13 raw data APIs, 1 multi-source aggregation, and 3 enhanced analytical tools
+*   **MCP Data Access Layer**: 17 tools comprising 13 raw data APIs and 4 basic market analysis tools
 *   **Business Analysis Layer**: 11 conversational market intelligence tools for advanced analysis and business insights
 *   **Unified Backend**: Single DataService orchestrates both tool systems with intelligent routing
 *   **Flexible Integration**: Applications can use either tool system based on their needs
@@ -22,7 +22,7 @@ The Total Addressable Market (TAM) Market Context Protocol (MCP) Server is a **p
 **Core Capabilities Achieved:**
 *   **Unified Data Access:** Single, consistent MCP API accessing Alpha Vantage, BLS, Census Bureau, FRED, IMF, Nasdaq Data Link, OECD, and World Bank with intelligent routing and caching.
 *   **Advanced Data Orchestration:** DataService layer provides intelligent source selection, cross-validation, and direct data access capabilities for maximum flexibility.
-*   **Dual Tool Architecture:** 28 MCP tools total - 17 data access tools (13 raw data APIs + 1 multi-source aggregation + 3 enhanced analytical) + 11 conversational business analysis tools with enhanced user guidance.
+*   **Dual Tool Architecture:** 28 MCP tools total - 17 data access tools (13 raw data APIs + 4 basic market analysis) + 11 conversational business analysis tools with enhanced user guidance.
 *   **Enhanced User Experience:** Business analysis tools feature comprehensive help information, practical examples, and detailed parameter guidance.
 *   **Production Architecture:** Robust error handling, multi-layer caching, rate limiting, structured logging, and enterprise-ready security features.
 *   **Protocol Compliance:** Full MCP 2024-11-05 specification support with tools, resources, logging, and notifications capabilities.
@@ -38,7 +38,7 @@ The TAM MCP Server has achieved complete production readiness with a sophisticat
 ### Tool System Architecture
 
 **System 1: MCP Data Access Tools (17 tools)**
-- **Purpose**: Direct access to data sources with minimal processing
+- **Purpose**: Direct access to data sources with basic market analysis
 - **Usage**: Applications needing raw data from specific sources
 - **Definition**: Implemented in `src/tools/tool-definitions.ts`
 - **Access**: Available via MCP protocol for data source integration
@@ -61,7 +61,7 @@ The TAM MCP Server has achieved complete production readiness with a sophisticat
 
 ### Tool Implementation Status
 
-**MCP Data Access Tools: 17 tools (Direct data source access)**
+**MCP Data Access Tools: 17 tools (Direct data source access + basic market analysis)**
 Located in `src/tools/tool-definitions.ts`:
 
 **Direct Data Source Access (13 tools):**
@@ -79,21 +79,19 @@ Located in `src/tools/tool-definitions.ts`:
 - `oecd_getLatestObservation` ✅
 - `worldBank_getIndicatorData` ✅
 
-**Multi-Source Aggregation (1 tool):**
+**Basic Market Analysis (4 tools):**
 - `industry_search` ✅
-
-**Enhanced Analytical Tools (3 tools):**
 - `tam_calculator` ✅ (Enhanced with comprehensive help and examples)
 - `market_size_calculator` ✅ (Enhanced with methodology guidance)
 - `company_financials_retriever` ✅ (Enhanced with statement type explanations)
 
 **Business Analysis Tools: 11 tools (Advanced market intelligence)**
-Located in `src/tools/market-tools.ts`:
+Located in `src/tools/market-tools.ts`, integrated via `src/tools/tool-definitions.ts`:
 
-1. `industry_search` ✅ (Multi-source industry search)
+1. `industry_analysis` ✅ (Enhanced multi-source industry analysis - renamed from industry_search for clarity)
 2. `industry_data` ✅ (Detailed industry intelligence with trends, ESG, players)
 3. `market_size` ✅ (Market size estimation and analysis)
-4. `tam_calculator` ✅ (Total Addressable Market calculations)
+4. `tam_analysis` ✅ (Advanced Total Addressable Market calculations - renamed from tam_calculator for clarity)
 5. `sam_calculator` ✅ (Serviceable Addressable Market with constraints)
 6. `market_segments` ✅ (Hierarchical market segmentation analysis)
 7. `market_forecasting` ✅ (Time series forecasting with scenarios)
@@ -110,7 +108,7 @@ Located in `src/tools/market-tools.ts`:
 - **🔍 Methodology Guidance**: Clear explanations of calculation approaches and when to use each
 
 ### Testing & Validation Status
-- **✅ 100% Tool Functionality**: All 17 tools verified through MCP protocol
+- **✅ 100% Tool Functionality**: All 28 tools verified through MCP protocol
 - **✅ Backend Integration**: Real API calls successfully executed across all 8 data sources
 - **✅ Transport Support**: Both STDIO and HTTP Streaming protocols operational
 - **✅ MCP Compliance**: Full 2024-11-05 specification support verified
@@ -132,7 +130,7 @@ The TAM MCP Server implements a sophisticated **dual tool system** to serve diff
 ### System 1: MCP Data Access Tools
 **File**: `src/tools/tool-definitions.ts`  
 **Count**: 17 tools  
-**Purpose**: Direct data source access with minimal processing
+**Purpose**: Direct data source access with basic market analysis
 
 **Target Users:**
 - Application developers
@@ -142,13 +140,15 @@ The TAM MCP Server implements a sophisticated **dual tool system** to serve diff
 
 **Tool Categories:**
 - **Direct Data Source Access (13 tools)**: Raw data from specific sources
-- **Multi-Source Aggregation (1 tool)**: Cross-source data consolidation  
-- **Enhanced Analytical (3 tools)**: Calculations with comprehensive help
+- **Basic Market Tools (4 tools)**: Essential market analysis tools including `industry_search` and `tam_calculator`
 
 **Usage Pattern:**
 ```typescript
 // Example: Direct Alpha Vantage company data
 await client.callTool("alphaVantage_getCompanyOverview", { symbol: "AAPL" });
+
+// Example: Basic industry search from data sources
+await client.callTool("industry_search", { query: "tech software" });
 ```
 
 ### System 2: Business Analysis Tools
@@ -163,8 +163,8 @@ await client.callTool("alphaVantage_getCompanyOverview", { symbol: "AAPL" });
 - Strategic planners
 
 **Tool Categories:**
-- **Industry Intelligence**: Detailed industry data with trends and ESG
-- **Market Analysis**: TAM/SAM calculations and size estimation
+- **Industry Intelligence**: Detailed industry data with trends and ESG including `industry_analysis` (enhanced multi-source analysis)
+- **Market Analysis**: TAM/SAM calculations and size estimation including `tam_analysis` (advanced TAM calculations)
 - **Comparative Analysis**: Market comparison and forecasting
 - **Data Quality**: Validation and opportunity identification
 
@@ -176,7 +176,19 @@ await client.callTool("industry_data", {
   include_trends: true, 
   include_esg: true 
 });
+
+// Example: Enhanced industry analysis with comprehensive insights
+await client.callTool("industry_analysis", { query: "fintech", include_esg: true });
 ```
+
+### Tool Naming Convention
+To ensure clarity and avoid confusion, similar tools in both systems have been given distinct names:
+
+**Data Access vs Business Analysis:**
+- `industry_search` (basic data source search) vs `industry_analysis` (enhanced multi-source analysis)
+- `tam_calculator` (basic TAM calculation) vs `tam_analysis` (advanced TAM with scenarios)
+
+This naming convention allows users to clearly distinguish between basic data access tools and advanced business intelligence tools while maintaining backward compatibility.
 
 ### Unified Backend Architecture
 Both tool systems share the same backend infrastructure:
@@ -345,8 +357,8 @@ These tools provide direct access to specific data from the integrated live data
 ### 2.2. Multi-Source Search and Aggregation Tools
 These tools query multiple data sources, then consolidate, deduplicate, and rank the results to provide a comprehensive view.
 
-#### 2.2.1. Industry Search (`industry_search`)
-*   **Description:** Searches for industry information across multiple integrated data sources using a flexible query. It aims to return consolidated, deduplicated, and relevance-ranked results, providing a comprehensive overview for a given industry query.
+#### 2.2.1. Industry Analysis (`industry_analysis`)
+*   **Description:** Enhanced industry search and analysis across multiple integrated data sources using intelligent query processing. It provides comprehensive industry insights including market trends, key players, ESG factors, and cross-referenced data from multiple sources with sophisticated ranking and deduplication.
 *   **Input Parameters:**
     *   `query`: string - The search query (e.g., "pharmaceutical manufacturing", "NAICS 3254", "biotechnology US", "economic outlook for renewable energy").
     *   `sources?`: string[] (optional) - Array of specific data source IDs (e.g., `["CENSUS", "BLS", "WORLD_BANK"]`) to restrict the search. If omitted, queries all enabled and relevant sources.
@@ -706,12 +718,12 @@ This section details the integration specifics for each backend data source, inc
 
 This section provides illustrative examples of how to invoke the MCP tools. These are conceptual and assume a client capable of making requests to the MCP server.
 
-### 8.1. `industry_search`
+### 8.1. `industry_analysis`
 
 **Example 1: General query for an industry**
 ```json
 {
-  "tool_name": "industry_search",
+  "tool_name": "industry_analysis",
   "parameters": {
     "query": "pharmaceutical manufacturing in USA",
     "limit": 5
@@ -722,7 +734,7 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
 **Example 2: Query with specific data sources**
 ```json
 {
-  "tool_name": "industry_search",
+  "tool_name": "industry_analysis",
   "parameters": {
     "query": "NAICS 3254",
     "sources": ["CENSUS", "BLS"],
@@ -734,7 +746,7 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
 **Example 3: Query with geography filter**
 ```json
 {
-  "tool_name": "industry_search",
+  "tool_name": "industry_analysis",
   "parameters": {
     "query": "renewable energy market size",
     "geographyFilter": ["DE", "FR"],
@@ -769,12 +781,12 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
 
 ### 8.3. Enhanced Analytical Tools
 
-#### 8.3.1. TAM Calculator (Enhanced)
+#### 8.3.1. TAM Analysis (Enhanced)
 
 *   **Basic TAM Calculation**
     ```json
     {
-      "tool_name": "tam_calculator",
+      "tool_name": "tam_analysis",
       "parameters": {
         "baseMarketSize": 500000000,
         "annualGrowthRate": 0.20,
@@ -786,7 +798,7 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
 *   **TAM with Segmentation**
     ```json
     {
-      "tool_name": "tam_calculator",
+      "tool_name": "tam_analysis",
       "parameters": {
         "baseMarketSize": 500000000,
         "annualGrowthRate": 0.20,

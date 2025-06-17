@@ -389,11 +389,135 @@ export async function createServer() {
           await notificationService.sendDataFetchStatus(
             "Company Financials",
             result ? "completed" : "failed",
+            result,          );
+          break;
+        // MarketAnalysisTools cases (from market-tools.ts)
+        case "industry_data": {
+          await notificationService.sendDataFetchStatus(
+            "Industry Data",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.industryData(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Industry Data",
+            result ? "completed" : "failed",
             result,
           );
           break;
-        // Cases for old tools like 'industry_data', 'market_size', etc. are removed as they are replaced by specific tools.
-        // Ensure all tools from AllToolDefinitions are handled or have a default error.
+        }
+        case "market_size": {
+          await notificationService.sendCalculationStatus(
+            "Market Size Analysis",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.marketSize(processedArgs as any);
+          await notificationService.sendCalculationStatus(
+            "Market Size Analysis",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "sam_calculator": {
+          await notificationService.sendCalculationStatus(
+            "SAM Calculation",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.samCalculator(processedArgs as any);
+          await notificationService.sendCalculationStatus(
+            "SAM Calculation",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "market_segments": {
+          await notificationService.sendDataFetchStatus(
+            "Market Segmentation",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.marketSegments(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Market Segmentation",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "market_forecasting": {
+          await notificationService.sendCalculationStatus(
+            "Market Forecasting",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.marketForecasting(processedArgs as any);
+          await notificationService.sendCalculationStatus(
+            "Market Forecasting",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "market_comparison": {
+          await notificationService.sendDataFetchStatus(
+            "Market Comparison",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.marketComparison(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Market Comparison",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "data_validation": {
+          await notificationService.sendDataFetchStatus(
+            "Data Validation",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.dataValidation(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Data Validation",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "market_opportunities": {
+          await notificationService.sendDataFetchStatus(
+            "Market Opportunities",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.marketOpportunities(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Market Opportunities",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "generic_data_query": {
+          await notificationService.sendDataFetchStatus(
+            "Generic Data Query",
+            "started",
+          );
+          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          result = await MarketAnalysisTools.genericDataQuery(processedArgs as any);
+          await notificationService.sendDataFetchStatus(
+            "Generic Data Query",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
         default:
           // This case should ideally not be reached if toolDefinition check is done correctly.
           throw new Error(`Unknown or unhandled tool: ${name}`);

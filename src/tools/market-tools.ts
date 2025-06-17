@@ -123,7 +123,7 @@ export class MarketAnalysisTools {
     // This method remains unchanged
     return [
       {
-        name: "industry_search",
+        name: "industry_analysis",
         description: `Search for industries by name, keywords, or description with intelligent matching and ranking.
 
 🔍 **What it does:**
@@ -223,7 +223,7 @@ export class MarketAnalysisTools {
         inputSchema: zodToJsonSchema(MarketSizeSchema) as any,
       },
       {
-        name: "tam_calculator",
+        name: "tam_analysis",
         description: `Calculate Total Addressable Market (TAM) with advanced methodologies and scenario analysis.
 
 🎯 **What it does:**
@@ -569,7 +569,7 @@ Returns: TAM estimates with confidence intervals, growth projections, and scenar
         "industry-database",
       );
     } catch (error) {
-      return handleToolError(error, "industry_search");
+      return handleToolError(error, "industry_analysis");
     }
   }
 
@@ -889,7 +889,7 @@ Returns: TAM estimates with confidence intervals, growth projections, and scenar
         `tam-calculator (data from ${marketDataSource})`,
       );
     } catch (error) {
-      return handleToolError(error, "tam_calculator");
+      return handleToolError(error, "tam_analysis");
     }
   }
 

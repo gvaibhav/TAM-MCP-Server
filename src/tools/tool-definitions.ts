@@ -1,5 +1,16 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { MarketAnalysisTools } from "./market-tools.js";
+import {
+  IndustryDataSchema, 
+  MarketSizeSchema,
+  SAMCalculatorSchema,
+  MarketSegmentsSchema,
+  MarketForecastingSchema,
+  MarketComparisonSchema,
+  DataValidationSchema,
+  MarketOpportunitiesSchema,
+} from "../types/index.js";
 
 // MCP Tool Definition type that expects JSON Schema instead of Zod schemas
 export interface ToolDefinition {
@@ -1239,7 +1250,23 @@ export function getToolDefinition(name: string): ToolDefinition | undefined {
 }
 
 export function getAllToolDefinitions(): ToolDefinition[] {
-  return Object.values(AllToolDefinitions);
+  // Combine data source tools from AllToolDefinitions with market analysis tools
+  const dataSourceTools = Object.values(AllToolDefinitions);
+  const marketAnalysisTools = MarketAnalysisTools.getToolDefinitions();
+  
+  // Convert MarketAnalysisTools Tool[] format to ToolDefinition[] format
+  const convertedMarketTools: ToolDefinition[] = marketAnalysisTools.map(
+    (tool) => ({
+      name: tool.name,
+      description: tool.description ?? "",
+      inputSchema: tool.inputSchema,
+      ...(tool.outputSchema && { outputSchema: tool.outputSchema }),
+    }),
+  );
+  
+  // Return all tools - both systems should be exposed independently (28 total)
+  // Note: Some tools may have the same name but different implementations in each system
+  return [...dataSourceTools, ...convertedMarketTools];
 }
 
 // Schema mapping for validation - keeps the original Zod schemas for validation
@@ -1261,6 +1288,16 @@ export const toolSchemaMapping: Record<string, z.ZodType<any>> = {
   tam_calculator: TamCalculatorInputSchema,
   market_size_calculator: MarketSizeCalculatorInputSchema,
   company_financials_retriever: CompanyFinancialsRetrieverInputSchema,
+  // Market Analysis Tools from MarketAnalysisTools class
+  industry_data: IndustryDataSchema,
+  market_size: MarketSizeSchema,
+  sam_calculator: SAMCalculatorSchema,
+  market_segments: MarketSegmentsSchema,
+  market_forecasting: MarketForecastingSchema,
+  market_comparison: MarketComparisonSchema,
+  data_validation: DataValidationSchema,
+  market_opportunities: MarketOpportunitiesSchema,
+  // Note: generic_data_query uses a schema defined in market-tools.ts
 };
 
 // Helper function to get Zod schema for validation

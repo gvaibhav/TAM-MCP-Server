@@ -19,10 +19,17 @@ tests/
 ├── README.md                          # This file
 ├── setup.ts                          # Test setup configuration
 ├── run-tests.js                      # Test runner script
-├── scripts/                          # Integration test scripts (3 files)
+├── scripts/                          # Integration test scripts (10 files)
 │   ├── test-simple-mcp.mjs          # ✅ Basic MCP protocol verification
 │   ├── test-inspector-fix.mjs       # ✅ STDIO transport verification
-│   └── test-mcp-tool-calls.mjs      # ✅ Tool call verification (100% success)
+│   ├── test-mcp-tool-calls.mjs      # ✅ Tool call verification (100% success)
+│   ├── test-tool-validation.mjs     # ✅ Tool count and uniqueness validation
+│   ├── test-comprehensive.mjs       # ✅ Comprehensive functionality test
+│   ├── test-default-values.mjs      # ✅ Default values validation
+│   ├── test-final-validation.mjs    # ✅ Final system validation
+│   ├── test-prompts.mjs             # ✅ Prompt functionality test
+│   ├── test-response-analysis.mjs   # ✅ Response structure analysis
+│   └── test-semantic-validation.mjs # ✅ Semantic validation test
 ├── unit/                            # Unit tests (26 files)
 │   ├── Core functionality tests
 │   ├── Transport layer tests (HTTP, SSE, STDIO)

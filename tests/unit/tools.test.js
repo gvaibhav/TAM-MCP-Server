@@ -91,17 +91,16 @@ describe('Market Analysis Tools Tests', () => {
       });
       
       // Verify specific tools exist
-      const toolNames = tools.map((tool) => tool.name);
-      expect(toolNames).toContain('industry_search');
+      const toolNames = tools.map((tool) => tool.name);      expect(toolNames).toContain('industry_analysis');
       expect(toolNames).toContain('market_size');
-      expect(toolNames).toContain('tam_calculator');
+      expect(toolNames).toContain('tam_analysis');
     });
   });
 
   describe('Industry Search', () => {
     it('should search for industries', () => {
       const tools = MarketAnalysisTools.getToolDefinitions();
-      const industrySearchTool = tools.find(tool => tool.name === 'industry_search');
+      const industrySearchTool = tools.find(tool => tool.name === 'industry_analysis');
       expect(industrySearchTool).toBeDefined();
       expect(industrySearchTool.description).toContain('Search');
     });
@@ -119,7 +118,7 @@ describe('Market Analysis Tools Tests', () => {
   describe('TAM Calculator', () => {
     it('should provide TAM calculation functionality', () => {
       const tools = MarketAnalysisTools.getToolDefinitions();
-      const tamTool = tools.find(tool => tool.name === 'tam_calculator');
+      const tamTool = tools.find(tool => tool.name === 'tam_analysis');
       expect(tamTool).toBeDefined();
       expect(tamTool.description).toContain('TAM');
     });

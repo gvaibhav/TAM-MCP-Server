@@ -53,12 +53,19 @@ A comprehensive Postman collection for testing all aspects of the TAM MCP Server
 
 #### Tool Coverage
 
-The collection includes test requests for all 11 market analysis tools:
+The collection includes test requests for key market analysis tools across all categories:
 
+**Basic Market Tools (4 tools):**
 1. `industry_search` - Find industries by keywords
+2. `tam_calculator` - Calculate Total Addressable Market
+3. `market_size_calculator` - Retrieve market size data
+4. `company_financials_retriever` - Get company financial data
+
+**Business Analysis Tools (11 tools):**
+1. `industry_analysis` - Enhanced industry analysis
 2. `industry_data` - Get detailed industry information
-3. `market_size` - Retrieve market size data
-4. `tam_calculator` - Calculate Total Addressable Market
+3. `market_size` - Advanced market size analysis
+4. `tam_analysis` - Advanced TAM calculations
 5. `sam_calculator` - Calculate Serviceable Markets
 6. `market_segments` - Analyze market segmentation
 7. `market_forecasting` - Generate market forecasts

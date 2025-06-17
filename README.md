@@ -133,7 +133,7 @@ npx @modelcontextprotocol/inspector npm run start:stdio
 
 Get professional market insights instantly - no parameter research required!
 
-All 28 tools include intelligent default values that let you start analyzing immediately:
+All 26 tools include intelligent default values that let you start analyzing immediately:
 
 ```javascript
 // Call any tool with empty parameters - defaults automatically applied
@@ -143,7 +143,7 @@ All 28 tools include intelligent default values that let you start analyzing imm
 }
 
 {
-  "name": "tam_calculator", 
+  "name": "tam_analysis", 
   "arguments": {} // Server provides: $10B market, 15% growth, 5-year projection
 }
 ```
@@ -164,7 +164,7 @@ All 28 tools include intelligent default values that let you start analyzing imm
 ```javascript
 // Market analysis with defaults
 {
-  "name": "tam_calculator",
+  "name": "tam_analysis",
   "arguments": {}
 }
 
@@ -207,15 +207,14 @@ Access professional templates through the prompts interface:
 }
 ```
 
-### MCP Tools - Dual Architecture System
+### MCP Tools - Three-Tier Architecture System
 
-The TAM MCP Server provides **28 total MCP tools** across two complementary systems:
+The TAM MCP Server provides **28 total MCP tools** organized in three complementary tiers:
 
-#### System 1: MCP Data Access Tools (17 tools)
-**Purpose**: Direct data source access and enhanced analytics  
+#### Tier 1: Direct Data Access Tools (13 tools)
+**Purpose**: Raw access to external data sources  
 **Target Users**: Developers, data engineers, custom analytics builders
 
-**Raw Data API Tools (13 tools):**
 - **`alphaVantage_getCompanyOverview`**: Get detailed company overview and financials
 - **`alphaVantage_searchSymbols`**: Search for stock symbols and company names
 - **`bls_getSeriesData`**: Retrieve Bureau of Labor Statistics employment data
@@ -230,22 +229,23 @@ The TAM MCP Server provides **28 total MCP tools** across two complementary syst
 - **`oecd_getLatestObservation`**: Get latest OECD economic observations
 - **`worldBank_getIndicatorData`**: Fetch World Bank development indicators
 
-**Multi-Source Aggregation Tool (1 tool):**
-- **`industry_search`**: Search across multiple data sources with intelligent aggregation
+#### Tier 2: Basic Market Tools (4 tools)
+**Purpose**: Foundational market analysis capabilities  
+**Target Users**: Business analysts starting with basic market research
 
-**Enhanced Analytical Tools (3 tools):**
-- **`tam_calculator`**: Calculate Total Addressable Market with comprehensive guidance
-- **`market_size_calculator`**: Estimate current market size with methodology explanations
-- **`company_financials_retriever`**: Retrieve company financial data with statement guidance
+- **`industry_search`**: Basic industry data retrieval from multiple sources
+- **`tam_calculator`**: Basic Total Addressable Market calculations
+- **`market_size_calculator`**: Basic market size estimation with methodology explanations
+- **`company_financials_retriever`**: Basic company financial data retrieval
 
-#### System 2: Business Analysis Tools (11 tools)
-**Purpose**: Conversational market intelligence and advanced business analysis  
-**Target Users**: Business analysts, market researchers, investment teams
+#### Tier 3: Business Analysis Tools (11 tools)
+**Purpose**: Advanced market intelligence and comprehensive business analysis  
+**Target Users**: Senior analysts, market researchers, investment teams
 
-1. **`industry_search`**: Multi-source industry search with intelligent ranking
+1. **`industry_analysis`**: Enhanced multi-source industry analysis with intelligent ranking
 2. **`industry_data`**: Detailed industry intelligence with trends, ESG, and key players
-3. **`market_size`**: Market size estimation and analysis with confidence scoring
-4. **`tam_calculator`**: Total Addressable Market calculations with projections
+3. **`market_size`**: Advanced market size estimation and analysis with confidence scoring
+4. **`tam_analysis`**: Advanced Total Addressable Market calculations with scenario projections
 5. **`sam_calculator`**: Serviceable Addressable Market with constraint analysis
 6. **`market_segments`**: Hierarchical market segmentation analysis
 7. **`market_forecasting`**: Time series forecasting with scenario analysis
@@ -416,22 +416,9 @@ TAM-MCP-Server/
 
 ## Tools Reference
 
-### Market Analysis Tools (11 tools)
-| Tool | Description |
-|------|-------------|
-| `industry_search` | Multi-source industry search with intelligent ranking |
-| `industry_data` | Detailed industry intelligence with trends and key players |
-| `market_size` | Market size estimation with confidence scoring |
-| `tam_calculator` | Total Addressable Market calculations |
-| `sam_calculator` | Serviceable Addressable Market analysis |
-| `market_segments` | Hierarchical market segmentation |
-| `market_forecasting` | Time series forecasting with scenarios |
-| `market_comparison` | Multi-market comparative analysis |
-| `data_validation` | Cross-source data quality validation |
-| `market_opportunities` | Market gap identification |
-| `generic_data_query` | Direct data source access |
+### MCP Data Access Tools (17 tools)
 
-### Data Access Tools (17 tools)
+#### Direct Data Source Access (13 tools)
 | Source | Tools | Description |
 |--------|-------|-------------|
 | Alpha Vantage | `alphaVantage_getCompanyOverview`, `alphaVantage_searchSymbols` | Company financials and stock data |
@@ -442,7 +429,29 @@ TAM-MCP-Server/
 | Nasdaq | `nasdaq_getDatasetTimeSeries`, `nasdaq_getLatestDatasetValue` | Financial datasets |
 | OECD | `oecd_getDataset`, `oecd_getLatestObservation` | International statistics |
 | World Bank | `worldBank_getIndicatorData` | Development indicators |
-| Enhanced | `tam_calculator`, `market_size_calculator`, `company_financials_retriever` | Advanced analytics |
+
+#### Basic Market Tools (4 tools)
+| Tool | Description |
+|------|-------------|
+| `industry_search` | Basic industry data search from sources |
+| `tam_calculator` | Basic Total Addressable Market calculations |
+| `market_size_calculator` | Market size estimation and calculations |
+| `company_financials_retriever` | Enhanced company financial data retrieval |
+
+### Business Analysis Tools (11 tools)
+| Tool | Description |
+|------|-------------|
+| `industry_analysis` | Enhanced multi-source industry analysis |
+| `industry_data` | Detailed industry intelligence with trends and key players |
+| `market_size` | Advanced market size estimation with confidence scoring |
+| `tam_analysis` | Advanced Total Addressable Market calculations |
+| `sam_calculator` | Serviceable Addressable Market analysis |
+| `market_segments` | Hierarchical market segmentation |
+| `market_forecasting` | Time series forecasting with scenarios |
+| `market_comparison` | Multi-market comparative analysis |
+| `data_validation` | Cross-source data quality validation |
+| `market_opportunities` | Market gap identification |
+| `generic_data_query` | Direct data source service access |
 
 ### Business Prompts (15 templates)
 
@@ -533,7 +542,7 @@ Import the comprehensive Postman collection for testing both MCP endpoints and b
 3. **Run Tests**:
    - Health check and server status
    - MCP session initialization
-   - All 28 tools (11 market analysis + 17 data access)
+   - All 26 tools (13 market analysis + 13 data access)
    - Resource access endpoints
    - Session management and cleanup
 

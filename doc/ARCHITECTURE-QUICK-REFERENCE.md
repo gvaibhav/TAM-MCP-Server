@@ -1,6 +1,4 @@
 # TAM MCP Server: Architecture Quick Reference
-## Corrected Implementation Overview
-
 **Last Updated**: June 13, 2025  
 **Status**: Documentation Aligned with Implementation
 
@@ -10,8 +8,8 @@
 
 ### System 1: MCP Data Access Tools
 - **Location**: `src/tools/tool-definitions.ts`
-- **Count**: 17 tools
-- **Purpose**: Direct data source access
+- **Count**: 17 tools (13 direct + 4 basic market)
+- **Purpose**: Direct data source access + basic market analysis
 - **Users**: Developers, data engineers, custom analytics
 
 ### System 2: Business Analysis Tools
@@ -41,19 +39,17 @@
 12. `oecd_getLatestObservation`
 13. `worldBank_getIndicatorData`
 
-#### Multi-Source Aggregation (1)
+#### Basic Market Analysis (4)
 14. `industry_search`
-
-#### Enhanced Analytical (3)
 15. `tam_calculator`
 16. `market_size_calculator`
 17. `company_financials_retriever`
 
 ### Business Analysis Tools (11)
-1. `industry_search`
+1. `industry_analysis` (enhanced multi-source analysis)
 2. `industry_data`
 3. `market_size`
-4. `tam_calculator`
+4. `tam_analysis` (advanced TAM with scenarios)
 5. `sam_calculator`
 6. `market_segments`
 7. `market_forecasting`

@@ -43,7 +43,7 @@
 ```bash
 # Calculate Total Addressable Market
 {
-  "tool": "tam_calculator",
+  "tool": "tam_analysis",
   "params": {
     "industryId": "cloud-computing",
     "region": "US", 

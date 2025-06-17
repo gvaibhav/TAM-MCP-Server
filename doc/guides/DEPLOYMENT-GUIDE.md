@@ -138,7 +138,7 @@ Expected output: 6-8 APIs accessible (87.5%+ success rate)
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 ```
-Expected: JSON response with 17 tools
+Expected: JSON response with 26 tools
 
 ### Integration Test
 ```bash
@@ -250,4 +250,4 @@ tail -f logs/combined.log
 
 ---
 
-✅ **The TAM MCP Server is ready for production use with 17 tools and 8 data source integrations!**
+✅ **The TAM MCP Server is ready for production use with 26 tools and 8 data source integrations!**
