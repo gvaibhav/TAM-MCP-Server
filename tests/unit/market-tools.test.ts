@@ -73,9 +73,11 @@ vi.mock('../../src/utils/index.js', () => {
     validateCurrency: vi.fn(),
     validateRegion: vi.fn(),
     formatCurrency: vi.fn((value) => `$${value.toLocaleString()}`),
-    formatPercentage: vi.fn((value) => `${(value * 100).toFixed(1)}%`),
-    calculateCAGR: vi.fn(),
-    calculateConfidenceScore: vi.fn((params) => 0.85)
+    formatPercentage: vi.fn((value) => `${(value * 100).toFixed(1)}%`),    calculateCAGR: vi.fn(),
+    calculateConfidenceScore: vi.fn((params) => 0.85),
+    logApiAvailabilityStatus: vi.fn().mockReturnValue(undefined),
+    getToolAvailabilityStatus: vi.fn().mockReturnValue({ available: true, warnings: [], missingKeys: [] }),
+    checkApiAvailability: vi.fn().mockReturnValue(new Map())
   };
 });
 

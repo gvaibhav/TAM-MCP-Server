@@ -27,7 +27,7 @@ import {
   generatePromptContent,
 } from "./prompts/prompt-definitions.js"; // Added: Import prompt definitions
 import { DataService } from "./services/DataService.js"; // Added
-import { logger, checkRateLimit } from "./utils/index.js";
+import { logger, checkRateLimit, logApiAvailabilityStatus, getToolAvailabilityStatus } from "./utils/index.js";
 import {
   NotificationService,
   TamNotificationIntegration,
@@ -75,10 +75,29 @@ export async function createServer() {
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = getAllToolDefinitions(); // Changed: Use new function
-    logger.info(`Listed ${tools.length} available tools`);
+    
+    // Add availability status to tool descriptions
+    const toolsWithAvailability = tools.map(tool => {
+      const status = getToolAvailabilityStatus(tool.name);
+      
+      let description = tool.description;
+      
+      if (!status.available) {
+        description += ` ❌ [UNAVAILABLE: Missing required API keys: ${status.missingKeys.join(', ')}]`;
+      } else if (status.warnings.length > 0) {
+        description += ` ⚠️ [${status.warnings.join('; ')}]`;
+      }
+      
+      return {
+        ...tool,
+        description
+      };
+    });
+    
+    logger.info(`Listed ${tools.length} available tools (${toolsWithAvailability.filter(t => !t.description.includes('❌')).length} fully available)`);
 
     return {
-      tools,
+      tools: toolsWithAvailability,
     };
   });
 
@@ -1161,6 +1180,9 @@ export async function createServer() {
       window: RATE_LIMIT_WINDOW,
     },
   });
+
+  // Log API availability status at startup
+  logApiAvailabilityStatus();
 
   return { server, cleanup, notificationService };
 }

@@ -185,9 +185,11 @@ describe('CensusService', () => {
           }
         }
       );
-    });
-
-    it('should work without API key', async () => {
+    });    it('should work without API key', async () => {
+      // Temporarily clear the environment variable
+      const originalKey = process.env.CENSUS_API_KEY;
+      delete process.env.CENSUS_API_KEY;
+      
       censusService = new CensusService(); // No API key
       const dataset = 'acs/acs1';
       const variables = 'B01003_001E';
@@ -211,6 +213,11 @@ describe('CensusService', () => {
           }
         }
       );
+      
+      // Restore the original environment variable
+      if (originalKey) {
+        process.env.CENSUS_API_KEY = originalKey;
+      }
     });
   });
 });

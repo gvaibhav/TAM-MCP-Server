@@ -3,6 +3,7 @@ import { z } from "zod";
 import { APIResponse } from "../types/index.js";
 
 export * from "./envHelper.js"; // Add this line
+export * from "./apiAvailability.js"; // Add this line
 
 // Logger configuration - Only log to files and stderr for MCP compatibility
 export const logger = createLogger({

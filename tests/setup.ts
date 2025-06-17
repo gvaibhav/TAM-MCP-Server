@@ -124,9 +124,11 @@ vi.mock('../../src/utils/index.js', () => ({
     return true;
   }),
   formatCurrency: vi.fn().mockImplementation((amount) => `$${amount.toLocaleString()}`),
-  formatPercentage: vi.fn().mockImplementation((value) => `${(value * 100).toFixed(2)}%`),
-  calculateCAGR: vi.fn().mockReturnValue(0.125),
-  calculateConfidenceScore: vi.fn().mockReturnValue(0.85)
+  formatPercentage: vi.fn().mockImplementation((value) => `${(value * 100).toFixed(2)}%`),  calculateCAGR: vi.fn().mockReturnValue(0.125),
+  calculateConfidenceScore: vi.fn().mockReturnValue(0.85),
+  logApiAvailabilityStatus: vi.fn().mockReturnValue(undefined),
+  getToolAvailabilityStatus: vi.fn().mockReturnValue({ available: true, warnings: [], missingKeys: [] }),
+  checkApiAvailability: vi.fn().mockReturnValue(new Map())
 }));
 
 vi.mock('../utils/index.js', () => ({
@@ -146,7 +148,10 @@ vi.mock('../utils/index.js', () => ({
       tool,
       timestamp: new Date().toISOString() 
     };
-  })
+  }),
+  logApiAvailabilityStatus: vi.fn().mockReturnValue(undefined),
+  getToolAvailabilityStatus: vi.fn().mockReturnValue({ available: true, warnings: [], missingKeys: [] }),
+  checkApiAvailability: vi.fn().mockReturnValue(new Map())
 }));
 
 // Path used when imported directly from notification service
@@ -167,7 +172,10 @@ vi.mock('../src/utils/index.js', () => ({
       tool,
       timestamp: new Date().toISOString() 
     };
-  })
+  }),
+  logApiAvailabilityStatus: vi.fn().mockReturnValue(undefined),
+  getToolAvailabilityStatus: vi.fn().mockReturnValue({ available: true, warnings: [], missingKeys: [] }),
+  checkApiAvailability: vi.fn().mockReturnValue(new Map())
 }));
 
 // Path used for direct imports in tests
@@ -188,7 +196,10 @@ vi.mock('@/utils/index.js', () => ({
       tool,
       timestamp: new Date().toISOString() 
     };
-  })
+  }),
+  logApiAvailabilityStatus: vi.fn().mockReturnValue(undefined),
+  getToolAvailabilityStatus: vi.fn().mockReturnValue({ available: true, warnings: [], missingKeys: [] }),
+  checkApiAvailability: vi.fn().mockReturnValue(new Map())
 }));
 
 // For ESM imports
@@ -209,7 +220,10 @@ vi.mock('../../src/utils/index.ts', () => ({
       tool,
       timestamp: new Date().toISOString() 
     };
-  })
+  }),
+  logApiAvailabilityStatus: vi.fn().mockReturnValue(undefined),
+  getToolAvailabilityStatus: vi.fn().mockReturnValue({ available: true, warnings: [], missingKeys: [] }),
+  checkApiAvailability: vi.fn().mockReturnValue(new Map())
 }));
 
 // Provide as a module export too

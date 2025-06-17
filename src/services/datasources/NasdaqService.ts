@@ -37,11 +37,14 @@ export class NasdaqService implements DataSourceService {
       if (error.response?.status === 403) {
         logger.warn("NasdaqService: API access restricted (403)", {
           endpoint,
-          message: "Nasdaq Data Link API may require updated authentication or subscription",
+          message:
+            "Nasdaq Data Link API may require updated authentication or subscription",
         });
-        throw new Error("Nasdaq Data Link API access restricted - please check API key and subscription status");
+        throw new Error(
+          "Nasdaq Data Link API access restricted - please check API key and subscription status",
+        );
       }
-      
+
       logger.error("NasdaqService: API call failed", {
         error: error.message,
         endpoint,
