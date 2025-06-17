@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import http from 'http';
 
 describe('End-to-End Transport Tests', () => {
   it('should be implemented', () => {

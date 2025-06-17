@@ -8,7 +8,7 @@ export class BlsService implements DataSourceService {
   private apiKey?: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.BLS_API_KEY || "";
+    this.apiKey = apiKey ?? process.env.BLS_API_KEY ?? "";
 
     if (!this.apiKey) {
       console.log(
@@ -96,7 +96,7 @@ export class BlsService implements DataSourceService {
         period: latestData.period,
         year: latestData.year,
         seriesId,
-        region: region || "US",
+        region: region ?? "US",
         source: "BLS",
         title: data.Results.series[0].title,
       };

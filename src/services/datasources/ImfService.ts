@@ -109,7 +109,7 @@ export class ImfService extends APIService implements DataSourceService {
         const seriesDimensionValues: any = {};
         seriesDimensions.forEach((dim: any, index: number) => {
           const valueIndex = keyParts[index];
-          if (dim.values && dim.values[valueIndex]) {
+          if (dim.values?.[valueIndex]) {
             const value = dim.values[valueIndex];
             seriesDimensionValues[dim.id] = value.name;
             seriesDimensionValues[`${dim.id}_ID`] = value.id;
@@ -120,7 +120,7 @@ export class ImfService extends APIService implements DataSourceService {
         const seriesAttributeValues: any = {};
         if (series.attributes && seriesAttributes.length > 0) {
           series.attributes.forEach((attrIndex: number, index: number) => {
-            if (seriesAttributes[index] && seriesAttributes[index].values) {
+            if (seriesAttributes[index]?.values) {
               const attr = seriesAttributes[index];
               const value = attr.values[attrIndex];
               if (value) {
@@ -152,10 +152,7 @@ export class ImfService extends APIService implements DataSourceService {
               observation
                 .slice(1)
                 .forEach((attrIndex: number, index: number) => {
-                  if (
-                    observationAttributes[index] &&
-                    observationAttributes[index].values
-                  ) {
+                  if (observationAttributes[index]?.values) {
                     const attr = observationAttributes[index];
                     const value = attr.values[attrIndex];
                     if (value) {
@@ -186,7 +183,7 @@ export class ImfService extends APIService implements DataSourceService {
     try {
       const data = await this.fetchImfDataset(
         industryId,
-        region || "ALL_COUNTRIES",
+        region ?? "ALL_COUNTRIES",
       );
 
       if (data && Array.isArray(data) && data.length > 0) {
@@ -210,7 +207,7 @@ export class ImfService extends APIService implements DataSourceService {
           dimensions: latestRecord, // Use the entire record as dimensions
           source: "IMF",
           dataset: industryId,
-          key: region || "ALL_COUNTRIES",
+          key: region ?? "ALL_COUNTRIES",
         };
       }
 

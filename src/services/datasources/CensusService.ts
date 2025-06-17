@@ -7,7 +7,7 @@ export class CensusService implements DataSourceService {
   private apiKey?: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.CENSUS_API_KEY || "";
+    this.apiKey = apiKey ?? process.env.CENSUS_API_KEY ?? "";
 
     if (!this.apiKey) {
       console.log(

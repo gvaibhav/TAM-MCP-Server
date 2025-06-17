@@ -6,6 +6,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import http from 'http';
+import { randomUUID } from 'crypto';
 
 describe('End-to-End Notifications Tests', () => {
   it('should be implemented', () => {
@@ -13,9 +15,6 @@ describe('End-to-End Notifications Tests', () => {
     expect(true).toBe(true);
   });
 });
-
-import http from 'http';
-import { randomUUID } from 'crypto';
 
 const SSE_PORT = 3001;
 

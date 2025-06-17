@@ -2,8 +2,9 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { MarketAnalysisTools } from "./market-tools.js";
 import {
-  IndustryDataSchema, 
+  IndustryDataSchema,
   MarketSizeSchema,
+  TAMCalculatorSchema,
   SAMCalculatorSchema,
   MarketSegmentsSchema,
   MarketForecastingSchema,
@@ -1253,7 +1254,7 @@ export function getAllToolDefinitions(): ToolDefinition[] {
   // Combine data source tools from AllToolDefinitions with market analysis tools
   const dataSourceTools = Object.values(AllToolDefinitions);
   const marketAnalysisTools = MarketAnalysisTools.getToolDefinitions();
-  
+
   // Convert MarketAnalysisTools Tool[] format to ToolDefinition[] format
   const convertedMarketTools: ToolDefinition[] = marketAnalysisTools.map(
     (tool) => ({
@@ -1263,7 +1264,7 @@ export function getAllToolDefinitions(): ToolDefinition[] {
       ...(tool.outputSchema && { outputSchema: tool.outputSchema }),
     }),
   );
-  
+
   // Return all tools - both systems should be exposed independently (28 total)
   // Note: Some tools may have the same name but different implementations in each system
   return [...dataSourceTools, ...convertedMarketTools];
@@ -1291,6 +1292,7 @@ export const toolSchemaMapping: Record<string, z.ZodType<any>> = {
   // Market Analysis Tools from MarketAnalysisTools class
   industry_data: IndustryDataSchema,
   market_size: MarketSizeSchema,
+  tam_analysis: TAMCalculatorSchema,
   sam_calculator: SAMCalculatorSchema,
   market_segments: MarketSegmentsSchema,
   market_forecasting: MarketForecastingSchema,

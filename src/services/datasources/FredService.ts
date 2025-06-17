@@ -8,7 +8,7 @@ export class FredService implements DataSourceService {
   private apiKey?: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.FRED_API_KEY || "";
+    this.apiKey = apiKey ?? process.env.FRED_API_KEY ?? "";
 
     if (!this.apiKey) {
       console.error(
@@ -84,7 +84,7 @@ export class FredService implements DataSourceService {
         value: parseFloat(latestObservation.value),
         date: latestObservation.date,
         seriesId,
-        region: region || "US",
+        region: region ?? "US",
         source: "FRED",
         realtime_start: latestObservation.realtime_start,
         realtime_end: latestObservation.realtime_end,

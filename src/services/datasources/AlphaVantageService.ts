@@ -8,7 +8,7 @@ export class AlphaVantageService implements DataSourceService {
   private apiKey?: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.ALPHA_VANTAGE_API_KEY || "";
+    this.apiKey = apiKey ?? process.env.ALPHA_VANTAGE_API_KEY ?? "";
 
     if (!this.apiKey) {
       console.error(
@@ -29,7 +29,7 @@ export class AlphaVantageService implements DataSourceService {
     try {
       const params = {
         function: functionName,
-        symbol: symbol,
+        symbol,
         apikey: this.apiKey,
       };
 
@@ -85,7 +85,7 @@ export class AlphaVantageService implements DataSourceService {
     try {
       const data = await this.fetchApiData("SYMBOL_SEARCH", keywords, false);
 
-      if (data && data["bestMatches"]) {
+      if (data?.["bestMatches"]) {
         return data["bestMatches"];
       }
 

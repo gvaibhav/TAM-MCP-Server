@@ -779,90 +779,6 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
     }
     ```
 
-### 8.3. Enhanced Analytical Tools
-
-#### 8.3.1. TAM Analysis (Enhanced)
-
-*   **Basic TAM Calculation**
-    ```json
-    {
-      "tool_name": "tam_analysis",
-      "parameters": {
-        "baseMarketSize": 500000000,
-        "annualGrowthRate": 0.20,
-        "projectionYears": 5
-      }
-    }
-    ```
-
-*   **TAM with Segmentation**
-    ```json
-    {
-      "tool_name": "tam_analysis",
-      "parameters": {
-        "baseMarketSize": 500000000,
-        "annualGrowthRate": 0.20,
-        "projectionYears": 5,
-        "segmentationAdjustments": {
-          "factor": 0.60,
-          "rationale": "Enterprise segment focus"
-        }
-      }
-    }
-    ```
-
-#### 8.3.2. Market Size Calculator (Enhanced)
-
-*   **Basic Market Size Estimation**
-    ```json
-    {
-      "tool_name": "market_size_calculator",
-      "parameters": {
-        "industryQuery": "Cloud infrastructure services in North America",
-        "methodology": "auto"
-      }
-    }
-    ```
-
-*   **Targeted Geographic Analysis**
-    ```json
-    {
-      "tool_name": "market_size_calculator",
-      "parameters": {
-        "industryQuery": "Electric vehicle manufacturing",
-        "geographyCodes": ["US", "CA", "EU"],
-        "year": "2024",
-        "methodology": "top_down"
-      }
-    }
-    ```
-
-#### 8.3.3. Company Financials Retriever (Enhanced)
-
-*   **Company Overview**
-    ```json
-    {
-      "tool_name": "company_financials_retriever",
-      "parameters": {
-        "companySymbol": "AAPL",
-        "statementType": "OVERVIEW"
-      }
-    }
-    ```
-
-*   **Multi-Year Income Statement**
-    ```json
-    {
-      "tool_name": "company_financials_retriever",
-      "parameters": {
-        "companySymbol": "MSFT",
-        "statementType": "INCOME_STATEMENT",
-        "period": "annual",
-        "limit": 3
-      }
-    }
-    ```
-
 #### 8.2.2. Bureau of Labor Statistics (BLS)
 
 *   **`bls_getSeriesData`**
@@ -1012,93 +928,366 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
     }
     ```
 
-## 10. Current Implementation Achievements
+## 9. Enhanced Notification System Architecture
 
-### 10.1. Production Milestones Achieved
+### 9.1. Overview
 
-The TAM MCP Server has successfully transitioned from design to production with the following major accomplishments:
+The TAM MCP Server features a comprehensive, business-relevant notification system that provides real-time insights into market analysis operations, data source performance, and calculation milestones. This enhanced system goes beyond generic progress notifications to deliver actionable intelligence for business users.
 
-**🎯 Complete Backend Integration (December 2024)**
-- Successfully integrated all 8 planned data sources with functional API connections
-- Achieved 100% tool functionality across 17 market analysis tools
-- Implemented robust error handling and fallback mechanisms
-- Deployed multi-layer caching for performance optimization
+**🎯 Business Value:**
+- **Real-time Market Intelligence**: Immediate alerts for significant market insights and opportunities
+- **Data Source Monitoring**: Proactive monitoring of backend API health and performance
+- **Quality Assurance**: Automated data quality assessment and confidence scoring
+- **Performance Optimization**: Cache performance monitoring and optimization alerts
+- **Operational Visibility**: Complete transparency into calculation milestones and validation steps
 
-**🚀 Enhanced User Experience (January 2025)**
-- Delivered comprehensive tool enhancements for 3 key analytical tools
-- Added 1000+ character detailed descriptions with practical examples
-- Implemented enum value explanations and parameter guidance
-- Provided real-world usage scenarios and professional tips
+### 9.2. Notification Architecture Components
 
-**✅ Full MCP Protocol Compliance**
-- Supports both STDIO and HTTP Streaming transport protocols
-- Implements tools, resources, logging, and notifications capabilities
-- Maintains JSON-RPC 2.0 compliance with proper error handling
-- Verified compatibility with MCP Inspector and Claude Desktop
+#### 9.2.1. Notification Service (`src/notifications/notification-service.ts`)
 
-### 10.2. Technical Achievements
+**Core Service Responsibilities:**
+- Centralized notification management for all MCP tools and backend services
+- Type-safe notification interfaces with business-specific schemas
+- Integration with both SSE and HTTP Streamable transports
+- Intelligent notification batching and priority management
 
-**DataService Architecture**
-- Intelligent routing system that selects optimal data sources based on query context
-- Direct data access methods for granular control over data source interactions
-- Cross-source validation and confidence scoring for multi-source aggregation
-- Configurable caching with source-specific TTL management
+**Key Interfaces:**
+- `ProgressNotification`: Operation progress updates with progress tokens
+- `MarketAnalysisNotification`: Market analysis specific events and milestones
+- `ErrorNotification`: Structured error reporting with context
+- `DataSourceHealthNotification`: API health and performance monitoring
+- `MarketIntelligenceNotification`: Business insights and opportunity alerts
+- `DataQualityNotification`: Quality assessment and confidence tracking
+- `CachePerformanceNotification`: Performance optimization insights
+- `CalculationMilestoneNotification`: TAM/SAM calculation completion events
 
-**Tool Enhancement Framework**
-- Comprehensive help information system with structured descriptions
-- Practical examples and parameter guidance integrated into tool definitions
-- Enhanced JSON Schema output with enum explanations and usage contexts
-- Professional-quality documentation accessible through MCP protocol
+#### 9.2.2. Server Integration (`src/server.ts`)
 
-**Production-Ready Infrastructure**
-- Enterprise-grade error handling with informative error messages
-- Rate limiting and API key management for external service integration
-- Structured logging with business metrics and performance monitoring
-- Comprehensive testing suite with automated validation
+**Integration Points:**
+- MCP capabilities declaration: `notifications: {}` capability registered
+- Tool execution pipeline integration with notification calls
+- Automatic notification delivery for tool lifecycle events
+- Error handling and notification escalation
 
-### 10.3. User Impact
+**Notification Flow:**
+1. **Start Notifications**: Tool execution begins
+2. **Progress Notifications**: Multi-phase operation progress (data fetch, calculation, validation)
+3. **Completion Notifications**: Successful tool completion with results summary
+4. **Error Notifications**: Failure scenarios with detailed context
 
-**For Business Analysts:**
-- Access to 8 major economic data sources through a single MCP interface
-- Enhanced tool descriptions reduce learning curve and improve adoption
-- Real-world examples and use cases accelerate implementation
-- Professional guidance helps ensure proper tool usage
+#### 9.2.3. Transport Layer Support
 
-**For Developers:**
-- Self-documenting API with comprehensive parameter explanations
-- Clear enum value descriptions reduce trial-and-error development
-- Robust error handling provides actionable feedback
-- Complete MCP compliance ensures seamless integration
+**SSE Transport (`src/sse-new.ts`):**
+- ✅ **Production Ready**: Real-time notification delivery via Server-Sent Events
+- Welcome notifications on client connection
+- Stream-based notification delivery during tool execution
+- Connection health monitoring and reconnection support
 
-**For Organizations:**
-- Production-ready market intelligence platform with enterprise security
-- Cost-effective access to premium data sources through unified interface
-- Scalable architecture supporting concurrent analysis workflows
-- Comprehensive audit trail and data provenance tracking
+**HTTP Streamable Transport (`src/http.ts`):**
+- ✅ **Production Ready**: Notification integration in streamable HTTP responses
+- Session-based notification management
+- Request lifecycle notification tracking
+- Response streaming with embedded notifications
 
-## 11. Future Enhancements
+### 9.3. Enhanced Notification Types
 
-This section outlines potential areas for future development and improvement of the TAM MCP Server to further enhance its capabilities and value to users.
+#### 9.3.1. Data Source Health Notifications 🏥
+**Method**: `notifications/data_source_health`
 
-*   **Advanced Analytical Tools:**
-    *   **Market Trend Analysis & Forecasting:** Develop tools that can analyze historical data from multiple sources to identify trends and provide basic forecasts for market size, growth rates, or key indicators.
-    *   **Competitive Landscape Analysis:** Integrate tools to identify key competitors based on industry and geography, potentially pulling company profile data and financial summaries.
-    *   **Supply Chain Analysis:** Tools to map out potential supply chain links or dependencies for specific industries.
+**Purpose**: Monitor the health, performance, and rate limits of backend data sources.
 
-*   **Data Source Enhancements:**
-    *   **Expanded Data Source Integrations:** Continuously evaluate and integrate additional relevant public and potentially commercial data sources (e.g., Eurostat, UN Comtrade, specialized industry report APIs).
-    *   **User-Configurable Data Source Prioritization:** Allow users or administrators to define preferred data sources or assign weights to sources for specific query types or industries in the `industry_search` tool.
+```typescript
+interface DataSourceHealthNotification {
+  source: "alpha_vantage" | "bls" | "census" | "fred" | "imf" | "nasdaq" | "oecd" | "worldbank";
+  status: "healthy" | "degraded" | "unavailable" | "rate_limited";
+  latency_ms: number;
+  last_successful_call: string;
+  rate_limit_remaining?: number;
+  message: string;
+  timestamp: string;
+}
+```
 
-*   **Data Quality and Processing:**
-    *   **Sophisticated Data Normalization & Standardization:** Improve algorithms for normalizing data from disparate sources (e.g., standardizing industry names, units of measure, financial reporting periods).
-    *   **Enhanced Data Quality Monitoring:** Implement automated checks for data consistency, freshness, and anomaly detection from integrated sources.
-    *   **Knowledge Graph Integration:** Explore building a knowledge graph from the aggregated data to enable more complex relationship queries and inferences.
+**Business Value**:
+- **Proactive Monitoring**: Early warning system for API issues
+- **Rate Limit Management**: Automatic throttling recommendations
+- **Performance Tracking**: Latency monitoring for SLA compliance
+- **Operational Planning**: Data source availability for critical operations
 
-*   **User Experience and Integration:**
-    *   **Natural Language Query (NLQ) Interface:** Develop capabilities to parse natural language questions into structured MCP tool requests.
-    *   **Webhook/Callback Mechanisms:** For long-running queries (especially complex `industry_search` or analytical tasks), implement a callback system to notify clients when results are ready.
-    *   **Data Export Formats:** Offer more diverse data export formats beyond JSON (e.g., CSV, Excel) for easier consumption in other tools.
-    *   **Client Libraries/SDKs:** Provide client libraries in popular programming languages to simplify integration with the TAM MCP Server.
+#### 9.3.2. Market Intelligence Notifications 📈
+**Method**: `notifications/market_intelligence`
+
+**Purpose**: Alert about market trends, anomalies, forecasts, and business insights.
+
+```typescript
+interface MarketIntelligenceNotification {
+  type: "market_alert" | "trend_detected" | "anomaly_found" | "forecast_update";
+  industry: string;
+  severity: "low" | "medium" | "high" | "critical";
+  insight: string;
+  data_confidence: number;
+  source_count: number;
+  affected_metrics: string[];
+  recommendation?: string;
+  timestamp: string;
+}
+```
+
+**Business Value**:
+- **Strategic Insights**: Automated identification of market opportunities
+- **Risk Management**: Early warning for market anomalies
+- **Investment Intelligence**: Data-driven investment recommendations
+- **Competitive Analysis**: Market trend detection across industries
+
+#### 9.3.3. Data Quality Notifications 🔍
+**Method**: `notifications/data_quality`
+
+**Purpose**: Quality score tracking, source validation, and confidence assessment.
+
+```typescript
+interface DataQualityNotification {
+  type: "stale_data" | "missing_data" | "conflicting_sources" | "high_confidence" | "low_confidence";
+  affected_calculations: string[];
+  quality_score: number; // 0-1 scale
+  recommendation: string;
+  sources_checked: string[];
+  variance_percentage?: number;
+  timestamp: string;
+}
+```
+
+**Business Value**:
+- **Decision Confidence**: Transparent quality assessment for all data
+- **Risk Mitigation**: Identification of data reliability issues
+- **Source Optimization**: Guidance for data source selection
+- **Compliance Support**: Audit trail for data quality decisions
+
+#### 9.3.4. Cache Performance Notifications 💾
+**Method**: `notifications/cache_performance`
+
+**Purpose**: Performance optimization through cache monitoring and recommendations.
+
+```typescript
+interface CachePerformanceNotification {
+  type: "cache_hit" | "cache_miss" | "cache_invalidated" | "cache_warming";
+  cache_key: string;
+  hit_rate: number; // 0-1 scale
+  performance_impact: "positive" | "negative" | "neutral";
+  time_saved_ms?: number;
+  memory_usage_mb?: number;
+  timestamp: string;
+}
+```
+
+**Business Value**:
+- **Performance Optimization**: Real-time cache effectiveness monitoring
+- **Cost Management**: API call reduction through efficient caching
+- **User Experience**: Response time optimization insights
+- **Resource Planning**: Memory usage and cache sizing guidance
+
+#### 9.3.5. Calculation Milestone Notifications 🎯
+**Method**: `notifications/calculation_milestone`
+
+**Purpose**: Track completion of major calculations and business milestones.
+
+```typescript
+interface CalculationMilestoneNotification {
+  type: "tam_calculated" | "sam_calculated" | "sam_refined" | "forecast_generated" | "validation_completed" | "opportunity_identified";
+  calculation_id: string;
+  industry: string;
+  market_size_usd: number;
+  confidence_level: number; // 0-1 scale
+  methodology: string;
+  key_assumptions: string[];
+  risk_factors?: string[];
+  timestamp: string;
+}
+```
+
+**Business Value**:
+- **Business Milestones**: Clear tracking of calculation completion
+- **Audit Trail**: Complete record of calculation methodologies
+- **Quality Assurance**: Confidence scoring for all calculations
+- **Strategic Planning**: Key assumption and risk factor identification
+
+### 9.4. Integration Patterns
+
+#### 9.4.1. Tool Integration Examples
+
+**TAM Calculator Integration:**
+```typescript
+// Start notification
+await notificationService.sendCalculationStatus(
+  "TAM calculation initiated",
+  { industry: params.industryId, phase: "initialization" }
+);
+
+// Progress notification
+await notificationService.sendProgress({
+  progressToken: requestId,
+  progress: 50,
+  total: 100,
+  message: "Market data analysis complete"
+});
+
+// Milestone notification
+await notificationService.sendCalculationMilestone({
+  type: "tam_calculated",
+  calculation_id: requestId,
+  industry: params.industryId,
+  market_size_usd: calculatedTAM,
+  confidence_level: confidenceScore,
+  methodology: "compound_growth_projection"
+});
+```
+
+**Data Source Health Integration:**
+```typescript
+// Health monitoring in data source services
+await notificationService.sendDataSourceHealth({
+  source: "alpha_vantage",
+  status: apiResponse.status === 200 ? "healthy" : "degraded",
+  latency_ms: responseTime,
+  last_successful_call: new Date().toISOString(),
+  rate_limit_remaining: remainingCalls,
+  message: `API responding with ${responseTime}ms latency`
+});
+```
+
+#### 9.4.2. Business Workflow Integration
+
+**Market Analysis Workflow:**
+1. **Initiation**: Tool start notification with progress tracking
+2. **Data Gathering**: Data source health monitoring during API calls
+3. **Quality Assessment**: Data quality notifications for retrieved information
+4. **Processing**: Progress notifications for calculation phases
+5. **Intelligence Generation**: Market intelligence notifications for insights
+6. **Completion**: Milestone notifications for final results
+7. **Optimization**: Cache performance notifications for future improvements
+
+### 9.5. Client Integration Guidelines
+
+#### 9.5.1. Notification Handling Patterns
+
+**Real-time Dashboard Integration:**
+```javascript
+// SSE client implementation
+const eventSource = new EventSource('/sse');
+
+eventSource.addEventListener('notification', (event) => {
+  const notification = JSON.parse(event.data);
+  
+  switch (notification.method) {
+    case 'notifications/market_intelligence':
+      updateMarketDashboard(notification.params);
+      break;
+    case 'notifications/data_source_health':
+      updateSystemHealth(notification.params);
+      break;
+    case 'notifications/calculation_milestone':
+      updateCalculationProgress(notification.params);
+      break;
+  }
+});
+```
+
+**Business Intelligence Integration:**
+```javascript
+// Market intelligence alert processing
+function handleMarketIntelligence(notification) {
+  if (notification.severity === 'high' || notification.severity === 'critical') {
+    // Trigger immediate business alerts
+    sendBusinessAlert({
+      title: `Market Alert: ${notification.industry}`,
+      message: notification.insight,
+      confidence: notification.data_confidence,
+      recommendation: notification.recommendation
+    });
+  }
+}
+```
+
+#### 9.5.2. Notification Filtering and Routing
+
+**Priority-based Routing:**
+- **Critical**: Immediate alerts for market anomalies and system failures
+- **High**: Important business insights and significant data quality issues
+- **Medium**: Routine calculation milestones and performance optimizations
+- **Low**: Cache performance updates and routine health checks
+
+**Topic-based Filtering:**
+- **Business Intelligence**: Market insights, trends, and opportunities
+- **Operations**: Data source health, cache performance, system status
+- **Quality Assurance**: Data quality, validation results, confidence scores
+- **Analytics**: Calculation milestones, methodology tracking, audit trails
+
+### 9.6. Monitoring and Analytics
+
+#### 9.6.1. Notification Metrics
+
+**Performance Metrics:**
+- Notification delivery latency
+- Notification processing rate
+- Client connection health
+- Message queue performance
+
+**Business Metrics:**
+- Market intelligence alert frequency
+- Data quality score trends
+- Calculation milestone completion rates
+- Data source health trends
+
+#### 9.6.2. Operational Dashboards
+
+**System Health Dashboard:**
+- Real-time data source status
+- Cache performance metrics
+- Notification delivery status
+- Client connection monitoring
+
+**Business Intelligence Dashboard:**
+- Market trend alerts
+- Industry analysis summaries
+- Calculation milestone tracking
+- Data quality assessments
+
+### 9.7. Future Enhancements
+
+#### 9.7.1. Advanced Features
+
+**Intelligent Notification Aggregation:**
+- Smart batching of related notifications
+- Duplicate detection and consolidation
+- Priority-based delivery scheduling
+- Context-aware notification grouping
+
+**Machine Learning Integration:**
+- Predictive market intelligence alerts
+- Anomaly detection for data quality
+- Performance optimization recommendations
+- Intelligent threshold adjustment
+
+**Enterprise Integration:**
+- Webhook support for external systems
+- Enterprise messaging platform integration
+- Compliance and audit trail enhancements
+- Role-based notification filtering
+
+#### 9.7.2. Scalability Improvements
+
+**Distributed Notification System:**
+- Message queue integration (Redis, RabbitMQ)
+- Horizontal scaling for high-volume notifications
+- Geographic distribution for global deployments
+- Load balancing for notification delivery
+
+**Analytics and Insights:**
+- Historical notification trend analysis
+- Business impact correlation analysis
+- ROI tracking for market intelligence alerts
+- Performance optimization recommendations
+
+The enhanced notification system transforms the TAM MCP Server from a simple data provider into an intelligent business intelligence platform that actively monitors, analyzes, and alerts users to critical market developments and system performance issues.
 
 *   **Operational Improvements:**
     *   **Dynamic API Key Management:** More sophisticated and secure ways to manage and rotate API keys for backend services.

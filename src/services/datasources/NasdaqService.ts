@@ -8,7 +8,7 @@ export class NasdaqService implements DataSourceService {
   private apiKey?: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.NASDAQ_DATA_LINK_API_KEY || "";
+    this.apiKey = apiKey ?? process.env.NASDAQ_DATA_LINK_API_KEY ?? "";
 
     if (!this.apiKey) {
       console.log(
@@ -33,10 +33,20 @@ export class NasdaqService implements DataSourceService {
 
       return response.data;
     } catch (error: any) {
+      // Handle specific API access issues
+      if (error.response?.status === 403) {
+        logger.warn("NasdaqService: API access restricted (403)", {
+          endpoint,
+          message: "Nasdaq Data Link API may require updated authentication or subscription",
+        });
+        throw new Error("Nasdaq Data Link API access restricted - please check API key and subscription status");
+      }
+      
       logger.error("NasdaqService: API call failed", {
         error: error.message,
         endpoint,
         params,
+        status: error.response?.status,
       });
       throw error;
     }

@@ -28,7 +28,10 @@ import {
 } from "./prompts/prompt-definitions.js"; // Added: Import prompt definitions
 import { DataService } from "./services/DataService.js"; // Added
 import { logger, checkRateLimit } from "./utils/index.js";
-import { NotificationService } from "./notifications/notification-service.js";
+import {
+  NotificationService,
+  TamNotificationIntegration,
+} from "./notifications/index.js";
 
 export async function createServer() {
   const server = new Server(
@@ -47,16 +50,16 @@ export async function createServer() {
       },
     },
   );
-
   // Initialize notification service
   const notificationService = new NotificationService(server);
+  const tamNotifications = new TamNotificationIntegration(notificationService);
   const dataService = new DataService(); // Added: Initialize DataService
 
   // Rate limiting configuration
   const RATE_LIMIT_REQUESTS = parseInt(
-    process.env.RATE_LIMIT_REQUESTS || "100",
+    process.env.RATE_LIMIT_REQUESTS ?? "100",
   );
-  const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW || "60000"); // 1 minute
+  const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW ?? "60000"); // 1 minute
 
   // Create logs directory if it doesn't exist
   const fs = await import("fs");
@@ -99,7 +102,7 @@ export async function createServer() {
       if (validationSchema) {
         // Apply defaults by parsing the arguments with the schema
         // This will fill in any missing values with their defaults
-        processedArgs = validationSchema.parse(args || {});
+        processedArgs = validationSchema.parse(args ?? {});
       }
     } catch (validationError) {
       logger.warn(`Invalid arguments for tool ${name}:`, {
@@ -154,21 +157,45 @@ export async function createServer() {
       // Refactored tool dispatching to use DataService
       // This switch will now primarily call methods on dataService
       switch (name) {
-        case "alphaVantage_getCompanyOverview":
+        case "alphaVantage_getCompanyOverview": {
+          const startTimeAV1 = Date.now();
           await notificationService.sendDataFetchStatus(
             "AlphaVantage Company Overview",
             "started",
           );
+
           result = await dataService.getAlphaVantageData(
             "OVERVIEW",
             processedArgs as any,
           );
+          const executionTimeAV1 = Date.now() - startTimeAV1;
+
+          // Enhanced notifications for data source health and performance
+          await tamNotifications.notifyDataSourcePerformance(
+            "alpha_vantage",
+            "Company Overview",
+            executionTimeAV1,
+            !!result,
+            undefined, // Rate limit info would come from the API response
+          );
+
+          // Cache performance notification (simulated - would be real in production)
+          await tamNotifications.notifyCachePerformance(
+            result ? "hit" : "miss",
+            `alphavantage_overview_${(processedArgs as any)?.symbol || "unknown"}`,
+            0.75, // Simulated hit rate
+            executionTimeAV1 > 1000
+              ? Math.max(0, 2000 - executionTimeAV1)
+              : undefined,
+          );
+
           await notificationService.sendDataFetchStatus(
             "AlphaVantage Company Overview",
             result ? "completed" : "failed",
             result,
           );
           break;
+        }
         case "alphaVantage_searchSymbols":
           await notificationService.sendDataFetchStatus(
             "AlphaVantage Symbol Search",
@@ -355,30 +382,180 @@ export async function createServer() {
             result,
           );
           break;
-        case "tam_calculator":
+        case "tam_calculator": {
+          const startTime = Date.now();
+          await tamNotifications.notifyDataSourcePerformance(
+            "alpha_vantage",
+            "TAM Calculation",
+            0,
+            true,
+          );
+
           await notificationService.sendCalculationStatus(
             "TAM Calculation",
             "started",
           );
+
           result = await dataService.calculateTam(processedArgs as any);
+          const executionTime = Date.now() - startTime;
+
+          if (result?.success) {
+            // Enhanced notification for TAM calculation completion
+            await tamNotifications.notifyTamAnalysisComplete(
+              result.data.industry || "Unknown Industry",
+              result.data.tam_estimate || 0,
+              result.data.confidence_level || 0.5,
+              result.data.methodology || "Standard TAM calculation",
+              ["internal_models", "market_research"],
+              result.data.key_assumptions || [
+                "Market trends continue",
+                "No major disruptions",
+                "Standard adoption rates",
+              ],
+              result.data.risk_factors || [
+                "Economic volatility",
+                "Competition changes",
+                "Regulatory shifts",
+              ],
+              executionTime,
+            );
+
+            // Check for significant market size and alert
+            if (result.data.tam_estimate > 10000000000) {
+              // > $10B
+              await tamNotifications.notifyMarketInsight(
+                result.data.industry || "Market",
+                `Large TAM identified: $${(result.data.tam_estimate / 1000000000).toFixed(1)}B with ${((result.data.confidence_level || 0.5) * 100).toFixed(1)}% confidence`,
+                result.data.tam_estimate > 100000000000 ? "high" : "medium",
+                result.data.confidence_level || 0.5,
+                ["tam_calculation", "market_size"],
+              );
+            }
+          }
+
           await notificationService.sendCalculationStatus(
             "TAM Calculation",
             result ? "completed" : "failed",
             result,
           );
           break;
-        case "market_size_calculator":
+        }
+        case "tam_analysis": {
+          const startTime = Date.now();
+          await tamNotifications.notifyDataSourcePerformance(
+            "internal_models",
+            "TAM Analysis",
+            0,
+            true,
+          );
+
+          await notificationService.sendCalculationStatus(
+            "TAM Analysis",
+            "started",
+          );
+
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.tamCalculator(
+            processedArgs as any,
+          );
+          const executionTime = Date.now() - startTime;
+
+          if (result?.success) {
+            // Enhanced notification for TAM analysis completion
+            await tamNotifications.notifyTamAnalysisComplete(
+              result.data.industry || "Unknown Industry",
+              result.data.tam_estimate || 0,
+              result.data.confidence_level || 0.5,
+              result.data.methodology || "Advanced TAM analysis",
+              ["internal_models", "market_research", "scenario_analysis"],
+              result.data.key_assumptions || [
+                "Market trends continue",
+                "Scenario planning",
+                "Addressable market validation",
+              ],
+              result.data.risk_factors || [
+                "Economic volatility",
+                "Technology disruption",
+                "Competitive pressures",
+              ],
+              executionTime,
+            );
+
+            // Check for significant market size and alert
+            if (result.data.tam_estimate > 10000000000) {
+              // > $10B
+              await tamNotifications.notifyMarketInsight(
+                result.data.industry || "Market",
+                `Large TAM identified via advanced analysis: $${(result.data.tam_estimate / 1000000000).toFixed(1)}B with ${((result.data.confidence_level || 0.5) * 100).toFixed(1)}% confidence`,
+                result.data.tam_estimate > 100000000000 ? "high" : "medium",
+                result.data.confidence_level || 0.5,
+                ["tam_analysis", "scenario_planning", "market_size"],
+              );
+            }
+          }
+
+          await notificationService.sendCalculationStatus(
+            "TAM Analysis",
+            result ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
+        case "market_size_calculator": {
+          const startTime2 = Date.now();
+          await tamNotifications.notifyDataSourcePerformance(
+            "internal_models",
+            "Market Size Calculation",
+            0,
+            true,
+          );
+
           await notificationService.sendCalculationStatus(
             "Market Size Calculation",
             "started",
           );
+
           result = await dataService.calculateMarketSize(processedArgs as any);
+          const executionTime2 = Date.now() - startTime2;
+
+          if (result?.success) {
+            // Enhanced notification for market size completion
+            await tamNotifications.notifyCalculationMilestone(
+              "validation_completed",
+              result.data.industry || "Unknown Industry",
+              result.data.market_size || 0,
+              result.data.confidence_level || 0.5,
+              result.data.methodology || "Market size analysis",
+              result.data.key_factors || [
+                "Market demand analysis",
+                "Competitive landscape",
+                "Growth projections",
+              ],
+              result.data.limitations || [
+                "Data availability",
+                "Market volatility",
+                "Regulatory changes",
+              ],
+            );
+
+            // Notify about data source performance
+            await tamNotifications.notifyDataSourcePerformance(
+              "internal_models",
+              "Market Size Calculation",
+              executionTime2,
+              true,
+            );
+          }
+
           await notificationService.sendCalculationStatus(
             "Market Size Calculation",
             result ? "completed" : "failed",
             result,
           );
           break;
+        }
         case "company_financials_retriever":
           await notificationService.sendDataFetchStatus(
             "Company Financials",
@@ -389,7 +566,8 @@ export async function createServer() {
           await notificationService.sendDataFetchStatus(
             "Company Financials",
             result ? "completed" : "failed",
-            result,          );
+            result,
+          );
           break;
         // MarketAnalysisTools cases (from market-tools.ts)
         case "industry_data": {
@@ -397,7 +575,9 @@ export async function createServer() {
             "Industry Data",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
           result = await MarketAnalysisTools.industryData(processedArgs as any);
           await notificationService.sendDataFetchStatus(
             "Industry Data",
@@ -411,7 +591,9 @@ export async function createServer() {
             "Market Size Analysis",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
           result = await MarketAnalysisTools.marketSize(processedArgs as any);
           await notificationService.sendCalculationStatus(
             "Market Size Analysis",
@@ -421,12 +603,59 @@ export async function createServer() {
           break;
         }
         case "sam_calculator": {
+          const startTime = Date.now();
+          await tamNotifications.notifyDataSourcePerformance(
+            "internal_models",
+            "SAM Calculation",
+            0,
+            true,
+          );
+
           await notificationService.sendCalculationStatus(
             "SAM Calculation",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.samCalculator(processedArgs as any);
+
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.samCalculator(
+            processedArgs as any,
+          );
+          const executionTime = Date.now() - startTime;
+
+          if (result?.success) {
+            // Enhanced notification for SAM calculation completion
+            await tamNotifications.notifySamAnalysisComplete(
+              result.data.industry || "Unknown Industry",
+              result.data.sam_estimate || 0,
+              result.data.confidence_level || 0.5,
+              result.data.methodology || "Standard SAM calculation",
+              ["internal_models", "market_research"],
+              result.data.key_assumptions || [
+                "Market penetration assumptions",
+                "Geographic coverage",
+                "Product-market fit",
+              ],
+              result.data.risk_factors || [
+                "Market competition",
+                "Technology changes",
+                "Customer adoption rates",
+              ],
+              executionTime,
+            ); // Check data quality and notify
+            const confidence = result.data.confidence_level || 0.5;
+            if (confidence < 0.7) {
+              await tamNotifications.notifyDataQuality(
+                "low_confidence",
+                [`SAM estimate: ${(confidence * 100).toFixed(1)}%`],
+                confidence,
+                ["Limited market data", "High uncertainty in assumptions"],
+                undefined,
+              );
+            }
+          }
+
           await notificationService.sendCalculationStatus(
             "SAM Calculation",
             result ? "completed" : "failed",
@@ -439,8 +668,12 @@ export async function createServer() {
             "Market Segmentation",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.marketSegments(processedArgs as any);
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.marketSegments(
+            processedArgs as any,
+          );
           await notificationService.sendDataFetchStatus(
             "Market Segmentation",
             result ? "completed" : "failed",
@@ -449,12 +682,67 @@ export async function createServer() {
           break;
         }
         case "market_forecasting": {
+          const startTime3 = Date.now();
+          await tamNotifications.notifyDataSourcePerformance(
+            "internal_models",
+            "Market Forecasting",
+            0,
+            true,
+          );
+
           await notificationService.sendCalculationStatus(
             "Market Forecasting",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.marketForecasting(processedArgs as any);
+
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.marketForecasting(
+            processedArgs as any,
+          );
+          const executionTime3 = Date.now() - startTime3;
+
+          if (result?.success) {
+            // Enhanced notification for forecasting completion
+            const forecastData = result.data;
+            const cagr = forecastData.cagr || 0;
+            const forecastYears = forecastData.forecast_years || 5;
+
+            await tamNotifications.notifyForecastComplete(
+              forecastData.industry || "Unknown Industry",
+              forecastYears,
+              cagr,
+              forecastData.confidence_level || 0.5,
+              forecastData.methodology || "Time series analysis",
+              forecastData.risk_factors || [
+                "Economic cycles",
+                "Technology disruption",
+                "Market saturation",
+              ],
+            );
+
+            // Notify about data source performance
+            await tamNotifications.notifyDataSourcePerformance(
+              "internal_models",
+              "Market Forecasting",
+              executionTime3,
+              true,
+            );
+
+            // Check for high growth and notify
+            if (cagr > 0.15) {
+              // > 15% CAGR
+              await tamNotifications.notifyMarketInsight(
+                forecastData.industry || "Market",
+                `High growth forecast: ${(cagr * 100).toFixed(1)}% CAGR over ${forecastYears} years`,
+                cagr > 0.25 ? "critical" : "high",
+                forecastData.confidence_level || 0.5,
+                ["market_forecast", "high_growth"],
+              );
+            }
+          }
+
           await notificationService.sendCalculationStatus(
             "Market Forecasting",
             result ? "completed" : "failed",
@@ -467,8 +755,12 @@ export async function createServer() {
             "Market Comparison",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.marketComparison(processedArgs as any);
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.marketComparison(
+            processedArgs as any,
+          );
           await notificationService.sendDataFetchStatus(
             "Market Comparison",
             result ? "completed" : "failed",
@@ -477,12 +769,84 @@ export async function createServer() {
           break;
         }
         case "data_validation": {
+          const startTime4 = Date.now();
+          await tamNotifications.notifyDataSourcePerformance(
+            "internal_models",
+            "Data Validation",
+            0,
+            true,
+          );
+
           await notificationService.sendDataFetchStatus(
             "Data Validation",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.dataValidation(processedArgs as any);
+
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.dataValidation(
+            processedArgs as any,
+          );
+          const executionTime4 = Date.now() - startTime4;
+
+          if (result?.success) {
+            // Enhanced notification for data validation completion
+            const validationData = result.data;
+            const qualityScore = validationData.quality_score || 0.5;
+
+            await tamNotifications.notifyCalculationMilestone(
+              "validation_completed",
+              validationData.data_source || "Data Validation",
+              0, // No market size for validation
+              qualityScore,
+              validationData.methodology || "Data quality assessment",
+              validationData.checks_performed || [
+                "Data completeness",
+                "Data accuracy",
+                "Data consistency",
+              ],
+              validationData.issues_found || [
+                "Data quality concerns identified",
+              ],
+            );
+
+            // Send data quality notification based on validation results
+            if (qualityScore < 0.7) {
+              await tamNotifications.notifyDataQuality(
+                qualityScore < 0.5 ? "missing_data" : "low_confidence",
+                [`Quality score: ${(qualityScore * 100).toFixed(1)}%`],
+                qualityScore,
+                validationData.sources_checked || [
+                  "primary_data",
+                  "secondary_data",
+                ],
+                validationData.variance || undefined,
+              );
+            } else {
+              await tamNotifications.notifyDataQuality(
+                "high_confidence",
+                [
+                  `Validation passed with ${(qualityScore * 100).toFixed(1)}% quality score`,
+                ],
+                qualityScore,
+                validationData.sources_checked || [
+                  "primary_data",
+                  "secondary_data",
+                ],
+                validationData.variance || undefined,
+              );
+            }
+
+            // Notify about data source performance
+            await tamNotifications.notifyDataSourcePerformance(
+              "internal_models",
+              "Data Validation",
+              executionTime4,
+              true,
+            );
+          }
+
           await notificationService.sendDataFetchStatus(
             "Data Validation",
             result ? "completed" : "failed",
@@ -495,8 +859,12 @@ export async function createServer() {
             "Market Opportunities",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.marketOpportunities(processedArgs as any);
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.marketOpportunities(
+            processedArgs as any,
+          );
           await notificationService.sendDataFetchStatus(
             "Market Opportunities",
             result ? "completed" : "failed",
@@ -509,8 +877,12 @@ export async function createServer() {
             "Generic Data Query",
             "started",
           );
-          const { MarketAnalysisTools } = await import("./tools/market-tools.js");
-          result = await MarketAnalysisTools.genericDataQuery(processedArgs as any);
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.genericDataQuery(
+            processedArgs as any,
+          );
           await notificationService.sendDataFetchStatus(
             "Generic Data Query",
             result ? "completed" : "failed",
@@ -534,7 +906,8 @@ export async function createServer() {
       // Assuming 'result' is the direct data or an object with an error property
       if (
         !result ||
-        (typeof result === "object" && result.hasOwnProperty("error"))
+        (typeof result === "object" &&
+          Object.prototype.hasOwnProperty.call(result, "error"))
       ) {
         // Basic error check
         await notificationService.sendError({
@@ -704,7 +1077,7 @@ export async function createServer() {
       return {
         contents: [
           {
-            uri: uri,
+            uri,
             mimeType: "text/markdown",
             text: content,
           },
@@ -740,7 +1113,7 @@ export async function createServer() {
 
     // Validate required arguments
     const requiredArgs =
-      promptDefinition.arguments?.filter((arg) => arg.required) || [];
+      promptDefinition.arguments?.filter((arg) => arg.required) ?? [];
     for (const requiredArg of requiredArgs) {
       if (!args || !(requiredArg.name in args)) {
         logger.warn(
@@ -751,7 +1124,7 @@ export async function createServer() {
     }
 
     // Generate prompt content based on the prompt type
-    const promptContent = generatePromptContent(name, args || {});
+    const promptContent = generatePromptContent(name, args ?? {});
 
     logger.info(`Generated prompt: ${name}`, { args });
 

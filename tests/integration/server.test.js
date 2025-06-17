@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createServer } from '../../dist/server.js';
 
 describe('Server Integration Tests', () => {
   it('should be implemented', () => {
