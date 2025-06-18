@@ -1,0 +1,789 @@
+{
+  "info": {
+    "name": "TAM MCP Server API Collection",
+    "description": "Comprehensive Postman collection for testing the Total Addressable Market (TAM) MCP Server with all tools and resources. This collection includes HTTP Streamable MCP endpoints, health checks, and session management.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set server URL if not already set",
+          "if (!pm.collectionVariables.get('serverUrl')) {",
+          "    pm.collectionVariables.set('serverUrl', 'http://localhost:3000');",
+          "}",
+          "",
+          "// Set request ID if not already set",
+          "if (!pm.collectionVariables.get('requestId')) {",
+          "    pm.collectionVariables.set('requestId', Math.floor(Math.random() * 1000000));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [          "// Extract session ID from initialize response",
+          "if (pm.request.url.toString().includes('/mcp') && pm.request.method === 'POST' && pm.response.code === 200) {",
+          "    const requestBody = JSON.parse(pm.request.body.raw || '{}');",
+          "    if (requestBody.method === 'initialize') {",
+          "        const sessionId = pm.response.headers.get('mcp-session-id');",
+          "        if (sessionId) {",
+          "            pm.collectionVariables.set('sessionId', sessionId);",
+          "            console.log('Session ID saved:', sessionId);",
+          "        }",
+          "    }",
+          "}",
+          "",
+          "// Check for successful responses",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",          "// Parse response based on content type and request",          "// Parse response based on content type and request",
+          "const contentType = pm.response.headers.get('content-type');",
+          "if (contentType && contentType.includes('text/event-stream')) {",
+          "    pm.test('SSE response received', function () {",
+          "        pm.expect(pm.response.text()).to.include('data:');",
+          "    });",          "} else if (pm.request.url.toString().includes('/health')) {",
+          "    // Health check returns simple JSON, not JSON-RPC",
+          "    pm.test('Health check response structure', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('status');",
+          "        pm.expect(jsonData).to.have.property('timestamp');",
+          "    });",
+          "} else {",
+          "    pm.test('JSON-RPC response structure', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('jsonrpc', '2.0');",
+          "        pm.expect(jsonData).to.have.property('id');",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "serverUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "requestId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverUrl}}/health",
+          "host": ["{{serverUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Check server health and status"
+      },
+      "response": []
+    },
+    {
+      "name": "Initialize MCP Connection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"initialize\",\n  \"params\": {\n    \"protocolVersion\": \"2024-11-05\",\n    \"capabilities\": {\n      \"tools\": {},\n      \"resources\": {}\n    },\n    \"clientInfo\": {\n      \"name\": \"postman-client\",\n      \"version\": \"1.0.0\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{serverUrl}}/mcp",
+          "host": ["{{serverUrl}}"],
+          "path": ["mcp"]
+        },
+        "description": "Initialize MCP connection and receive session ID"
+      },
+      "response": []
+    },
+    {
+      "name": "List Tools",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          },
+          {
+            "key": "mcp-session-id",
+            "value": "{{sessionId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/list\",\n  \"params\": {}\n}"
+        },
+        "url": {
+          "raw": "{{serverUrl}}/mcp",
+          "host": ["{{serverUrl}}"],
+          "path": ["mcp"]
+        },
+        "description": "List all available market analysis tools"
+      },
+      "response": []
+    },
+    {
+      "name": "List Resources",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/event-stream"
+          },
+          {
+            "key": "mcp-session-id",
+            "value": "{{sessionId}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"resources/list\",\n  \"params\": {}\n}"
+        },
+        "url": {
+          "raw": "{{serverUrl}}/mcp",
+          "host": ["{{serverUrl}}"],
+          "path": ["mcp"]
+        },
+        "description": "List all available resources (documentation, guides)"
+      },
+      "response": []
+    },
+    {
+      "name": "Market Analysis Tools",
+      "item": [
+        {
+          "name": "Industry Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"industry_analysis\",\n    \"arguments\": {\n      \"query\": \"fintech\",\n      \"limit\": 5\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Analyze industries by keywords"
+          },
+          "response": []
+        },
+        {
+          "name": "Industry Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"industry_data\",\n    \"arguments\": {\n      \"industryId\": \"tech-software\",\n      \"includeFinancials\": true,\n      \"includeTrends\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Get detailed industry information with financials and trends"
+          },
+          "response": []
+        },
+        {
+          "name": "Market Size Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"market_size\",\n    \"arguments\": {\n      \"industryId\": \"tech-software\",\n      \"region\": \"US\",\n      \"year\": 2024,\n      \"currency\": \"USD\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve market size data for specific industry and region"
+          },
+          "response": []
+        },
+        {
+          "name": "TAM Calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"tam_calculator\",\n    \"arguments\": {\n      \"industryId\": \"tech-software\",\n      \"region\": \"US\",\n      \"methodology\": \"top-down\",\n      \"includeAdjacent\": false,\n      \"timeHorizon\": 5\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Calculate Total Addressable Market using top-down methodology"
+          },
+          "response": []
+        },
+        {
+          "name": "SAM Calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sam_calculator\",\n    \"arguments\": {\n      \"tamValue\": 1000000000,\n      \"targetMarketShare\": 0.05,\n      \"targetSegments\": [\"enterprise\", \"smb\"],\n      \"geographicConstraints\": [\"north-america\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Calculate Serviceable Addressable Market from TAM"
+          },
+          "response": []
+        },
+        {
+          "name": "Market Segments Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"market_segments\",\n    \"arguments\": {\n      \"industryId\": \"tech-software\",\n      \"segmentationType\": \"demographic\",\n      \"region\": \"US\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Analyze market segmentation by demographics"
+          },
+          "response": []
+        },
+        {
+          "name": "Market Forecasting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"market_forecasting\",\n    \"arguments\": {\n      \"industryId\": \"tech-software\",\n      \"region\": \"US\",\n      \"forecastYears\": 5,\n      \"scenarios\": [\"conservative\", \"optimistic\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Generate market forecasts with multiple scenarios"
+          },
+          "response": []
+        },
+        {
+          "name": "Market Comparison",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"market_comparison\",\n    \"arguments\": {\n      \"industries\": [\"tech-software\", \"tech-hardware\"],\n      \"regions\": [\"US\", \"EU\"],\n      \"metrics\": [\"size\", \"growth\"],\n      \"year\": 2024\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Compare multiple markets across various metrics"
+          },
+          "response": []
+        },
+        {
+          "name": "Data Validation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"data_validation\",\n    \"arguments\": {\n      \"dataSource\": \"market-research\",\n      \"industryId\": \"tech-software\",\n      \"region\": \"US\",\n      \"validationType\": \"completeness\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Validate market data quality and completeness"
+          },
+          "response": []
+        },
+        {
+          "name": "Market Opportunities",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"market_opportunities\",\n    \"arguments\": {\n      \"industryId\": \"tech-software\",\n      \"region\": \"US\",\n      \"analysisType\": \"growth-potential\",\n      \"timeframe\": \"3-years\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Identify market opportunities and growth potential"
+          },
+          "response": []
+        },
+        {
+          "name": "Generic Data Query - World Bank",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"generic_data_query\",\n    \"arguments\": {\n      \"service\": \"worldbank\",\n      \"method\": \"getEconomicData\",\n      \"params\": {\n        \"country\": \"US\",\n        \"indicator\": \"GDP\",\n        \"year\": 2023\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Query World Bank economic data directly"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Resources",
+      "item": [
+        {
+          "name": "Read README Resource",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"resources/read\",\n  \"params\": {\n    \"uri\": \"tam://readme\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Read the TAM MCP Server README documentation"
+          },
+          "response": []
+        },
+        {
+          "name": "Read Contributing Guidelines",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"resources/read\",\n  \"params\": {\n    \"uri\": \"tam://contributing\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Read the contributing guidelines"
+          },
+          "response": []
+        },
+        {
+          "name": "Read Release Notes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"resources/read\",\n  \"params\": {\n    \"uri\": \"tam://release-notes\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Read the release notes and change history"
+          },
+          "response": []
+        }      ]
+    },
+    {
+      "name": "Prompts",
+      "item": [
+        {
+          "name": "List Prompts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/list\",\n  \"params\": {}\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "List all available prompts"
+          },
+          "response": []
+        },
+        {
+          "name": "Startup Funding Pitch Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/get\",\n  \"params\": {\n    \"name\": \"startup_funding_pitch\",\n    \"arguments\": {\n      \"company_name\": \"TechFlow AI\",\n      \"industry_sector\": \"fintech\",\n      \"funding_stage\": \"series-a\",\n      \"target_amount\": \"10000000\",\n      \"geographic_focus\": \"US\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Generate a comprehensive startup funding pitch prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Private Equity Research Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/get\",\n  \"params\": {\n    \"name\": \"private_equity_research\",\n    \"arguments\": {\n      \"target_company\": \"Manufacturing Solutions Inc\",\n      \"industry_focus\": \"manufacturing\",\n      \"deal_size\": \"75000000\",\n      \"investment_thesis\": \"operational efficiency\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Generate a private equity investment research prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Corporate Strategy Entry Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/get\",\n  \"params\": {\n    \"name\": \"corporate_strategy_entry\",\n    \"arguments\": {\n      \"company_name\": \"Global Corp\",\n      \"target_market\": \"cybersecurity\",\n      \"entry_strategy\": \"strategic acquisition\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },            "description": "Generate a corporate market entry strategy prompt"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Session Management",
+      "item": [
+        {
+          "name": "Terminate Session (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Terminate the MCP session"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

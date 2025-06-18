@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build output (will be rebuilt in container)
+dist/
+
+# Development files
+.git/
+.github/
+.qodo/
+*.md
+!README.md
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Test files
+tests/
+coverage/
+
+# Development tools
+.eslintrc.json
+.gitignore
+*.test.js
+*.test.ts
+
+# Documentation
+doc/
+examples/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/

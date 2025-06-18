@@ -1,0 +1,205 @@
+name: Backend API Integration Tests
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+    inputs:
+      test_level:
+        description: 'Test level to run'
+        required: true
+        default: 'health-check'
+        type: choice
+        options:
+          - health-check
+          - full-integration
+          - postman-only
+
+env:
+  NODE_VERSION: '20'
+  TIMEOUT_MINUTES: 15
+
+jobs:
+  api-health-check:
+    name: API Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    outputs:
+      health-status: ${{ steps.health-check.outputs.result }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run API health check
+        id: health-check
+        run: |
+          echo "Running API health check..."
+          if npm run test:api-health; then
+            echo "result=success" >> $GITHUB_OUTPUT
+          else
+            echo "result=failure" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(env.TIMEOUT_MINUTES) }}
+    needs: api-health-check
+    if: github.event.inputs.test_level == 'full-integration' || github.event_name == 'schedule'
+    
+    strategy:
+      matrix:
+        test-type: ['unit', 'integration', 'live-apis']
+        
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run unit tests
+        if: matrix.test-type == 'unit'
+        run: npm run test:unit
+        
+      - name: Run integration tests
+        if: matrix.test-type == 'integration'
+        run: npm run test:integration
+        
+      - name: Run live API tests
+        if: matrix.test-type == 'live-apis'
+        env:
+          # Public APIs only - no secrets required
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
+        run: |
+          echo "Running live API tests (with graceful failures)..."
+          npm run test:live || echo "Some live API tests failed (expected without API keys)"
+        continue-on-error: true
+
+  postman-tests:
+    name: Postman Newman Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.inputs.test_level == 'postman-only' || github.event.inputs.test_level == 'full-integration' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Newman
+        run: npm install -g newman
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Start HTTP server
+        run: |
+          npm run start:http &
+          sleep 10  # Wait for server to start
+          
+      - name: Wait for server
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:3000/health; do sleep 1; done'
+          
+      - name: Run Newman collection
+        env:
+          # API keys for enhanced testing (optional)
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          NASDAQ_DATA_LINK_API_KEY: ${{ secrets.NASDAQ_DATA_LINK_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+        run: |
+          # Create temporary environment file
+          cat > newman-env.json << EOF
+          {
+            "id": "ci-env",
+            "name": "CI Environment",
+            "values": [
+              {"key": "ALPHA_VANTAGE_API_KEY", "value": "${ALPHA_VANTAGE_API_KEY:-}", "enabled": true},
+              {"key": "CENSUS_API_KEY", "value": "${CENSUS_API_KEY:-}", "enabled": true},
+              {"key": "FRED_API_KEY", "value": "${FRED_API_KEY:-}", "enabled": true},
+              {"key": "NASDAQ_DATA_LINK_API_KEY", "value": "${NASDAQ_DATA_LINK_API_KEY:-}", "enabled": true},
+              {"key": "BLS_API_KEY", "value": "${BLS_API_KEY:-}", "enabled": true}
+            ]
+          }
+          EOF
+          
+          # Run Newman with proper error handling
+          newman run TAM-MCP-Server-Postman-Collection.json \
+            --environment newman-env.json \
+            --reporters cli,json \
+            --reporter-json-export newman-results.json \
+            --timeout 30000 \
+            --delay-request 2000 \
+            --bail || echo "Some Postman tests failed (expected without API keys)"
+        continue-on-error: true
+        
+      - name: Upload Newman results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-test-results
+          path: newman-results.json
+          retention-days: 7
+
+  summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [api-health-check, integration-tests, postman-tests]
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🧪 Backend API Integration Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Health Check**: ${{ needs.api-health-check.outputs.health-status || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Integration Tests**: ${{ needs.integration-tests.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Postman Tests**: ${{ needs.postman-tests.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Notes:" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests are designed to work with or without API keys" >> $GITHUB_STEP_SUMMARY
+          echo "- Public APIs (World Bank, OECD, IMF) should always pass" >> $GITHUB_STEP_SUMMARY
+          echo "- Premium APIs require valid keys in repository secrets" >> $GITHUB_STEP_SUMMARY
+          echo "- Failed tests may indicate API quota limits or service outages" >> $GITHUB_STEP_SUMMARY

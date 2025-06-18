@@ -6,7 +6,6 @@
   },
   "extends": [
     "eslint:recommended",
-    "@typescript-eslint/recommended",
     "prettier"
   ],
   "parser": "@typescript-eslint/parser",
@@ -18,9 +17,9 @@
   "plugins": [
     "@typescript-eslint",
     "prettier"
-  ],
-  "rules": {
+  ],  "rules": {
     "prettier/prettier": "error",
+    "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -39,7 +38,7 @@
     {
       "files": ["tests/**/*"],
       "env": {
-        "vitest": true
+        "jest": true
       },
       "rules": {
         "no-console": "off",

@@ -1,472 +1,111 @@
-# Contributing to Market Sizing MCP Server
+# Contributing to TAM MCP Server
 
-Thank you for your interest in contributing to the Market Sizing MCP Server! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to the TAM (Total Addressable Market) MCP Server! This document provides guidelines and information for contributors.
 
-## 🚀 Getting Started
+## Before You Submit
 
-### Prerequisites
+Before submitting any pull request, please ensure you follow these essential requirements:
 
-- Node.js 18+ installed
-- npm or yarn package manager
-- Git for version control
-- TypeScript knowledge
-- Familiarity with Express.js and MCP concepts
+### 1. Run Tests and Lint
 
-### Development Setup
+Always run tests and lint checks before submitting code:
 
-1. **Fork and Clone**
-   ```bash
-   git clone https://github.com/your-username/market-sizing-mcp.git
-   cd market-sizing-mcp
-   ```
+```bash
+# Run all tests (must pass)
+npm test
 
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+# Run ESLint (must have no errors)
+npm run lint
 
-3. **Set Up Environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Run Tests**
-   ```bash
-   npm test
-   npm run test:coverage
-   ```
-
-## 🏗 Project Structure
-
-Understanding the codebase structure will help you contribute effectively:
-
-```
-src/
-├── index.ts              # Main entry point and server initialization
-├── server.ts             # Express server configuration and middleware
-├── types/
-│   └── schemas.ts        # Zod schemas and TypeScript type definitions
-├── tools/
-│   └── mcpTools.ts       # MCP tool implementations and business logic
-├── services/
-│   ├── dataService.ts    # Data operations and external API integrations
-│   └── cacheService.ts   # Caching logic and performance optimization
-└── utils/
-    └── logger.ts         # Logging utilities and structured logging
+# Build the project (must succeed)
+npm run build
 ```
 
-## 🛠 Development Guidelines
+All tests must pass and there should be no ESLint errors. ESLint warnings are acceptable but should be minimized.
 
-### Code Style
+### 2. Update Design Documentation
 
-We use strict TypeScript with comprehensive linting and formatting:
+If your changes affect the system architecture, design, or add new features:
 
-- **TypeScript**: Strict mode enabled with comprehensive type checking
-- **ESLint**: Code linting with custom rules for consistency
-- **Prettier**: Automatic code formatting
-- **Conventional Commits**: Structured commit messages
+- Update relevant documentation in the `doc/` directory
+- Add or update architectural diagrams if applicable
+- Update API documentation for any new tools or endpoints
+- Ensure your changes align with the existing design patterns
 
-### Coding Standards
+### 3. Project Organization Rules
 
-1. **TypeScript Best Practices**
-   ```typescript
-   // Use strict types - avoid 'any'
-   interface MarketData {
-     size: number;
-     growth: number;
-     segments: MarketSegment[];
-   }
+Follow these strict organizational rules:
 
-   // Use Zod for runtime validation
-   const marketSizeSchema = z.object({
-     industry: z.string().min(1),
-     geography: z.string(),
-     year: z.number().int().min(2020).max(2030)
-   });
-   ```
+#### Do NOT leave logs in project root
+- Never commit log files to the project root directory
+- Use `.gitignore` to exclude log files (`*.log`, `logs/`, etc.)
+- If you need to include sample logs for documentation, place them in appropriate subdirectories
 
-2. **Error Handling**
-   ```typescript
-   // Use structured error handling
-   try {
-     const result = await dataService.getMarketSize(params);
-     return { success: true, data: result };
-   } catch (error) {
-     logger.error('Market size calculation failed', { error, params });
-     throw new MCPError(
-       'CALCULATION_FAILED',
-       'Unable to calculate market size',
-       { originalError: error }
-     );
-   }
-   ```
+#### Move reports to the report folder
+- All documentation should follow the established structure in the `doc/` directory
+- Do not leave temporary reports or generated files in the root or source directories
+- Name reports with clear, descriptive filenames and include dates when relevant
 
-3. **Logging Standards**
-   ```typescript
-   // Use structured logging with context
-   logger.info('Processing market analysis request', {
-     tool: 'calculate_tam',
-     industry: params.industry,
-     requestId: context.requestId
-   });
+### 4. Code Quality Standards
 
-   // Log business metrics
-   logger.business('market_analysis_completed', {
-     tool: 'calculate_tam',
-     execution_time: Date.now() - startTime,
-     result_value: result.tam
-   });
-   ```
+- Follow TypeScript best practices
+- Use proper error handling and logging
+- Add appropriate tests for new functionality
+- Maintain consistent code formatting (Prettier is configured)
+- Use meaningful variable and function names
+- Add JSDoc comments for public APIs
 
-4. **Testing Requirements**
-   ```typescript
-   // Unit tests for all functions
-   describe('MCPTools.calculateTAM', () => {
-     it('should calculate TAM for valid industry data', async () => {
-       const params = { industry: 'SaaS', geography: 'Global' };
-       const result = await mcpTools.calculateTAM(params);
-       
-       expect(result.success).toBe(true);
-       expect(result.data.tam).toBeGreaterThan(0);
-       expect(result.data.methodology).toBeDefined();
-     });
-   });
-   ```
+### 5. Development Setup
 
-### Git Workflow
+```bash
+# Clone the repository
+git clone <repository-url>
+cd TAM-MCP-Server
 
-1. **Branch Naming**
-   - `feature/description` - New features
-   - `fix/description` - Bug fixes
-   - `docs/description` - Documentation updates
-   - `refactor/description` - Code refactoring
-   - `test/description` - Test improvements
+# Install dependencies
+npm install
 
-2. **Commit Messages**
-   Use [Conventional Commits](https://www.conventionalcommits.org/):
-   ```
-   feat(tools): add market opportunity analysis tool
-   fix(cache): resolve cache invalidation issue
-   docs(readme): update API documentation
-   refactor(services): improve data service performance
-   test(integration): add comprehensive API tests
-   ```
+# Set up development environment
+npm run dev-setup
 
-3. **Pull Request Process**
-   - Create feature branch from `main`
-   - Make changes with comprehensive tests
-   - Update documentation if needed
-   - Run linting and tests locally
-   - Create PR with descriptive title and body
-   - Address review feedback promptly
-
-## 🧪 Testing Guidelines
-
-### Test Structure
-
-```
-tests/
-├── unit/                 # Unit tests for individual components
-│   ├── tools/
-│   ├── services/
-│   └── utils/
-├── integration/          # API endpoint integration tests
-├── performance/          # Load and performance tests
-└── fixtures/            # Test data and mocks
+# Run in development mode
+npm run dev
 ```
 
-### Writing Tests
+## Contribution Process
 
-1. **Unit Tests**
-   ```typescript
-   // Test individual functions in isolation
-   describe('DataService.getIndustryData', () => {
-     beforeEach(() => {
-       mockApiProvider.reset();
-     });
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Make your changes following the guidelines above
+4. Run tests and lint: `npm test && npm run lint`
+5. Update documentation as needed
+6. Commit your changes with clear, descriptive messages
+7. Push to your fork and submit a pull request
 
-     it('should return industry data for valid industry', async () => {
-       const industryData = await dataService.getIndustryData('technology');
-       expect(industryData).toMatchSchema(industryDataSchema);
-     });
-   });
-   ```
+## Code of Conduct
 
-2. **Integration Tests**
-   ```typescript
-   // Test complete API workflows
-   describe('POST /mcp/tools/calculate_tam', () => {
-     it('should calculate TAM and return valid response', async () => {
-       const response = await request(app)
-         .post('/mcp/tools/calculate_tam')
-         .send({ industry: 'SaaS', geography: 'North America' })
-         .expect(200);
+- Be respectful and constructive in all interactions
+- Follow the existing code patterns and conventions
+- Test your changes thoroughly
+- Document your work clearly
+- Help maintain the high quality of the codebase
 
-       expect(response.body.success).toBe(true);
-       expect(response.body.data.tam).toBeGreaterThan(0);
-     });
-   });
-   ```
+## Types of Contributions
 
-3. **Performance Tests**
-   ```typescript
-   // Test performance under load
-   describe('Performance Tests', () => {
-     it('should handle 100 concurrent TAM calculations', async () => {
-       const promises = Array.from({ length: 100 }, () =>
-         request(app).post('/mcp/tools/calculate_tam')
-       );
-       
-       const results = await Promise.all(promises);
-       expect(results.every(r => r.status === 200)).toBe(true);
-     });
-   });
-   ```
+We welcome:
+- Bug fixes
+- New data source integrations
+- Performance improvements
+- Documentation improvements
+- Test coverage enhancements
+- Tool enhancements and new market analysis features
 
-### Test Coverage
+## Questions?
 
-- Maintain **90%+** code coverage
-- Cover all error scenarios
-- Test edge cases and boundary conditions
-- Include performance regression tests
+If you have questions about contributing:
+- Check the documentation in the `doc/` directory
+- Look at existing code for patterns and examples
+- Open an issue for discussion before making large changes
+- Review recent pull requests for contribution examples
 
-## 📊 Adding New Tools
-
-To add a new market analysis tool:
-
-1. **Define Schema**
-   ```typescript
-   // In src/types/schemas.ts
-   export const newToolInputSchema = z.object({
-     parameter1: z.string(),
-     parameter2: z.number().optional()
-   });
-
-   export const newToolResponseSchema = z.object({
-     result: z.array(z.string()),
-     metadata: z.object({
-       source: z.string(),
-       timestamp: z.string()
-     })
-   });
-   ```
-
-2. **Implement Tool**
-   ```typescript
-   // In src/tools/mcpTools.ts
-   async newTool(input: z.infer<typeof newToolInputSchema>): Promise<MCPResponse> {
-     const startTime = Date.now();
-     
-     try {
-       // Validate input
-       const validatedInput = newToolInputSchema.parse(input);
-       
-       // Business logic
-       const result = await this.dataService.performNewAnalysis(validatedInput);
-       
-       // Log success
-       this.logger.business('new_tool_executed', {
-         execution_time: Date.now() - startTime,
-         input_params: validatedInput
-       });
-       
-       return {
-         success: true,
-         data: result,
-         metadata: {
-           tool: 'new_tool',
-           execution_time: Date.now() - startTime,
-           cache_used: false
-         }
-       };
-     } catch (error) {
-       this.logger.error('New tool execution failed', { error, input });
-       throw new MCPError('TOOL_EXECUTION_FAILED', 'Tool execution failed', { error });
-     }
-   }
-   ```
-
-3. **Add Route**
-   ```typescript
-   // In src/server.ts
-   app.post('/mcp/tools/new_tool', async (req, res) => {
-     try {
-       const result = await mcpTools.newTool(req.body);
-       res.json(result);
-     } catch (error) {
-       handleMCPError(error, res);
-     }
-   });
-   ```
-
-4. **Write Tests**
-   ```typescript
-   // Add comprehensive tests
-   describe('MCPTools.newTool', () => {
-     it('should execute new tool successfully', async () => {
-       const result = await mcpTools.newTool({ parameter1: 'value' });
-       expect(result.success).toBe(true);
-     });
-   });
-   ```
-
-5. **Update Documentation**
-   - Update README.md with tool description
-   - Add API documentation
-   - Include usage examples
-
-## 🔧 Data Integration
-
-### Adding New Data Sources
-
-1. **External API Integration**
-   ```typescript
-   // In src/services/dataService.ts
-   async integrateNewProvider(apiKey: string): Promise<void> {
-     this.newProvider = new NewProviderClient({
-       apiKey,
-       baseURL: 'https://api.newprovider.com/v1',
-       timeout: 10000
-     });
-   }
-   ```
-
-2. **Data Normalization**
-   ```typescript
-   private normalizeNewProviderData(rawData: any): MarketData {
-     return {
-       size: rawData.market_size_usd,
-       growth: rawData.cagr_percent / 100,
-       segments: rawData.segments.map(s => ({
-         name: s.segment_name,
-         size: s.size_usd,
-         growth: s.growth_rate / 100
-       }))
-     };
-   }
-   ```
-
-3. **Error Handling**
-   ```typescript
-   try {
-     const data = await this.newProvider.getMarketData(params);
-     return this.normalizeNewProviderData(data);
-   } catch (error) {
-     if (error.status === 429) {
-       throw new MCPError('RATE_LIMITED', 'API rate limit exceeded');
-     }
-     throw new MCPError('DATA_SOURCE_ERROR', 'Failed to fetch data', { error });
-   }
-   ```
-
-## 🚦 Release Process
-
-### Version Management
-
-We follow [Semantic Versioning](https://semver.org/):
-- **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
-
-### Release Checklist
-
-1. **Pre-release**
-   - [ ] All tests passing
-   - [ ] Code coverage ≥90%
-   - [ ] Documentation updated
-   - [ ] CHANGELOG.md updated
-   - [ ] Version bumped in package.json
-
-2. **Release**
-   - [ ] Create release branch
-   - [ ] Tag version: `git tag v1.2.3`
-   - [ ] Push to GitHub
-   - [ ] Create GitHub release
-   - [ ] Deploy to staging
-   - [ ] Deploy to production
-
-3. **Post-release**
-   - [ ] Monitor metrics
-   - [ ] Update documentation site
-   - [ ] Communicate changes to users
-
-## 🐛 Bug Reports
-
-### Reporting Issues
-
-When reporting bugs, please include:
-
-1. **Environment Information**
-   - Node.js version
-   - Operating system
-   - Server version
-   - Configuration details
-
-2. **Steps to Reproduce**
-   - Exact steps to trigger the issue
-   - Input data used
-   - Expected vs actual behavior
-
-3. **Logs and Errors**
-   - Server logs (redact sensitive info)
-   - Error messages
-   - Stack traces
-
-4. **Additional Context**
-   - Screenshots if applicable
-   - Related issues or PRs
-   - Potential solutions
-
-### Issue Template
-
-```markdown
-## Bug Description
-Brief description of the issue
-
-## Environment
-- Node.js: v18.x.x
-- OS: Ubuntu 22.04
-- Server Version: v1.0.0
-
-## Steps to Reproduce
-1. Step one
-2. Step two
-3. Step three
-
-## Expected Behavior
-What should happen
-
-## Actual Behavior
-What actually happens
-
-## Logs
-```
-Error logs here
-```
-
-## Additional Context
-Any other relevant information
-```
-
-## 📞 Getting Help
-
-- **Documentation**: Check README.md and inline code comments
-- **GitHub Issues**: Search existing issues before creating new ones
-- **GitHub Discussions**: For questions and general discussion
-- **Code Review**: Request reviews on complex changes
-
-## 🏆 Recognition
-
-Contributors will be recognized in:
-- CONTRIBUTORS.md file
-- GitHub contributors section
-- Release notes for significant contributions
-- Monthly contributor highlights
-
-Thank you for contributing to the Market Sizing MCP Server! Your contributions help make market analysis more accessible and powerful for everyone. 🚀
+Thank you for helping make TAM-MCP-Server better!
