@@ -14,7 +14,7 @@ This MCP server provides comprehensive market research capabilities including:
 - **15 Prompts**: Professional business analysis templates for funding, strategy, and research
 - **Data Integration**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
 - **Smart Defaults**: Pre-configured parameters for immediate use without setup
-- **Multiple Transports**: STDIO, HTTP, and SSE support
+- **Multiple Transports**: STDIO, Streamable HTTP, and SSE support
 
 ### Capabilities
 
