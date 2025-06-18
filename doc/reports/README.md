@@ -4,8 +4,20 @@ This directory contains detailed technical reports and analysis documentation fo
 
 ## 📊 **Available Reports**
 
+| Report | Date | Description | Status |
+|--------|------|-------------|--------|
+| [Postman Collection Verification](POSTMAN-COLLECTION-VERIFICATION-REPORT.md) | June 17, 2025 | API testing verification and collection validation | ✅ Complete |
+| [MCP Prompts Final Report](MCP-PROMPTS-FINAL-REPORT.md) | Previous | Business analysis prompts implementation | ✅ Complete |
+| [Semantic Validation](SEMANTIC-VALIDATION-COMPLETE.md) | Previous | Validation results and analysis | ✅ Complete |
+| [Default Values Summary](DEFAULT-VALUES-SUMMARY.md) | Previous | Default values analysis report | ✅ Complete |
+
 ### **Testing Reports**
-This directory is reserved for technical reports and analysis. Reports are generated during development and testing phases to provide detailed insights into system performance, test coverage, and implementation details.
+
+This directory contains detailed technical reports and analysis documentation covering:
+- **API Verification**: Postman collection testing and validation
+- **Integration Testing**: Backend service connectivity and data flow
+- **Prompt Testing**: Business analysis prompt generation and validation
+- **Semantic Analysis**: Tool and resource validation results
 
 ## 🎯 **Report Usage**
 

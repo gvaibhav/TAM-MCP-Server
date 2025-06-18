@@ -41,11 +41,13 @@
     "test:ui": "vitest --ui --config config/vitest.config.ts",
     "test:vitest": "vitest run --config config/vitest.config.ts",
     "test:vitest:watch": "vitest watch --config config/vitest.config.ts",
-    "test:vitest:ui": "vitest --ui --config config/vitest.config.ts",
-    "test:live": "vitest run tests/integration/services/live --config config/vitest.config.ts",
+    "test:vitest:ui": "vitest --ui --config config/vitest.config.ts",    "test:live": "vitest run tests/integration/services/live --config config/vitest.config.ts",
     "test:api-health": "node scripts/api-health-check.mjs",
     "test:backend-apis": "./scripts/test-backend-apis.sh",
     "test:postman": "./scripts/test-postman-api.sh",
+    "test:newman": "npx newman run examples/TAM-MCP-Server-Postman-Collection.json --env-var serverUrl=http://localhost:3000",
+    "test:newman:timeout": "npx newman run examples/TAM-MCP-Server-Postman-Collection.json --env-var serverUrl=http://localhost:3000 --timeout-request 5000",
+    "test:newman:ci": "npx newman run examples/TAM-MCP-Server-Postman-Collection.json --env-var serverUrl=http://localhost:3000 --timeout-request 5000 --bail",
     "test:integration-full": "npm run test:api-health && npm run test:live && npm run test:integration"
   },
   "dependencies": {

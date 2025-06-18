@@ -30,13 +30,15 @@
       "listen": "test",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          "// Extract session ID from initialize response",
-          "if (pm.request.name === 'Initialize MCP Connection' && pm.response.code === 200) {",
-          "    const sessionId = pm.response.headers.get('mcp-session-id');",
-          "    if (sessionId) {",
-          "        pm.collectionVariables.set('sessionId', sessionId);",
-          "        console.log('Session ID saved:', sessionId);",
+        "exec": [          "// Extract session ID from initialize response",
+          "if (pm.request.url.toString().includes('/mcp') && pm.request.method === 'POST' && pm.response.code === 200) {",
+          "    const requestBody = JSON.parse(pm.request.body.raw || '{}');",
+          "    if (requestBody.method === 'initialize') {",
+          "        const sessionId = pm.response.headers.get('mcp-session-id');",
+          "        if (sessionId) {",
+          "            pm.collectionVariables.set('sessionId', sessionId);",
+          "            console.log('Session ID saved:', sessionId);",
+          "        }",
           "    }",
           "}",
           "",
@@ -44,15 +46,20 @@
           "pm.test('Status code is 200', function () {",
           "    pm.response.to.have.status(200);",
           "});",
-          "",
-          "// Parse response based on content type",
+          "",          "// Parse response based on content type and request",          "// Parse response based on content type and request",
           "const contentType = pm.response.headers.get('content-type');",
           "if (contentType && contentType.includes('text/event-stream')) {",
           "    pm.test('SSE response received', function () {",
           "        pm.expect(pm.response.text()).to.include('data:');",
+          "    });",          "} else if (pm.request.url.toString().includes('/health')) {",
+          "    // Health check returns simple JSON, not JSON-RPC",
+          "    pm.test('Health check response structure', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('status');",
+          "        pm.expect(jsonData).to.have.property('timestamp');",
           "    });",
           "} else {",
-          "    pm.test('JSON response structure', function () {",
+          "    pm.test('JSON-RPC response structure', function () {",
           "        const jsonData = pm.response.json();",
           "        pm.expect(jsonData).to.have.property('jsonrpc', '2.0');",
           "        pm.expect(jsonData).to.have.property('id');",
@@ -187,7 +194,7 @@
       "name": "Market Analysis Tools",
       "item": [
         {
-          "name": "Industry Search",
+          "name": "Industry Analysis",
           "request": {
             "method": "POST",
             "header": [
@@ -206,14 +213,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"industry_search\",\n    \"arguments\": {\n      \"query\": \"fintech\",\n      \"limit\": 5\n    }\n  }\n}"
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"industry_analysis\",\n    \"arguments\": {\n      \"query\": \"fintech\",\n      \"limit\": 5\n    }\n  }\n}"
             },
             "url": {
               "raw": "{{serverUrl}}/mcp",
               "host": ["{{serverUrl}}"],
               "path": ["mcp"]
             },
-            "description": "Search for industries by keywords"
+            "description": "Analyze industries by keywords"
           },
           "response": []
         },
@@ -624,35 +631,139 @@
             "description": "Read the release notes and change history"
           },
           "response": []
-        }
-      ]
+        }      ]
     },
     {
-      "name": "Session Management",
+      "name": "Prompts",
       "item": [
         {
-          "name": "SSE Stream (GET)",
+          "name": "List Prompts",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
               {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
                 "key": "Accept",
-                "value": "text/event-stream"
+                "value": "application/json, text/event-stream"
               },
               {
                 "key": "mcp-session-id",
                 "value": "{{sessionId}}"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/list\",\n  \"params\": {}\n}"
+            },
             "url": {
               "raw": "{{serverUrl}}/mcp",
               "host": ["{{serverUrl}}"],
               "path": ["mcp"]
             },
-            "description": "Establish SSE stream for real-time notifications"
+            "description": "List all available prompts"
           },
           "response": []
         },
+        {
+          "name": "Startup Funding Pitch Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/get\",\n  \"params\": {\n    \"name\": \"startup_funding_pitch\",\n    \"arguments\": {\n      \"company_name\": \"TechFlow AI\",\n      \"industry_sector\": \"fintech\",\n      \"funding_stage\": \"series-a\",\n      \"target_amount\": \"10000000\",\n      \"geographic_focus\": \"US\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Generate a comprehensive startup funding pitch prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Private Equity Research Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/get\",\n  \"params\": {\n    \"name\": \"private_equity_research\",\n    \"arguments\": {\n      \"target_company\": \"Manufacturing Solutions Inc\",\n      \"industry_focus\": \"manufacturing\",\n      \"deal_size\": \"75000000\",\n      \"investment_thesis\": \"operational efficiency\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Generate a private equity investment research prompt"
+          },
+          "response": []
+        },
+        {
+          "name": "Corporate Strategy Entry Prompt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"prompts/get\",\n  \"params\": {\n    \"name\": \"corporate_strategy_entry\",\n    \"arguments\": {\n      \"company_name\": \"Global Corp\",\n      \"target_market\": \"cybersecurity\",\n      \"entry_strategy\": \"strategic acquisition\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },            "description": "Generate a corporate market entry strategy prompt"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Session Management",
+      "item": [
         {
           "name": "Terminate Session (DELETE)",
           "request": {

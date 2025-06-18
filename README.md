@@ -694,13 +694,14 @@ npm run test:postman
 
 - **[Integration Tests](tests/scripts/README.md)** - Integration test scripts documentation
 - **[Test Reports](doc/reports/INTEGRATION-TEST-FINAL-REPORT.md)** - Comprehensive testing results
+- **[Postman Collection Verification](doc/reports/POSTMAN-COLLECTION-VERIFICATION-REPORT.md)** - API testing verification results
 - **[Semantic Validation](doc/reports/SEMANTIC-VALIDATION-COMPLETE.md)** - Validation results and analysis
 - **[Default Values Summary](doc/reports/DEFAULT-VALUES-SUMMARY.md)** - Default values analysis report
 
 ### Examples & Scripts
 
 - **[Examples Directory](examples/README.md)** - API examples and integration resources
-- **[Postman Collection](examples/TAM-MCP-Server-Postman-Collection.json)** - Comprehensive API testing
+- **[Postman Collection](examples/TAM-MCP-Server-Postman-Collection.json)** - Comprehensive API testing collection
 - **[Development Scripts](scripts/)** - Build and setup automation scripts
 
 ### Implementation Guides

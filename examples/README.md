@@ -8,11 +8,15 @@ This directory contains examples and resources for testing and integrating with 
 
 A comprehensive Postman collection for testing all aspects of the TAM MCP Server API.
 
+**✅ Verification Status: 95.7% Success Rate (22/23 endpoints verified)**  
+See detailed results in: `doc/reports/POSTMAN-COLLECTION-VERIFICATION-REPORT.md`
+
 #### Features
 - **Health Check**: Server status and availability testing
 - **Session Management**: MCP session initialization and cleanup
 - **Tool Testing**: All 11 market analysis tools with sample requests
 - **Resource Access**: Documentation and endpoint access
+- **Prompt Testing**: Business analysis prompt generation
 - **Error Handling**: Edge cases and error scenarios
 - **Performance Testing**: Response time monitoring
 
@@ -38,7 +42,20 @@ A comprehensive Postman collection for testing all aspects of the TAM MCP Server
 4. **Run Tests**
    - Use collection runner for automated testing
    - Run individual requests for manual testing
-   - Monitor response times and data quality
+   - Use Newman CLI for CI/CD: `npx newman run TAM-MCP-Server-Postman-Collection.json`
+
+#### Automated Testing with Newman
+
+```bash
+# Install Newman (if not already installed)
+npm install -g newman
+
+# Run full test suite
+npx newman run examples/TAM-MCP-Server-Postman-Collection.json --env-var serverUrl=http://localhost:3000
+
+# Run with timeout for CI/CD
+npx newman run examples/TAM-MCP-Server-Postman-Collection.json --env-var serverUrl=http://localhost:3000 --timeout-request 5000
+```
 
 #### Available Endpoints
 

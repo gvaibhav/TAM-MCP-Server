@@ -91,6 +91,7 @@ doc/
 │   ├── CHANGELOG.md                  # Technical changes
 │   └── requirements.md               # Technical specifications
 ├── reports/                          # Technical reports
+│   ├── POSTMAN-COLLECTION-VERIFICATION-REPORT.md # API testing verification
 │   ├── INTEGRATION-TEST-FINAL-REPORT.md # Backend testing
 │   └── HTTP-STREAMING-TEST-REPORT.md    # Transport testing
 └── archive/                          # Historical documents
