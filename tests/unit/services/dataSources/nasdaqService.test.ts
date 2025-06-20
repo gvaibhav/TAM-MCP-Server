@@ -2,6 +2,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { NasdaqService } from '../../../../src/services/datasources/NasdaqService';
 import { envTestUtils } from '../../../utils/envTestHelper';
+import { logger } from '../../../../src/utils/index.js';
 
 vi.mock('axios');
 
@@ -35,15 +36,14 @@ describe('NasdaqService', () => {
     it('isAvailable should be true even if no API key is available (public access)', async () => {
       vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', '');
       nasdaqService = new NasdaqService();
-      expect(await nasdaqService.isAvailable()).toBe(true);
-    });
+      expect(await nasdaqService.isAvailable()).toBe(true);    });
 
     it('should log info if API key is not configured', () => {
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger);
       vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', '');
       new NasdaqService();
-      expect(consoleLogSpy).toHaveBeenCalledWith('ℹ️  Nasdaq: API key not configured - using public access with limited rate limits (set NASDAQ_DATA_LINK_API_KEY to enable full access)');
-      consoleLogSpy.mockRestore();
+      expect(loggerSpy).toHaveBeenCalledWith('ℹ️  Nasdaq: API key not configured - using public access with limited rate limits (set NASDAQ_DATA_LINK_API_KEY to enable full access)');
+      loggerSpy.mockRestore();
     });
   });
 

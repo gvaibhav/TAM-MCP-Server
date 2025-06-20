@@ -80,7 +80,7 @@ BLS_API_KEY=your_bls_key
 
 ## 📋 Available Tools
 
-### Direct Data Access (12 tools)
+### Direct Data Access (17 tools)
 | Tool | Description | Data Source |
 |------|-------------|-------------|
 | `alphaVantage_getCompanyOverview` | Company financials and overview | Alpha Vantage |
@@ -117,7 +117,7 @@ Expected output: 6-8 APIs accessible (87.5%+ success rate)
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 ```
-Expected: JSON response with 26 tools
+Expected: JSON response with 28 tools
 
 ### Integration Test
 ```bash

@@ -11,7 +11,7 @@ export class FredService implements DataSourceService {
     this.apiKey = apiKey ?? process.env.FRED_API_KEY ?? "";
 
     if (!this.apiKey) {
-      console.error(
+      logger.info(
         "ℹ️  FRED: API key not configured - service disabled (set FRED_API_KEY to enable)",
       );
     }

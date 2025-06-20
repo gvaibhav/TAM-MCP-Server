@@ -6,12 +6,11 @@ const BASE_URL = "https://data.nasdaq.com/api/v3";
 
 export class NasdaqService implements DataSourceService {
   private apiKey?: string;
-
   constructor(apiKey?: string) {
     this.apiKey = apiKey ?? process.env.NASDAQ_DATA_LINK_API_KEY ?? "";
 
     if (!this.apiKey) {
-      console.log(
+      logger.info(
         "ℹ️  Nasdaq: API key not configured - using public access with limited rate limits (set NASDAQ_DATA_LINK_API_KEY to enable full access)",
       );
     }

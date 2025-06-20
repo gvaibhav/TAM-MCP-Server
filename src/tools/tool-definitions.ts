@@ -124,7 +124,10 @@ export const CensusFetchMarketSizeSchema = z.object({
     .describe(
       "Industry NAICS code (e.g., '23' for Construction). Default: Professional Services (54)",
     ),
-  geography: z.string().describe("Geography parameter (e.g., 'us:1')."),
+  geography: z
+    .string()
+    .default("us:1")
+    .describe("Geography parameter (e.g., 'us:1'). Default: us:1"),
   measure: z
     .enum(["EMP", "PAYANN", "ESTAB"])
     .optional()
@@ -1247,7 +1250,25 @@ For Apple's last 3 annual income statements:
 };
 
 export function getToolDefinition(name: string): ToolDefinition | undefined {
-  return AllToolDefinitions[name];
+  // First check AllToolDefinitions (data source tools)
+  if (AllToolDefinitions[name]) {
+    return AllToolDefinitions[name];
+  }
+
+  // Then check MarketAnalysisTools
+  const marketAnalysisTools = MarketAnalysisTools.getToolDefinitions();
+  const marketTool = marketAnalysisTools.find((tool) => tool.name === name);
+
+  if (marketTool) {
+    return {
+      name: marketTool.name,
+      description: marketTool.description ?? "",
+      inputSchema: marketTool.inputSchema,
+      ...(marketTool.outputSchema && { outputSchema: marketTool.outputSchema }),
+    };
+  }
+
+  return undefined;
 }
 
 export function getAllToolDefinitions(): ToolDefinition[] {

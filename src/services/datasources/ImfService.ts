@@ -7,7 +7,7 @@ import { APIService } from "../APIService.js";
 export class ImfService extends APIService implements DataSourceService {
   constructor(_apiKey?: string) {
     super("https://dataservices.imf.org/REST/SDMX_JSON.svc");
-    console.error("ImfService: Constructor - API Configuration:", {
+    logger.info("ImfService: Constructor - API Configuration:", {
       available: true,
     });
   }
@@ -70,7 +70,7 @@ export class ImfService extends APIService implements DataSourceService {
     try {
       // Check for proper structure
       if (!data.structure?.dimensions?.series) {
-        console.warn(
+        logger.warn(
           "ImfService: Series structure definition not found in response",
         );
         return null;
@@ -81,13 +81,13 @@ export class ImfService extends APIService implements DataSourceService {
         !Array.isArray(data.dataSets) ||
         data.dataSets.length === 0
       ) {
-        console.warn("ImfService: No datasets found in response");
+        logger.warn("ImfService: No datasets found in response");
         return null;
       }
 
       const dataset = data.dataSets[0];
       if (!dataset.series || Object.keys(dataset.series).length === 0) {
-        console.warn("ImfService: No series data found in dataset");
+        logger.warn("ImfService: No series data found in dataset");
         return null;
       }
 

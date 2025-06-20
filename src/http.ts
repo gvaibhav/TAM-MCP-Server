@@ -5,8 +5,9 @@ import { InMemoryEventStore } from "@modelcontextprotocol/sdk/examples/shared/in
 import express, { Request, Response } from "express";
 import { createServer } from "./server.js";
 import { randomUUID } from "node:crypto";
+import { logger } from "./utils/index.js";
 
-console.error("Starting TAM MCP Server (Streamable HTTP transport)...");
+logger.info("Starting TAM MCP Server (Streamable HTTP transport)...");
 
 const app = express();
 
@@ -16,7 +17,7 @@ const transports: Map<string, StreamableHTTPServerTransport> = new Map<
 >();
 
 app.post("/mcp", async (req: Request, res: Response) => {
-  console.error("Received TAM MCP POST request");
+  logger.info("Received TAM MCP POST request");
   try {
     // Check for existing session ID
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
@@ -35,7 +36,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
         eventStore, // Enable resumability
         onsessioninitialized: async (sessionId: string) => {
           // Store the transport by session ID when session is initialized
-          console.error(`TAM MCP Session initialized with ID: ${sessionId}`);
+          logger.info(`TAM MCP Session initialized with ID: ${sessionId}`);
           transports.set(sessionId, transport);
 
           // Send welcome notification
@@ -50,7 +51,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
       server.onclose = async () => {
         const sid = transport.sessionId;
         if (sid && transports.has(sid)) {
-          console.error(
+          logger.info(
             `TAM MCP Transport closed for session ${sid}, removing from transports map`,
           );
           transports.delete(sid);
@@ -79,7 +80,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
     // Handle the request with existing transport
     await transport.handleRequest(req, res);
   } catch (error) {
-    console.error("Error handling TAM MCP request:", error);
+    logger.error("Error handling TAM MCP request:", error);
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: "2.0",
@@ -96,7 +97,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
 
 // Handle GET requests for SSE streams
 app.get("/mcp", async (req: Request, res: Response) => {
-  console.error("Received TAM MCP GET request");
+  logger.info("Received TAM MCP GET request");
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (!sessionId || !transports.has(sessionId)) {
     res.status(400).json({
@@ -113,13 +114,11 @@ app.get("/mcp", async (req: Request, res: Response) => {
   // Check for Last-Event-ID header for resumability
   const lastEventId = req.headers["last-event-id"] as string | undefined;
   if (lastEventId) {
-    console.error(
+    logger.info(
       `TAM MCP Client reconnecting with Last-Event-ID: ${lastEventId}`,
     );
   } else {
-    console.error(
-      `TAM MCP Establishing new SSE stream for session ${sessionId}`,
-    );
+    logger.info(`TAM MCP Establishing new SSE stream for session ${sessionId}`);
   }
 
   const transport = transports.get(sessionId);
@@ -141,7 +140,7 @@ app.delete("/mcp", async (req: Request, res: Response) => {
     return;
   }
 
-  console.error(
+  logger.info(
     `TAM MCP Received session termination request for session ${sessionId}`,
   );
 
@@ -149,7 +148,7 @@ app.delete("/mcp", async (req: Request, res: Response) => {
     const transport = transports.get(sessionId);
     await transport!.handleRequest(req, res);
   } catch (error) {
-    console.error("Error handling session termination:", error);
+    logger.error("Error handling session termination:", error);
     if (!res.headersSent) {
       res.status(500).json({
         jsonrpc: "2.0",
@@ -178,26 +177,26 @@ app.get("/health", (_req, res) => {
 // Start the server
 const PORT = process.env.PORT ?? 3002;
 app.listen(PORT, () => {
-  console.error(`TAM MCP Server (Streamable HTTP) listening on port ${PORT}`);
-  console.error(`Health check: http://localhost:${PORT}/health`);
-  console.error(`MCP endpoint: http://localhost:${PORT}/mcp`);
+  logger.info(`TAM MCP Server (Streamable HTTP) listening on port ${PORT}`);
+  logger.info(`Health check: http://localhost:${PORT}/health`);
+  logger.info(`MCP endpoint: http://localhost:${PORT}/mcp`);
 });
 
 // Handle server shutdown
 process.on("SIGINT", async () => {
-  console.error("Shutting down TAM MCP Server (Streamable HTTP)...");
+  logger.info("Shutting down TAM MCP Server (Streamable HTTP)...");
 
   // Close all active transports to properly clean up resources
   for (const sessionId of transports.keys()) {
     try {
-      console.error(`Closing transport for session ${sessionId}`);
+      logger.info(`Closing transport for session ${sessionId}`);
       await transports.get(sessionId)!.close();
       transports.delete(sessionId);
     } catch (error) {
-      console.error(`Error closing transport for session ${sessionId}:`, error);
+      logger.error(`Error closing transport for session ${sessionId}:`, error);
     }
   }
 
-  console.error("TAM MCP Server shutdown complete");
+  logger.info("TAM MCP Server shutdown complete");
   process.exit(0);
 });

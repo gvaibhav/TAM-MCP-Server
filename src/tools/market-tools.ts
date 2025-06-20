@@ -1040,18 +1040,19 @@ Returns: TAM estimates with confidence intervals, growth projections, and scenar
 
       validateRegion(region);
       validatePositiveNumber(years, "Years to forecast");
-
-      const forecasts =
+      const forecastData =
         await MarketAnalysisTools.dataService.generateMarketForecast(
           industryId,
           years,
           region,
         );
-      if (!forecasts || forecasts.length === 0) {
+      if (!forecastData?.forecasts || forecastData.forecasts.length === 0) {
         return createErrorResponse(
           `Unable to generate forecast for industry: ${industryId}`,
         );
       }
+
+      const forecasts = forecastData.forecasts;
 
       const currentMarketSizeResult =
         await MarketAnalysisTools.dataService.getMarketSize(industryId, region);
