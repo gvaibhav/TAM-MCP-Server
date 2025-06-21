@@ -9,6 +9,9 @@
   },
   "homepage": "https://github.com/gvaibhav/TAM-MCP-Server",
   "bugs": "https://github.com/gvaibhav/TAM-MCP-Server/issues",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -20,7 +23,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js",
+    "build": "tsc.cmd && node_modules\\.bin\\shx.cmd chmod +x dist/*.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "start": "node dist/index.js",
@@ -41,7 +44,7 @@
     "test:ui": "vitest --ui --config config/vitest.config.ts",
     "test:vitest": "vitest run --config config/vitest.config.ts",
     "test:vitest:watch": "vitest watch --config config/vitest.config.ts",
-    "test:vitest:ui": "vitest --ui --config config/vitest.config.ts",    
+    "test:vitest:ui": "vitest --ui --config config/vitest.config.ts",
     "test:live": "vitest run tests/integration/services/live --config config/vitest.config.ts",
     "test:api-health": "node scripts/api-health-check.mjs",
     "test:backend-apis": "./scripts/test-backend-apis.sh",
