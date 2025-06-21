@@ -43,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+        
       - name: Build project
         run: npm run build
         
@@ -60,7 +63,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ fromJSON(env.TIMEOUT_MINUTES) }}
+    timeout-minutes: 15
     needs: api-health-check
     if: github.event.inputs.test_level == 'full-integration' || github.event_name == 'schedule'
     
@@ -80,6 +83,9 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
+        
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
         
       - name: Build project
         run: npm run build
@@ -125,6 +131,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+        
       - name: Install Newman
         run: npm install -g newman
         
@@ -165,7 +174,7 @@ jobs:
           EOF
           
           # Run Newman with proper error handling
-          newman run TAM-MCP-Server-Postman-Collection.json \
+          newman run examples/TAM-MCP-Server-Postman-Collection.json \
             --environment newman-env.json \
             --reporters cli,json \
             --reporter-json-export newman-results.json \
