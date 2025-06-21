@@ -315,9 +315,9 @@ export async function createServer() {
             "started",
           );
           result = await dataService.getImfData(
-            "fetchMarketSize",
+            "fetchImfDataset",
             processedArgs as any,
-          ); // To be implemented
+          );
           await notificationService.sendDataFetchStatus(
             "IMF Latest Observation",
             result ? "completed" : "failed",

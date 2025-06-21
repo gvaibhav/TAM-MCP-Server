@@ -155,9 +155,9 @@ export const ImfGetDatasetSchema = z.object({
     ),
   key: z
     .string()
-    .default("M.US.PMP_IX")
+    .default("A.US.NGDP_RPCH")
     .describe(
-      'Structured key for data selection (e.g., "M.US.CPI_IX"). Default: US Import Price Index',
+      'Structured key for data selection (e.g., "M.US.CPI_IX"). Default: US Real GDP Growth Rate (annual)',
     ),
   startPeriod: z
     .string()
@@ -180,15 +180,22 @@ export const ImfGetLatestObservationSchema = z.object({
     ),
   key: z
     .string()
-    .default("M.US.PMP_IX")
+    .default("A.US.NGDP_RPCH")
     .describe(
-      "Structured key for data selection. Default: US Import Price Index",
+      "Structured key for data selection. Default: US Real GDP Growth Rate (annual)",
     ),
   valueAttribute: z
     .string()
     .optional()
     .describe("Specific attribute to extract if multiple values exist."),
-  // startPeriod, endPeriod might be relevant if "latest" needs context
+  startPeriod: z
+    .string()
+    .optional()
+    .describe("Start date for data range (YYYY-MM or YYYY)"),
+  endPeriod: z
+    .string()
+    .optional()
+    .describe("End date for data range (YYYY-MM or YYYY)"),
 });
 
 // 2.1.6 Nasdaq Data Link

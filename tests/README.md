@@ -83,6 +83,8 @@ Tests component interactions and MCP protocol compliance.
 - Tool registration and discovery
 - Notification system integration
 - Request validation and error handling
+- External API integration with both success and error scenarios
+- Service error handling and recovery mechanisms
 
 ### End-to-End Tests (`tests/e2e/`)
 Tests complete workflows through real transport connections.
