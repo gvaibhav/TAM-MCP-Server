@@ -175,7 +175,7 @@ app.get("/health", (_req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT ?? 3002;
+const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {
   logger.info(`TAM MCP Server (Streamable HTTP) listening on port ${PORT}`);
   logger.info(`Health check: http://localhost:${PORT}/health`);
