@@ -27,7 +27,12 @@ import {
   generatePromptContent,
 } from "./prompts/prompt-definitions.js"; // Added: Import prompt definitions
 import { DataService } from "./services/DataService.js"; // Added
-import { logger, checkRateLimit, logApiAvailabilityStatus, getToolAvailabilityStatus } from "./utils/index.js";
+import {
+  logger,
+  checkRateLimit,
+  logApiAvailabilityStatus,
+  getToolAvailabilityStatus,
+} from "./utils/index.js";
 import {
   NotificationService,
   TamNotificationIntegration,
@@ -75,26 +80,28 @@ export async function createServer() {
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = getAllToolDefinitions(); // Changed: Use new function
-    
+
     // Add availability status to tool descriptions
-    const toolsWithAvailability = tools.map(tool => {
+    const toolsWithAvailability = tools.map((tool) => {
       const status = getToolAvailabilityStatus(tool.name);
-      
+
       let description = tool.description;
-      
+
       if (!status.available) {
-        description += ` ❌ [UNAVAILABLE: Missing required API keys: ${status.missingKeys.join(', ')}]`;
+        description += ` ❌ [UNAVAILABLE: Missing required API keys: ${status.missingKeys.join(", ")}]`;
       } else if (status.warnings.length > 0) {
-        description += ` ⚠️ [${status.warnings.join('; ')}]`;
+        description += ` ⚠️ [${status.warnings.join("; ")}]`;
       }
-      
+
       return {
         ...tool,
-        description
+        description,
       };
     });
-    
-    logger.info(`Listed ${tools.length} available tools (${toolsWithAvailability.filter(t => !t.description.includes('❌')).length} fully available)`);
+
+    logger.info(
+      `Listed ${tools.length} available tools (${toolsWithAvailability.filter((t) => !t.description.includes("❌")).length} fully available)`,
+    );
 
     return {
       tools: toolsWithAvailability,
@@ -308,9 +315,9 @@ export async function createServer() {
             "started",
           );
           result = await dataService.getImfData(
-            "fetchMarketSize",
+            "fetchImfDataset",
             processedArgs as any,
-          ); // To be implemented
+          );
           await notificationService.sendDataFetchStatus(
             "IMF Latest Observation",
             result ? "completed" : "failed",
@@ -401,6 +408,20 @@ export async function createServer() {
             result,
           );
           break;
+        case "industry_analysis": {
+          const { MarketAnalysisTools } = await import(
+            "./tools/market-tools.js"
+          );
+          result = await MarketAnalysisTools.industrySearch(
+            processedArgs as any,
+          );
+          await notificationService.sendDataFetchStatus(
+            "Industry Analysis",
+            result.success ? "completed" : "failed",
+            result,
+          );
+          break;
+        }
         case "tam_calculator": {
           const startTime = Date.now();
           await tamNotifications.notifyDataSourcePerformance(
@@ -1180,9 +1201,21 @@ export async function createServer() {
       window: RATE_LIMIT_WINDOW,
     },
   });
-
   // Log API availability status at startup
   logApiAvailabilityStatus();
 
-  return { server, cleanup, notificationService };
+  // Function to send welcome notification after connection
+  const sendWelcomeNotification = async () => {
+    try {
+      await notificationService.sendMessage(
+        "info",
+        "TAM MCP Server connected and ready! Notifications are enabled.",
+      );
+      logger.info("Welcome notification sent");
+    } catch (error) {
+      logger.error("Failed to send welcome notification", error);
+    }
+  };
+
+  return { server, cleanup, notificationService, sendWelcomeNotification };
 }

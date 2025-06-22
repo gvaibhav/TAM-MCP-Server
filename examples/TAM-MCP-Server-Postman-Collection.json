@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "TAM MCP Server API Collection",
-    "description": "Comprehensive Postman collection for testing the Total Addressable Market (TAM) MCP Server with all tools and resources. This collection includes HTTP Streamable MCP endpoints, health checks, and session management.",
+    "description": "Comprehensive Postman collection for testing the Total Addressable Market (TAM) MCP Server with all tools and resources. This collection includes HTTP Streamable MCP endpoints, health checks, session management, and all data source integrations including IMF, World Bank, OECD, Nasdaq, Alpha Vantage, BLS, Census, and FRED APIs.",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -501,6 +501,221 @@
             },
             "description": "Identify market opportunities and growth potential"
           },
+          "response": []        },
+        {
+          "name": "IMF Get Dataset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"imf_getDataset\",\n    \"arguments\": {\n      \"datasetId\": \"IFS\",\n      \"countries\": [\"US\", \"CN\", \"DE\"],\n      \"concepts\": [\"NGDP_SA_XDC\"],\n      \"periods\": [\"2023\", \"2024\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve comprehensive economic datasets from the International Monetary Fund"
+          },
+          "response": []
+        },
+        {
+          "name": "IMF Get Latest Observation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"imf_getLatestObservation\",\n    \"arguments\": {\n      \"datasetId\": \"WEO\",\n      \"countries\": [\"US\"],\n      \"concepts\": [\"NGDPD\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Fetch the most recent data point from IMF economic datasets for quick current snapshots"
+          },
+          "response": []        },
+        {
+          "name": "Nasdaq Get Dataset Time Series",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"nasdaq_getDatasetTimeSeries\",\n    \"arguments\": {\n      \"databaseCode\": \"EOD\",\n      \"datasetCode\": \"AAPL\",\n      \"startDate\": \"2024-01-01\",\n      \"endDate\": \"2024-12-31\",\n      \"collapse\": \"daily\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve time series datasets from Nasdaq Data Link for financial analysis"
+          },
+          "response": []
+        },
+        {
+          "name": "Nasdaq Get Latest Dataset Value",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"nasdaq_getLatestDatasetValue\",\n    \"arguments\": {\n      \"databaseCode\": \"EOD\",\n      \"datasetCode\": \"AAPL\",\n      \"column\": \"Close\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Get the most recent value from a Nasdaq Data Link dataset"
+          },
+          "response": []
+        },
+        {
+          "name": "OECD Get Dataset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"oecd_getDataset\",\n    \"arguments\": {\n      \"datasetId\": \"QNA\",\n      \"filterExpression\": \"USA+GBR+DEU.B1_GE.CUR+VOBARSA.Q\",\n      \"dimensionAtObservation\": \"TIME_PERIOD\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve comprehensive datasets from OECD for economic analysis"
+          },
+          "response": []
+        },
+        {
+          "name": "OECD Get Latest Observation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"oecd_getLatestObservation\",\n    \"arguments\": {\n      \"datasetId\": \"MEI\",\n      \"filterExpression\": \"USA.PRINTO01.IXOB.M\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Fetch the most recent data point from OECD datasets"
+          },
+          "response": []
+        },
+        {
+          "name": "World Bank Get Indicator Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"worldBank_getIndicatorData\",\n    \"arguments\": {\n      \"countryCode\": \"USA;CHN;DEU\",\n      \"indicator\": \"NY.GDP.MKTP.CD\",\n      \"date\": \"2020:2024\",\n      \"format\": \"json\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve development indicators and economic data from World Bank"
+          },
           "response": []
         },
         {
@@ -531,6 +746,196 @@
               "path": ["mcp"]
             },
             "description": "Query World Bank economic data directly"
+          },
+          "response": []        }
+      ]
+    },
+    {
+      "name": "Data Sources",
+      "item": [
+        {
+          "name": "Alpha Vantage Get Company Overview",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"alphaVantage_getCompanyOverview\",\n    \"arguments\": {\n      \"symbol\": \"AAPL\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Fetch comprehensive company overview and financial ratios from Alpha Vantage"
+          },
+          "response": []
+        },
+        {
+          "name": "Alpha Vantage Search Symbols",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"alphaVantage_searchSymbols\",\n    \"arguments\": {\n      \"keywords\": \"electric vehicle\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Search for stock symbols and company names using Alpha Vantage"
+          },
+          "response": []
+        },
+        {
+          "name": "BLS Get Series Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"bls_getSeriesData\",\n    \"arguments\": {\n      \"seriesIds\": [\"LNS14000000\", \"CES0000000001\"],\n      \"startYear\": \"2020\",\n      \"endYear\": \"2024\",\n      \"catalog\": true,\n      \"calculations\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve labor and economic data from Bureau of Labor Statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Census Fetch Industry Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"census_fetchIndustryData\",\n    \"arguments\": {\n      \"naicsCode\": \"5112\",\n      \"geographyLevel\": \"state\",\n      \"year\": \"2022\",\n      \"variables\": [\"EMP\", \"PAYANN\"]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Fetch industry data from U.S. Census Bureau business surveys"
+          },
+          "response": []
+        },
+        {
+          "name": "Census Fetch Market Size",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"census_fetchMarketSize\",\n    \"arguments\": {\n      \"naicsCode\": \"5112\",\n      \"geographyLevel\": \"national\",\n      \"year\": \"2022\",\n      \"sizeMetric\": \"revenue\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Calculate market size using U.S. Census Bureau industry data"
+          },
+          "response": []
+        },
+        {
+          "name": "FRED Get Series Observations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "mcp-session-id",
+                "value": "{{sessionId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{requestId}}\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"fred_getSeriesObservations\",\n    \"arguments\": {\n      \"seriesId\": \"GDP\",\n      \"observationStart\": \"2020-01-01\",\n      \"observationEnd\": \"2024-12-31\",\n      \"frequency\": \"q\",\n      \"aggregationMethod\": \"avg\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{serverUrl}}/mcp",
+              "host": ["{{serverUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Retrieve economic time series data from Federal Reserve Economic Data (FRED)"
           },
           "response": []
         }

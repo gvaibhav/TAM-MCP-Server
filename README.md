@@ -38,6 +38,12 @@ This MCP server provides comprehensive market research capabilities including:
 - Intelligent routing based on data type and availability
 - Comprehensive caching for performance optimization
 
+**MCP Protocol Features**
+- **Real-time Notifications**: 6 types of business-specific notifications for market intelligence, data source health, calculation milestones, and performance monitoring
+- **Multiple Transports**: Full support for STDIO, HTTP, and Server-Sent Events (SSE) protocols
+- **Resource Access**: Documentation and status information available through MCP resources
+- **Tool Discovery**: Complete tool catalog with smart defaults and validation
+
 ## Installation
 
 ### Prerequisites
@@ -140,7 +146,7 @@ npx @modelcontextprotocol/inspector npm run start:stdio
 
 Get professional market insights instantly - no parameter research required!
 
-All 26 tools include intelligent default values that let you start analyzing immediately:
+All 28 tools include intelligent default values that let you start analyzing immediately:
 
 ```javascript
 // Call any tool with empty parameters - defaults automatically applied
@@ -549,7 +555,7 @@ Import the comprehensive Postman collection for testing both MCP endpoints and b
 3. **Run Tests**:
    - Health check and server status
    - MCP session initialization
-   - All 26 tools (13 market analysis + 13 data access)
+   - All 28 tools (11 market analysis + 17 data access)
    - Resource access endpoints
    - Session management and cleanup
 

@@ -112,7 +112,7 @@ Successfully added comprehensive notifications support to the TAM MCP Server, su
 
 ### Running Services
 - **SSE Server**: `http://localhost:3001` ✅ Running
-- **HTTP Streamable Server**: `http://localhost:3002` ✅ Running
+- **HTTP Streamable Server**: `http://localhost:3000` ✅ Running
 - **Health Endpoints**: Both responding correctly
 
 ### Capabilities

@@ -265,7 +265,7 @@ export class DataService {
 
   // Method for tam_calculator tool
   async calculateTam(params: any): Promise<any> {
-    console.log("DataService.calculateTam called with:", params);
+    logger.info("DataService.calculateTam called with:", params);
     const {
       baseMarketSize,
       annualGrowthRate,
@@ -299,7 +299,7 @@ export class DataService {
 
   // Method for market_size_calculator tool
   async calculateMarketSize(params: any): Promise<any> {
-    console.log("DataService.calculateMarketSize called with:", params);
+    logger.info("DataService.calculateMarketSize called with:", params);
     // This method will involve:
     // 1. Parsing industryQuery and geographyCodes
     // 2. Calling other DataService methods or specific data source services

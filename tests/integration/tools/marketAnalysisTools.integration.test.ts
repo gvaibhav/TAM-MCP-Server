@@ -253,18 +253,17 @@ describe('MarketAnalysisTools - Integration Tests', () => {
         expect(mockDataService.getMarketSize).toHaveBeenCalledWith('tech-software', 'US');
         expect(response.success).toBe(true);
         expect(response.data?.totalAddressableMarket).toBe(500e9);
-        expect(response.data?.methodology).toContain('CensusService');
-    });
+        expect(response.data?.methodology).toContain('CensusService');    });
 
     it('should return Zod validation error for invalid params in tamCalculator', async () => {
-      // Missing industryId, which is required by TAMCalculatorSchema
-      const invalidParams = { region: 'US', population: 100000 };
+      // Invalid data types - population should be number, not string
+      const invalidParams = { region: 'US', population: 'invalid-number', penetrationRate: 'not-a-number' };
       const response = await MarketAnalysisTools.tamCalculator(invalidParams as any); // Cast as any to bypass TS error for test
 
       expect(response.success).toBe(false);
       // Check either error.message (object) or error (string) formats
       const errorMessage = (response.error as any)?.message || response.error;
-      expect(errorMessage).toContain('Required'); // Check for Zod validation message
+      expect(errorMessage).toContain('Expected number'); // Check for Zod validation message
     });
   });
 });

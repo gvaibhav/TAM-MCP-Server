@@ -127,7 +127,10 @@ export interface ValidationResult {
 export const IndustrySearchSchema = z.object({
   query: z
     .string()
-    .describe("Industry name, description, or keywords to search for"),
+    .default("technology")
+    .describe(
+      "Industry name, description, or keywords to search for (default: 'technology')",
+    ),
   limit: z.number().default(10).describe("Maximum number of results to return"),
   includeSubIndustries: z
     .boolean()
@@ -136,7 +139,12 @@ export const IndustrySearchSchema = z.object({
 });
 
 export const IndustryDataSchema = z.object({
-  industry_id: z.string().describe("Industry identifier or NAICS/SIC code"),
+  industry_id: z
+    .string()
+    .default("54")
+    .describe(
+      "Industry identifier or NAICS/SIC code (default: '54' - Professional Services)",
+    ),
   include_trends: z
     .boolean()
     .default(false)
@@ -152,7 +160,10 @@ export const IndustryDataSchema = z.object({
 });
 
 export const MarketSizeSchema = z.object({
-  industryId: z.string().describe("Industry identifier"),
+  industryId: z
+    .string()
+    .default("54")
+    .describe("Industry identifier (default: '54' - Professional Services)"),
   region: z
     .string()
     .default("global")
@@ -172,7 +183,10 @@ export const MarketSizeSchema = z.object({
 });
 
 export const TAMCalculatorSchema = z.object({
-  industryId: z.string().describe("Industry identifier"),
+  industryId: z
+    .string()
+    .default("54")
+    .describe("Industry identifier (default: '54' - Professional Services)"),
   region: z.string().default("global").describe("Geographic region"),
   population: z.number().optional().describe("Target population size"),
   penetrationRate: z
@@ -190,8 +204,14 @@ export const TAMCalculatorSchema = z.object({
 });
 
 export const SAMCalculatorSchema = z.object({
-  tamValue: z.number().describe("Total Addressable Market value"),
-  targetSegments: z.array(z.string()).describe("Target market segments"),
+  tamValue: z
+    .number()
+    .default(1000000000)
+    .describe("Total Addressable Market value (default: $1B)"),
+  targetSegments: z
+    .array(z.string())
+    .default(["enterprise"])
+    .describe("Target market segments (default: ['enterprise'])"),
   geographicConstraints: z
     .array(z.string())
     .default([])
@@ -204,7 +224,8 @@ export const SAMCalculatorSchema = z.object({
     .number()
     .min(0)
     .max(1)
-    .describe("Target market share (0-1)"),
+    .default(0.05)
+    .describe("Target market share (0-1, default: 5%)"),
   timeframe: z
     .string()
     .default("3-5 years")
@@ -212,10 +233,14 @@ export const SAMCalculatorSchema = z.object({
 });
 
 export const MarketSegmentsSchema = z.object({
-  industryId: z.string().describe("Industry identifier"),
+  industryId: z
+    .string()
+    .default("54")
+    .describe("Industry identifier (default: '54' - Professional Services)"),
   segmentationType: z
     .enum(["demographic", "geographic", "psychographic", "behavioral"])
-    .describe("Type of segmentation"),
+    .default("demographic")
+    .describe("Type of segmentation (default: 'demographic')"),
   region: z.string().default("global").describe("Geographic region"),
   minSegmentSize: z
     .number()
@@ -224,7 +249,10 @@ export const MarketSegmentsSchema = z.object({
 });
 
 export const MarketForecastingSchema = z.object({
-  industryId: z.string().describe("Industry identifier"),
+  industryId: z
+    .string()
+    .default("technology")
+    .describe("Industry identifier (default: technology)"),
   years: z.number().default(5).describe("Number of years to forecast"),
   region: z.string().default("global").describe("Geographic region"),
   includeScenarios: z
@@ -241,7 +269,10 @@ export const MarketComparisonSchema = z.object({
   industryIds: z
     .array(z.string())
     .min(2)
-    .describe("List of industry identifiers to compare"),
+    .default(["technology", "healthcare"])
+    .describe(
+      "List of industry identifiers to compare (default: technology, healthcare)",
+    ),
   metrics: z
     .array(z.string())
     .default(["size", "growth", "cagr"])
@@ -259,8 +290,12 @@ export const MarketComparisonSchema = z.object({
 export const DataValidationSchema = z.object({
   dataType: z
     .enum(["market-size", "industry-data", "forecast", "tam-calculation"])
-    .describe("Type of data to validate"),
-  data: z.record(z.any()).describe("Data object to validate"),
+    .default("market-size")
+    .describe("Type of data to validate (default: market-size)"),
+  data: z
+    .record(z.any())
+    .default({})
+    .describe("Data object to validate (default: empty object)"),
   strictMode: z
     .boolean()
     .default(false)
@@ -268,7 +303,10 @@ export const DataValidationSchema = z.object({
 });
 
 export const MarketOpportunitiesSchema = z.object({
-  industryId: z.string().describe("Industry identifier"),
+  industryId: z
+    .string()
+    .default("technology")
+    .describe("Industry identifier (default: technology)"),
   region: z.string().default("global").describe("Geographic region"),
   minMarketSize: z
     .number()

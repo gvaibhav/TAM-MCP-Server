@@ -10,7 +10,7 @@ export class CensusService implements DataSourceService {
     this.apiKey = apiKey ?? process.env.CENSUS_API_KEY ?? "";
 
     if (!this.apiKey) {
-      console.log(
+      logger.info(
         "ℹ️  Census: API key not configured - using public access with limited rate limits (set CENSUS_API_KEY to enable full access)",
       );
     }

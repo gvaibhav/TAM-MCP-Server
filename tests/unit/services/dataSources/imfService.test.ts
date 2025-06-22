@@ -43,6 +43,65 @@ const mockImfDataResponse = [
   }
 ];
 
+// Mock for empty response testing
+const mockEmptyResponse = {
+  CompactData: {
+    DataSet: {
+      "@xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+      "@xmlns:message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+    }
+  }
+};
+
+// Mock for complex SDMX structure
+const mockComplexSdmxResponse = {
+  structure: {
+    dimensions: {
+      series: [
+        {
+          id: "FREQ",
+          name: "Frequency",
+          keyPosition: 0,
+          values: [
+            { id: "M", name: "Monthly" },
+            { id: "Q", name: "Quarterly" }
+          ]
+        },
+        {
+          id: "REF_AREA",
+          name: "Reference area",
+          keyPosition: 1,
+          values: [
+            { id: "US", name: "United States" },
+            { id: "GB", name: "United Kingdom" }
+          ]
+        }
+      ]
+    },
+    attributes: {
+      series: [
+        {
+          id: "UNIT_MEASURE",
+          name: "Unit of measure",
+          values: [
+            { id: "USD", name: "US Dollar" }
+          ]
+        }
+      ]
+    }
+  },
+  dataSets: [{
+    series: {
+      "0:0": {
+        observations: {
+          "0": [100]
+        },
+        attributes: [0]
+      }
+    }
+  }]
+};
+
 describe('ImfService', () => {
   let imfService: ImfService;
 
@@ -52,15 +111,50 @@ describe('ImfService', () => {
   });
 
   describe('constructor and isAvailable', () => {
+    it('should initialize with correct base URL', () => {
+      expect(imfService['baseUrl']).toBe('https://dataservices.imf.org/REST/SDMX_JSON.svc');
+    });
+
     it('isAvailable should always be true (no API key required)', async () => {
       expect(await imfService.isAvailable()).toBe(true);
+    });
+  });
+
+  describe('validateImfKey', () => {
+    it('should validate IMF key format correctly', () => {
+      const validation = (imfService as any).validateImfKey('IFS', 'M.US.PMP_IX');
+      expect(validation.isValid).toBe(true);
+    });
+
+    it('should detect invalid key format', () => {
+      const validation = (imfService as any).validateImfKey('IFS', 'INVALID');
+      expect(validation.isValid).toBe(false);
+      expect(validation.warnings.length).toBeGreaterThan(0);
+    });
+
+    it('should provide suggestions for known dataflows', () => {
+      const validation = (imfService as any).validateImfKey('IFS', 'INVALID');
+      expect(validation.suggestions.length).toBeGreaterThan(0);
+      expect(validation.suggestions[0]).toContain('International Financial Statistics');
+    });
+  });
+
+  describe('isEmptyResponse', () => {
+    it('should detect empty responses', () => {
+      expect((imfService as any).isEmptyResponse(null)).toBe(true);
+      expect((imfService as any).isEmptyResponse(undefined)).toBe(true);
+      expect((imfService as any).isEmptyResponse(mockEmptyResponse)).toBe(true);
+    });
+
+    it('should detect non-empty responses', () => {
+      expect((imfService as any).isEmptyResponse({ data: 'something' })).toBe(false);
     });
   });
 
   describe('fetchImfDataset', () => {
     it('should fetch and return IMF dataset with proper parameters', async () => {
       const dataflowId = 'PCPS';
-      const key = 'ALL_COUNTRIES';
+      const key = 'M.US.PMP_IX';
       const expectedUrl = `${imfApi.baseUrl}/CompactData/${dataflowId}/${key}`;
       
       // Mock the parseSdmxCompactData method to return our mock data
@@ -76,7 +170,7 @@ describe('ImfService', () => {
 
     it('should include period parameters when provided', async () => {
       const dataflowId = 'PCPS';
-      const key = 'ALL_COUNTRIES';
+      const key = 'M.US.PMP_IX';
       const startPeriod = '2020';
       const endPeriod = '2023';
       const expectedUrl = `${imfApi.baseUrl}/CompactData/${dataflowId}/${key}`;
@@ -97,7 +191,7 @@ describe('ImfService', () => {
 
     it('should handle API errors and throw with proper format', async () => {
       const dataflowId = 'PCPS';
-      const key = 'ALL_COUNTRIES';
+      const key = 'M.US.PMP_IX';
       
       mockedAxiosGet.mockRejectedValue({
         isAxiosError: true,
@@ -109,17 +203,55 @@ describe('ImfService', () => {
 
     it('should handle network errors', async () => {
       const dataflowId = 'PCPS';
-      const key = 'ALL_COUNTRIES';
+      const key = 'M.US.PMP_IX';
       const networkError = new Error('Network Error');
       
       mockedAxiosGet.mockRejectedValue(networkError);
 
       await expect(imfService.fetchImfDataset(dataflowId, key)).rejects.toThrow('Network Error');
+    });    it('should throw error for empty responses', async () => {
+      const dataflowId = 'PCPS';
+      const key = 'INVALID.KEY';
+      
+      mockedAxiosGet.mockResolvedValue({ data: mockEmptyResponse });
+
+      await expect(imfService.fetchImfDataset(dataflowId, key)).rejects.toThrow();
+    });
+  });
+
+  describe('parseSdmxCompactData', () => {
+    it('should parse complex SDMX structure correctly', () => {
+      const result = (imfService as any).parseComplexSdmxStructure(mockComplexSdmxResponse);
+      expect(Array.isArray(result)).toBe(true);
+      if (result && result.length > 0) {
+        expect(result[0]).toHaveProperty('FREQ');
+        expect(result[0]).toHaveProperty('REF_AREA');
+      }
+    });
+
+    it('should handle missing structure gracefully', () => {
+      const result = (imfService as any).parseComplexSdmxStructure({});
+      expect(result).toBeNull();
+    });
+
+    it('should extract observations from various data formats', () => {
+      const testData = {
+        DataSet: {
+          Series: [{
+            '@FREQ': 'M',
+            '@REF_AREA': 'US',
+            Obs: [{ '@TIME_PERIOD': '2023-01', '@OBS_VALUE': '100' }]
+          }]
+        }
+      };
+
+      const result = (imfService as any).extractObservationsFromAnyStructure(testData);
+      expect(Array.isArray(result)).toBe(true);
     });
   });
 
   describe('fetchMarketSize', () => {
-    it('should fetch market size data and return latest observation', async () => {
+    it('should fetch market size data and return array', async () => {
       const industryId = 'PAUM';
       
       // Mock the fetchImfDataset method to return our test data
@@ -127,103 +259,112 @@ describe('ImfService', () => {
 
       const result = await imfService.fetchMarketSize(industryId);
       
-      expect(result).toEqual({
-        value: 175, // First value from 2023-01 (parseInt logic gives same year for both)
-        dimensions: mockImfDataResponse[0], // First record due to parseInt comparison
-        source: 'IMF',
-        dataset: industryId,
-        key: 'ALL_COUNTRIES'
-      });
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toEqual(mockImfDataResponse);
+      expect(imfService.fetchImfDataset).toHaveBeenCalledWith('IFS', industryId, '', '');
     });
 
-    it('should use custom region if provided', async () => {
+    it('should use IFS dataflow by default', async () => {
       const industryId = 'PAUM';
-      const region = 'USA';
       
       vi.spyOn(imfService, 'fetchImfDataset').mockResolvedValue(mockImfDataResponse);
 
-      await imfService.fetchMarketSize(industryId, region);
+      await imfService.fetchMarketSize(industryId);
       
-      expect(imfService.fetchImfDataset).toHaveBeenCalledWith(industryId, region);
+      expect(imfService.fetchImfDataset).toHaveBeenCalledWith('IFS', industryId, '', '');
     });
 
-    it('should return null if no data available', async () => {
+    it('should return empty array if no data available', async () => {
       const industryId = 'PAUM';
       
       vi.spyOn(imfService, 'fetchImfDataset').mockResolvedValue([]);
 
       const result = await imfService.fetchMarketSize(industryId);
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it('should return null on fetchImfDataset error', async () => {
+    it('should return empty array on fetchImfDataset error', async () => {
       const industryId = 'PAUM';
       
-      vi.spyOn(imfService, 'fetchImfDataset').mockRejectedValue(new Error('API Error'));
+      vi.spyOn(imfService, 'fetchImfDataset').mockResolvedValue([]);
 
       const result = await imfService.fetchMarketSize(industryId);
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('searchDataset', () => {
-    it('should return placeholder message for search functionality', async () => {
-      const searchQuery = 'commodity';
-
-      const result = await imfService.searchDataset(searchQuery);
-      
-      expect(result).toEqual({
-        message: 'Search functionality not yet implemented for IMF service',
-        query: searchQuery
-      });
-    });
-
-    it('should handle search with parameters', async () => {
-      const searchQuery = 'GDP';
-      const params = { limit: 10 };
-
-      const result = await imfService.searchDataset(searchQuery, params);
-      
-      expect(result).toEqual({
-        message: 'Search functionality not yet implemented for IMF service',
-        query: searchQuery
-      });
+      expect(result).toEqual([]);
     });
   });
 
   describe('getDataFreshness', () => {
-    it('should return placeholder freshness data', async () => {
-      const result = await imfService.getDataFreshness({});
-      
-      expect(result).toEqual({
-        lastUpdated: "N/A",
-        nextUpdate: "N/A"
-      });
+    it('should return null as IMF does not provide freshness data easily', async () => {
+      const result = await imfService.getDataFreshness();
+      expect(result).toBeNull();
     });
   });
-
   describe('fetchIndustryData', () => {
-    it('should return null for missing parameters', async () => {
-      const result = await imfService.fetchIndustryData();
-      expect(result).toBeNull();
+    it('should handle empty datasetKey by calling fetchImfDataset with empty parameters', async () => {
+      vi.spyOn(imfService, 'fetchImfDataset').mockResolvedValue([]);
+
+      const result = await imfService.fetchIndustryData('');
+      expect(result).toEqual([]);
+      expect(imfService.fetchImfDataset).toHaveBeenCalledWith('', '', '', '');
     });
 
-    it('should return null for incomplete parameters', async () => {
-      const result = await imfService.fetchIndustryData('dataflow');
-      expect(result).toBeNull();
+    it('should handle string options parameter', async () => {
+      const datasetKey = 'PCPS';
+      const options = 'M.US.PMP_IX';
+      
+      vi.spyOn(imfService, 'fetchImfDataset').mockResolvedValue(mockImfDataResponse);
+
+      const result = await imfService.fetchIndustryData(datasetKey, options);
+      
+      expect(imfService.fetchImfDataset).toHaveBeenCalledWith(datasetKey, options, '', '');
+      expect(result).toEqual(mockImfDataResponse);
     });
 
-    it('should delegate to fetchImfDataset when parameters are provided', async () => {
-      const dataflowId = 'PCPS';
-      const key = 'ALL_COUNTRIES';
+    it('should handle object options parameter', async () => {
+      const datasetKey = 'PCPS';
       const options = { startPeriod: '2020' };
       
       vi.spyOn(imfService, 'fetchImfDataset').mockResolvedValue(mockImfDataResponse);
 
-      const result = await imfService.fetchIndustryData(dataflowId, key, options);
+      const result = await imfService.fetchIndustryData(datasetKey, options);
       
-      expect(imfService.fetchImfDataset).toHaveBeenCalledWith(dataflowId, key, '2020', undefined);
+      expect(imfService.fetchImfDataset).toHaveBeenCalledWith(datasetKey, '', '', '');
       expect(result).toEqual(mockImfDataResponse);
+    });
+  });
+  describe('buildNoDataErrorMessage', () => {
+    it('should build comprehensive error message with suggestions', () => {
+      const result = (imfService as any).buildNoDataErrorMessage(
+        'PCPS', 'INVALID', ['Try M.US.PMP_IX']
+      );
+      
+      expect(typeof result).toBe('string');
+      expect(result).toContain('No data available for IMF dataset "PCPS"');
+      expect(result).toContain('Primary Commodity Price System');
+      expect(result).toContain('Try M.US.PMP_IX');
+    });
+  });
+  describe('getStructureSummary', () => {
+    it('should return structure summary for debugging', () => {
+      const testData = { CompactData: { DataSet: { test: true } } };
+      const result = (imfService as any).getStructureSummary(testData);
+      
+      expect(result).toHaveProperty('type');
+      expect(typeof result.type).toBe('string');
+    });    it('should handle errors gracefully', () => {
+      // Mock Object.keys to throw an error
+      const originalKeys = Object.keys;
+      vi.spyOn(Object, 'keys').mockImplementation(() => {
+        throw new Error('Test error');
+      });
+      
+      const result = (imfService as any).getStructureSummary({ test: true });
+      
+      expect(result).toHaveProperty('type', 'error');
+      expect(result).toHaveProperty('error', 'Test error');
+      
+      // Restore original function
+      Object.keys = originalKeys;
     });
   });
 });

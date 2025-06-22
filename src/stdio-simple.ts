@@ -6,14 +6,20 @@ dotenv.config();
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer } from "./server.js";
+import { logger } from "./utils/index.js";
 
-console.error("Starting TAM MCP Server (STDIO transport)...");
+logger.info("Starting TAM MCP Server (STDIO transport)...");
 
 async function main() {
   const transport = new StdioServerTransport();
-  const { server, cleanup } = await createServer();
+  const { server, cleanup, sendWelcomeNotification } = await createServer();
 
   await server.connect(transport);
+
+  // Send welcome notification after connection is established
+  setTimeout(async () => {
+    await sendWelcomeNotification();
+  }, 1000); // Wait 1 second for connection to be fully established
 
   // Cleanup on exit
   process.on("SIGINT", async () => {
@@ -24,6 +30,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("TAM MCP Server error:", error);
+  logger.error("TAM MCP Server error:", error);
   process.exit(1);
 });

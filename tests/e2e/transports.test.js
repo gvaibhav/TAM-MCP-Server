@@ -14,7 +14,7 @@ describe('End-to-End Transport Tests', () => {
 });
 
 const SSE_PORT = 3001;
-const HTTP_PORT = 3002;
+const HTTP_PORT = 3000;
 
 export async function testSSETransportConnection() {
   console.log('🧪 Testing SSE Transport Connection...');
@@ -256,11 +256,10 @@ async function runAllE2ETests() {
     
     console.log('\n🎉 All E2E tests passed! Transport protocols are working correctly.');
     return true;
-  } catch (error) {
-    console.error('❌ E2E tests failed:', error.message);
+  } catch (error) {    console.error('❌ E2E tests failed:', error.message);
     console.error('💡 Make sure both servers are running:');
     console.error('   npm run start:sse  # Port 3001');
-    console.error('   npm run start:http # Port 3002');
+    console.error('   npm run start:http # Port 3000');
     return false;
   }
 }

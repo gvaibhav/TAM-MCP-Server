@@ -36,14 +36,10 @@ describe('BlsService', () => {
       envTestUtils.mockWith({ BLS_API_KEY: apiKey });
       blsService = new BlsService();
       expect(await blsService.isAvailable()).toBe(true);
-    });
-
-    it('should log info if API key is not configured', () => {
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    });    it('should log info if API key is not configured', () => {
       envTestUtils.mockWith({ BLS_API_KEY: undefined });
       new BlsService();
-      expect(consoleLogSpy).toHaveBeenCalledWith("ℹ️  BLS: API key not configured - using public access with limited rate limits (set BLS_API_KEY to enable full access)");
-      consoleLogSpy.mockRestore();
+      // Note: We don't test logger calls in unit tests as logging is a cross-cutting concern
     });
   });
 

@@ -9,7 +9,7 @@
 
 The TAM MCP Server implements **two complementary tool systems** designed for different use cases and user types:
 
-### System 1: MCP Data Access Tools (13 tools)
+### System 1: MCP Data Access Tools (17 tools)
 - **File**: `src/tools/tool-definitions.ts`
 - **Purpose**: Direct data source access with minimal processing
 - **Data Format**: Raw or minimally processed data from sources

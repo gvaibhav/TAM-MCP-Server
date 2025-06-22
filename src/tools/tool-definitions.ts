@@ -124,7 +124,10 @@ export const CensusFetchMarketSizeSchema = z.object({
     .describe(
       "Industry NAICS code (e.g., '23' for Construction). Default: Professional Services (54)",
     ),
-  geography: z.string().describe("Geography parameter (e.g., 'us:1')."),
+  geography: z
+    .string()
+    .default("us:1")
+    .describe("Geography parameter (e.g., 'us:1'). Default: us:1"),
   measure: z
     .enum(["EMP", "PAYANN", "ESTAB"])
     .optional()
@@ -152,9 +155,9 @@ export const ImfGetDatasetSchema = z.object({
     ),
   key: z
     .string()
-    .default("M.US.PMP_IX")
+    .default("A.US.NGDP_RPCH")
     .describe(
-      'Structured key for data selection (e.g., "M.US.CPI_IX"). Default: US Import Price Index',
+      'Structured key for data selection (e.g., "M.US.CPI_IX"). Default: US Real GDP Growth Rate (annual)',
     ),
   startPeriod: z
     .string()
@@ -177,15 +180,22 @@ export const ImfGetLatestObservationSchema = z.object({
     ),
   key: z
     .string()
-    .default("M.US.PMP_IX")
+    .default("A.US.NGDP_RPCH")
     .describe(
-      "Structured key for data selection. Default: US Import Price Index",
+      "Structured key for data selection. Default: US Real GDP Growth Rate (annual)",
     ),
   valueAttribute: z
     .string()
     .optional()
     .describe("Specific attribute to extract if multiple values exist."),
-  // startPeriod, endPeriod might be relevant if "latest" needs context
+  startPeriod: z
+    .string()
+    .optional()
+    .describe("Start date for data range (YYYY-MM or YYYY)"),
+  endPeriod: z
+    .string()
+    .optional()
+    .describe("End date for data range (YYYY-MM or YYYY)"),
 });
 
 // 2.1.6 Nasdaq Data Link
@@ -1247,7 +1257,25 @@ For Apple's last 3 annual income statements:
 };
 
 export function getToolDefinition(name: string): ToolDefinition | undefined {
-  return AllToolDefinitions[name];
+  // First check AllToolDefinitions (data source tools)
+  if (AllToolDefinitions[name]) {
+    return AllToolDefinitions[name];
+  }
+
+  // Then check MarketAnalysisTools
+  const marketAnalysisTools = MarketAnalysisTools.getToolDefinitions();
+  const marketTool = marketAnalysisTools.find((tool) => tool.name === name);
+
+  if (marketTool) {
+    return {
+      name: marketTool.name,
+      description: marketTool.description ?? "",
+      inputSchema: marketTool.inputSchema,
+      ...(marketTool.outputSchema && { outputSchema: marketTool.outputSchema }),
+    };
+  }
+
+  return undefined;
 }
 
 export function getAllToolDefinitions(): ToolDefinition[] {

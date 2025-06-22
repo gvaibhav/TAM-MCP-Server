@@ -11,7 +11,7 @@ export class AlphaVantageService implements DataSourceService {
     this.apiKey = apiKey ?? process.env.ALPHA_VANTAGE_API_KEY ?? "";
 
     if (!this.apiKey) {
-      console.error(
+      logger.info(
         "ℹ️  AlphaVantage: API key not configured - service disabled (set ALPHA_VANTAGE_API_KEY to enable)",
       );
     }

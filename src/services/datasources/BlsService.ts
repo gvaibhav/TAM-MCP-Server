@@ -11,8 +11,8 @@ export class BlsService implements DataSourceService {
     this.apiKey = apiKey ?? process.env.BLS_API_KEY ?? "";
 
     if (!this.apiKey) {
-      console.log(
-        "ℹ️  BLS: API key not configured - using public access with limited rate limits (set BLS_API_KEY to enable full access)",
+      logger.info(
+        "ℹ️  BLS: API key not configured - using public access with limited rate limits (set BLS_API_KEY for full access)",
       );
     }
   }
