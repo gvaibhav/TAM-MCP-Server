@@ -1,6 +1,6 @@
 {
   "name": "@gvaibhav/tam-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Market research and business intelligence with TAM/SAM calculations and integration across 8 economic data sources: Alpha Vantage, BLS, Census Bureau, FRED, IMF, Nasdaq Data Link, OECD, and World Bank.",
   "license": "MIT",
   "author": {
@@ -21,7 +21,8 @@
     "dist",
     "README.md",
     "LICENSE"
-  ],  "scripts": {
+  ],
+  "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
