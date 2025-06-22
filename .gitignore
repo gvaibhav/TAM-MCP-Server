@@ -87,3 +87,16 @@ tests/scripts/test-debug-*.mjs
 *.bak
 *.backup
 *~
+
+# Temporary test files (should be in tests/ directory structure)
+test-*.mjs
+test-*.js
+test-*.json
+debug-*.mjs
+debug-*.js
+*-temp.*
+*-tmp.*
+
+# Prevent any test files in root that belong in tests/ directory
+/test*
+!/tests/
