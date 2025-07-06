@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/gvaibhav-tam-mcp-server-badge.png)](https://mseep.ai/app/gvaibhav-tam-mcp-server)
+
 # Market Sizing MCP Server
 
 [![License](https://img.shields.io/github/license/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/blob/main/LICENSE)
