@@ -8,11 +8,11 @@
 
 ## Executive Summary
 
-Successfully implemented Tier 1 portfolio rebalancing data sources, extending TAM-MCP-Server from 8 to 11 total data sources. Docker deployment validated with 9/11 sources (82%) operational.
+Successfully implemented Tier 1 portfolio rebalancing data sources, extending TAM-MCP-Server from 8 to 11 total data sources. Docker deployment validated with **10/11 sources (91%) operational**.
 
 ---
 
-## ✅ Validation Results: 9/11 Sources Working (82%)
+## ✅ Validation Results: 10/11 Sources Working (91%)
 
 ### Working Sources
 
@@ -25,20 +25,15 @@ Successfully implemented Tier 1 portfolio rebalancing data sources, extending TA
 | 5 | Census | Business | 674ms | CBP data ✅ |
 | 6 | FRED | Economic | 404ms | GDP $32.48T ✅ |
 | 7 | Alpha Vantage | Stocks | 228ms | MSFT $3.45T ✅ |
-| 8 | **CoinGecko** | **Crypto** | **107ms** | **BTC $63,775** ✅ |
-| 9 | **ExchangeRateAPI** | **Forex** | **102ms** | **EUR 0.8667** ✅ |
+| 8 | **CoinGecko** | **Crypto** | **151ms** | **BTC $63,844** ✅ |
+| 9 | **ExchangeRateAPI** | **Forex** | **93ms** | **EUR 0.8667** ✅ |
+| 10 | **Finnhub** | **Stock/Sentiment** | **178ms** | **AAPL $305.32** ✅ |
 
-### Pending User Action
-
-| # | Source | Status | Action Required |
-|---|--------|--------|-----------------|
-| 10 | **Finnhub** | ⏳ Ready | Get free key: https://finnhub.io/register |
-
-### Known Limitations
+### ❌ Known Limitations (1/11 - 9%)
 
 | # | Source | Status | Notes |
 |---|--------|--------|-------|
-| 11 | Nasdaq Data Link | ❌ | Incapsula bot protection (optional) |
+| 11 | Nasdaq Data Link | ❌ Optional | Incapsula bot protection (not critical) |
 
 ---
 

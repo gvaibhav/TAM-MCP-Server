@@ -1,0 +1,32 @@
+
+services:
+  tam-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tam-mcp-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Override a few env vars for Docker context
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+    volumes:
+      # Persist logs on the host
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
