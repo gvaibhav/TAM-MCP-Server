@@ -1,6 +1,7 @@
 import axios from "axios";
 import { logger } from "../../utils/index.js";
 import { DataSourceService } from "../../types/dataSources.js";
+import { cacheService } from "../CacheService.js";
 
 const BASE_URL = "https://www.alphavantage.co/query";
 
@@ -103,24 +104,32 @@ export class AlphaVantageService implements DataSourceService {
     logger.info("AlphaVantageService.fetchMarketSize called", { symbol });
 
     try {
-      const overview = await this.fetchApiData("OVERVIEW", symbol, false);
+      // Cache company overview for 1 hour (doesn't change frequently)
+      return await cacheService.withCache(
+        "alphavantage:marketsize",
+        { symbol },
+        async () => {
+          const overview = await this.fetchApiData("OVERVIEW", symbol, false);
 
-      if (!overview || overview["Symbol"] !== symbol) {
-        return null;
-      }
+          if (!overview || overview["Symbol"] !== symbol) {
+            return null;
+          }
 
-      const marketCap = parseFloat(overview["MarketCapitalization"]);
+          const marketCap = parseFloat(overview["MarketCapitalization"]);
 
-      return {
-        value: isNaN(marketCap) ? null : marketCap,
-        symbol: overview["Symbol"],
-        name: overview["Name"],
-        sector: overview["Sector"],
-        industry: overview["Industry"],
-        description: overview["Description"],
-        source: "Alpha Vantage",
-        lastUpdated: new Date().toISOString().split("T")[0],
-      };
+          return {
+            value: isNaN(marketCap) ? null : marketCap,
+            symbol: overview["Symbol"],
+            name: overview["Name"],
+            sector: overview["Sector"],
+            industry: overview["Industry"],
+            description: overview["Description"],
+            source: "Alpha Vantage",
+            lastUpdated: new Date().toISOString().split("T")[0],
+          };
+        },
+        3600, // 1 hour cache
+      );
     } catch (error) {
       logger.error("AlphaVantageService.fetchMarketSize failed", {
         error: error instanceof Error ? error.message : error,

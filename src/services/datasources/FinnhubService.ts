@@ -1,6 +1,7 @@
 import axios from "axios";
 import { logger } from "../../utils/index.js";
 import { DataSourceService } from "../../types/dataSources.js";
+import { cacheService } from "../CacheService.js";
 
 const BASE_URL = "https://finnhub.io/api/v1";
 
@@ -67,20 +68,28 @@ export class FinnhubService implements DataSourceService {
     logger.info("FinnhubService.getQuote called", { symbol });
 
     try {
-      const data = await this.fetchApiData("/quote", { symbol });
+      // Use cache with 60 second TTL for real-time quotes
+      return await cacheService.withCache(
+        "finnhub:quote",
+        { symbol },
+        async () => {
+          const data = await this.fetchApiData("/quote", { symbol });
 
-      return {
-        symbol,
-        current: data.c,
-        change: data.d,
-        percentChange: data.dp,
-        high: data.h,
-        low: data.l,
-        open: data.o,
-        previousClose: data.pc,
-        timestamp: data.t ? new Date(data.t * 1000) : new Date(),
-        source: "Finnhub",
-      };
+          return {
+            symbol,
+            current: data.c,
+            change: data.d,
+            percentChange: data.dp,
+            high: data.h,
+            low: data.l,
+            open: data.o,
+            previousClose: data.pc,
+            timestamp: data.t ? new Date(data.t * 1000) : new Date(),
+            source: "Finnhub",
+          };
+        },
+        60, // 60 second cache for real-time quotes
+      );
     } catch (error) {
       logger.error("FinnhubService.getQuote failed", {
         error: error instanceof Error ? error.message : error,

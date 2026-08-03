@@ -1,6 +1,7 @@
 import axios from "axios";
 import { logger } from "../../utils/index.js";
 import { DataSourceService } from "../../types/dataSources.js";
+import { cacheService } from "../CacheService.js";
 
 const BASE_URL = "https://api.coingecko.com/api/v3";
 
@@ -74,15 +75,21 @@ export class CoinGeckoService implements DataSourceService {
     logger.info("CoinGeckoService.getPrice called", { ids: idList, vsCurrencies: vsList });
 
     try {
-      const data = await this.fetchApiData("/simple/price", {
-        ids: idList,
-        vs_currencies: vsList,
-        include_market_cap: includeMarketCap,
-        include_24hr_vol: include24hrVol,
-        include_24hr_change: include24hrChange,
-      });
-
-      return data;
+      // Cache crypto prices for 60 seconds (volatile data)
+      return await cacheService.withCache(
+        "coingecko:price",
+        { ids: idList, vsCurrencies: vsList, includeMarketCap, include24hrVol, include24hrChange },
+        async () => {
+          return await this.fetchApiData("/simple/price", {
+            ids: idList,
+            vs_currencies: vsList,
+            include_market_cap: includeMarketCap,
+            include_24hr_vol: include24hrVol,
+            include_24hr_change: include24hrChange,
+          });
+        },
+        60, // 60 second cache
+      );
     } catch (error) {
       logger.error("CoinGeckoService.getPrice failed", {
         error: error instanceof Error ? error.message : error,
