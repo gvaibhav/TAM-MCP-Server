@@ -5,6 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: tam-mcp-server
+    labels:
+      nemoclaw.mcp.enabled: "true"
+      nemoclaw.mcp.endpoint: "http://host.docker.internal:3000/mcp"
+      nemoclaw.mcp.transport: "streamable_http"
+      nemoclaw.mcp.audience: "deep-research"
+      nemoclaw.mcp.risk: "read_only"
+      nemoclaw.mcp.capability: "tam-research"
     ports:
       - "3000:3000"
     env_file:
