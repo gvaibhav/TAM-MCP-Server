@@ -7,14 +7,18 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDeps needed for build).
+# --ignore-scripts skips the "prepare" lifecycle hook which runs tsc before sources are copied.
+RUN npm ci --ignore-scripts
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the TypeScript application
 RUN npm run build
+
+# Remove devDependencies after build for a lean image
+RUN npm prune --production
 
 # Create logs directory
 RUN mkdir -p logs
@@ -26,9 +30,10 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV LOG_LEVEL=info
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Health check against the /health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the server
-CMD ["npm", "start"]
+# Start the server in HTTP (Streamable HTTP) transport mode
+# This exposes /health and /mcp over HTTP - suitable for Docker/networked use
+CMD ["node", "dist/index.js", "http"]
