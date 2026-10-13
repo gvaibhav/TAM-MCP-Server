@@ -6,7 +6,7 @@
 
 A Model Context Protocol server providing market research and business analysis capabilities through 28 tools, 15 business prompts, and integration with 8 economic data sources.
 
-*Previously included in the official MCP community servers list here : https://github.com/modelcontextprotocol/servers/blob/e21dbea731f2ccddcd48525cf9a1e1e405fee12f/README.md*
+*Previously featured in the official MCP community servers list here : https://github.com/modelcontextprotocol/servers/blob/e21dbea731f2ccddcd48525cf9a1e1e405fee12f/README.md*
 
 ## Overview
 
