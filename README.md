@@ -6,6 +6,8 @@
 
 A Model Context Protocol server providing market research and business analysis capabilities through 28 tools, 15 business prompts, and integration with 8 economic data sources.
 
+*Previously included in the official MCP community servers list here : https://github.com/modelcontextprotocol/servers/blob/e21dbea731f2ccddcd48525cf9a1e1e405fee12f/README.md*
+
 ## Overview
 
 This MCP server provides comprehensive market research capabilities including:
@@ -15,6 +17,51 @@ This MCP server provides comprehensive market research capabilities including:
 - **Data Integration**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
 - **Smart Defaults**: Pre-configured parameters for immediate use without setup
 - **Multiple Transports**: STDIO, Streamable HTTP, and SSE support
+
+### Architecture Overview
+
+```mermaid
+flowchart TD
+    Client[MCP Client] <--> Transports
+
+    subgraph Transports[Transports]
+        STDIO[STDIO]
+        HTTP[HTTP]
+        SSE[SSE]
+    end
+
+    Transports <--> ToolTiers
+
+    subgraph ToolTiers[MCP Tool Tiers]
+        Tier3[Tier 3: Business Analysis Tools]
+        Tier2[Tier 2: Basic Market Tools]
+        Tier1[Tier 1: Data Access Tools]
+
+        Tier3 --> Tier2
+        Tier3 --> Tier1
+        Tier2 --> Tier1
+    end
+
+    ToolTiers <--> CacheLayer
+
+    subgraph CacheLayer[Cache Layer]
+        InMemory[In-Memory Cache]
+        Redis[Redis Cache]
+    end
+
+    CacheLayer <--> DataServices
+
+    subgraph DataServices[Data Services]
+        AV[Alpha Vantage]
+        BLS[BLS]
+        Census[Census]
+        FRED[FRED]
+        IMF[IMF]
+        Nasdaq[Nasdaq]
+        OECD[OECD]
+        WB[World Bank]
+    end
+```
 
 ### Capabilities
 
@@ -324,7 +371,8 @@ CACHE_TTL_FRED_MS=86400000
 
 ### Data Source Setup
 
-**Required Keys:**
+**Recommended Keys:**
+*(Note: Keys are optional. Without them, Tier 1 direct data access tools and higher-tier analysis tools that depend on these specific sources will degrade in functionality, relying on mock data or limited access.)*
 - **Alpha Vantage**: Free tier provides 25 requests/day
 - **Census Bureau**: Free API access
 - **FRED**: Free API access  
