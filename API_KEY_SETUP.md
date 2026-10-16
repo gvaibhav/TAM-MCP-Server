@@ -58,3 +58,7 @@ curl http://localhost:3000/health
 ```
 
 Provider connectivity does not make the market-sizing tools authoritative. Free public APIs supply economic, employment, company, and financial observations. The industry search, market segmentation, forecasting, opportunity, and source-derived TAM tools remain unavailable until a real catalog/methodology layer is implemented. Input-based TAM and SAM arithmetic tools continue to work and identify their assumptions.
+
+## Premium sources
+
+`IBISWORLD_API_KEY`, `STATISTA_API_KEY`, `GRAND_VIEW_RESEARCH_API_KEY`, `BLOOMBERG_API_KEY`, and `PITCHBOOK_API_KEY` appear only as commented examples in `.env.example`. There are no corresponding server adapters, configured subscriptions, or successful live tests. Do not add a key expecting those sources to become available. Nasdaq Data Link paid datasets and Alpha Vantage paid endpoints have also not been verified with paid access. See [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md) for the exact last observed behavior.

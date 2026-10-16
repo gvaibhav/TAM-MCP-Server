@@ -6,6 +6,18 @@
 
 A Model Context Protocol server exposing 28 tools, 15 business prompts, static resources, and economic/financial data adapters. Public-source observations are available where provider access succeeds; catalog-backed market sizing features fail explicitly until an authoritative catalog is configured.
 
+## Verification status (2026-10-16)
+
+| Area | Verified | Still needs verification or implementation |
+|---|---|---|
+| Build and automated tests | Node.js 22 Docker build; 232 tests in 21 files pass | The default suite uses mocks and includes placeholder end-to-end tests; it does not exercise every tool against a live provider |
+| MCP transport | Docker `/health` returned 200; Streamable HTTP negotiated `2025-11-25`; listing returned 28 tools, 15 prompts, and 9 resources; `tam://mcp-status` was read successfully | Real-client notification delivery, legacy SSE behavior, every tool call, and MCP `2026-07-28` compatibility |
+| Public and free-tier providers | Direct live API probes returned data from World Bank, FRED, Finnhub, CoinGecko, and the public ExchangeRate endpoint | These probes do not establish that every MCP tool using those providers works or that cached data is current |
+| Limited or failing providers | OECD was reachable but its dataset query/parser needs work; BLS and Census rejected the configured values; Alpha Vantage `OVERVIEW` returned a tier restriction; Nasdaq Data Link was blocked; the IMF adapter uses an obsolete endpoint | A valid key, eligible endpoint or subscription, adapter update, and an end-to-end tool call as applicable |
+| Premium market data | No licensed industry catalog or paid-provider response has been verified | IBISWorld, Statista, Grand View Research, Bloomberg, and PitchBook have placeholder key names only; no adapters or paid subscriptions are configured. Nasdaq paid datasets and Alpha Vantage paid endpoints are untested |
+
+These are results from the stated date, not an ongoing availability guarantee. A passing mock test or a successful direct API probe is not proof of live MCP tool correctness. See [provider-by-provider evidence](DATA_SOURCE_STATUS.md), [API key requirements](API_KEY_SETUP.md), and [remaining work](AUDIT_AND_UPGRADE_PLAN.md).
+
 *Previously featured in the official MCP community servers list here : https://github.com/modelcontextprotocol/servers/blob/e21dbea731f2ccddcd48525cf9a1e1e405fee12f/README.md*
 
 ## Overview
@@ -15,7 +27,7 @@ This MCP server provides comprehensive market research capabilities including:
 - **28 Tools**: Market analysis, data access, and business intelligence tools
 - **15 Prompts**: Professional business analysis templates for funding, strategy, and research
 - **Data Integration**: World Bank, FRED, Census, BLS, OECD, IMF, Alpha Vantage, Finnhub, Nasdaq Data Link, CoinGecko, and ExchangeRateAPI, with provider-specific availability
-- **Smart Defaults**: Pre-configured parameters for immediate use without setup
+- **Tool defaults**: Some tools provide sample parameters; source access and catalog-backed operations still require valid data and a defined methodology
 - **Multiple Transports**: STDIO, Streamable HTTP, and SSE support
 
 ### Architecture Overview
@@ -68,9 +80,8 @@ flowchart TD
 **Market Analysis Tools**
 - Input-based Total Addressable Market (TAM) and Serviceable Addressable Market (SAM) calculations
 - Source-backed market size estimation and forecasting interfaces (currently unavailable without an authoritative catalog)
-- Industry analysis and competitive intelligence
-- Market segmentation and opportunity identification
-- Data validation and cross-source verification
+- Industry, segmentation, and opportunity interfaces (catalog-backed results are currently unavailable)
+- Data validation interfaces (live cross-source accuracy is not yet verified)
 
 **Business Intelligence Prompts**
 - Startup funding pitch preparation
@@ -188,11 +199,9 @@ npx @modelcontextprotocol/inspector npm run start:stdio
 
 ## Usage
 
-### Smart Default Values - Zero-Friction Start
+### Tool defaults
 
-Get professional market insights instantly - no parameter research required!
-
-All 28 tools include intelligent default values that let you start analyzing immediately:
+Some tools supply example values when arguments are omitted. Examples are user-input assumptions, not sourced market facts, and do not unlock unavailable providers or catalog-backed operations:
 
 ```javascript
 // Call any tool with empty parameters - defaults automatically applied
@@ -203,20 +212,17 @@ All 28 tools include intelligent default values that let you start analyzing imm
 
 {
   "name": "tam_analysis", 
-  "arguments": {} // Server provides: $10B market, 15% growth, 5-year projection
+  "arguments": {} // Uses documented sample assumptions; inspect the result before use
 }
 ```
 
-**Professional Defaults Include:**
+**Example defaults may include:**
 - Stock Analysis: AAPL, MSFT, GOOGL (Fortune 500 companies)
 - Economic Data: US GDP, Global indicators, 2020-2024 timeframes  
 - Industry Codes: Technology sector, Professional Services (NAICS 54)
 - Market Calculations: $10B base market, 15% growth rates, 5-year projections
 
-**Perfect for:**
-- First-time users getting immediate results without parameter research
-- Demo environments showcasing professional market analysis capabilities  
-- Rapid prototyping with realistic business data and scenarios
+For real research, supply explicit inputs and verify the source, unit, date, geography, and calculation assumptions in each response.
 
 ### Basic Tool Usage
 
@@ -315,7 +321,7 @@ The TAM MCP Server provides **28 total MCP tools** organized in three complement
 
 ### Data Sources
 
-The server integrates with 8 data sources:
+Eight providers have direct MCP tool definitions. Additional Finnhub, CoinGecko, and ExchangeRate adapters are present, but provider health does not imply full MCP tool coverage. Current access and limitations are tracked in [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md).
 - **Alpha Vantage**: Company financials, stock data
 - **BLS**: Employment and labor statistics  
 - **Census**: Industry and demographic data
@@ -374,11 +380,7 @@ CACHE_CHECK_PERIOD=600
 
 **Recommended keys:**
 
-The server does not fall back to mock market data. Missing, rejected, or tier-limited keys produce explicit tool errors.
-- **Alpha Vantage**: Free tier provides 25 requests/day
-- **Census Bureau**: Free API access
-- **FRED**: Free API access  
-- **Nasdaq Data Link**: Free tier available
+The server does not fall back to mock market data. Missing, rejected, or tier-limited keys produce explicit tool errors. See [API_KEY_SETUP.md](API_KEY_SETUP.md) for current free-key requirements and [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md) for the last observed responses. Free keys do not grant access to paid datasets or endpoints.
 
 **No key required:**
 - World Bank and OECD
@@ -548,13 +550,13 @@ TAM-MCP-Server/
 
 ### Testing
 
-The project uses a comprehensive test structure with Vitest as the primary testing framework:
+Vitest is the primary test runner. The default run covers unit and mocked integration behavior; some files under `tests/e2e/` are placeholders and do not exercise a running server:
 
 ```
 tests/
 ├── unit/                    # Fast, isolated component tests
 ├── integration/            # Component interaction tests
-├── e2e/                   # End-to-end workflow tests
+├── e2e/                   # Includes placeholder tests; inspect before relying on them
 ├── scripts/               # Integration test scripts
 │   ├── test-comprehensive.mjs # Comprehensive testing
 │   ├── test-http-streaming.mjs # HTTP streaming transport
@@ -568,7 +570,7 @@ tests/
 #### Running Tests
 
 ```bash
-# Run all tests
+# Run the default unit and mocked integration suite
 npm test
 
 # Run by category
@@ -582,21 +584,15 @@ npm run test:watch       # Watch mode for development
 npm run test:ui          # Vitest UI mode
 npm run test:ci          # CI-optimized test run
 
-# Run integration scripts
-npm run test:scripts              # Comprehensive backend integration
-npm run test:scripts:http         # HTTP streaming transport  
-npm run test:scripts:simple       # Basic MCP functionality
-npm run test:scripts:tools        # Individual tool validation
-npm run test:scripts:inspector    # MCP Inspector compatibility
-
-# Or run directly
-node tests/scripts/test-comprehensive.mjs
-node tests/scripts/test-http-streaming.mjs
+# Run direct provider connectivity probes from the Docker container
+docker compose exec -T tam-mcp-server node scripts/validate-datasources.mjs
 ```
+
+The provider probe calls upstream APIs directly. It does not invoke MCP tools and may exit nonzero when unavailable providers are configured. The default Vitest configuration excludes legacy and live-provider test files; `npm run test:live` currently uses that same exclusion, so it is **not** evidence of live-provider coverage. The 232 passing tests from 2026-10-16 included a placeholder notification test. Notification delivery to a real MCP client and paid endpoints still need dedicated tests.
 
 #### API Testing with Postman
 
-Import the comprehensive Postman collection for testing both MCP endpoints and backend API integrations:
+The Postman collection is available for manual investigation. It was not part of the verified 232-test run, and its older examples may need updating before use:
 
 **MCP Server Testing Collection**
 1. **Import Collection**: `examples/TAM-MCP-Server-Postman-Collection.json`
@@ -625,14 +621,9 @@ newman run examples/TAM-MCP-Server-Postman-Collection.json \
 npm run test:postman
 ```
 
-#### Test Coverage
-- **Unit Level**: Individual tool functionality and business logic
-- **Integration Level**: MCP protocol compliance and server behavior
-- **System Level**: Complete workflows through real transports
-- **API Level**: REST endpoints and session management
-- **Performance**: Response time and resource usage monitoring
+#### Verified scope
 
-Code coverage reports are generated in the `coverage/` directory.
+The passing suite verifies component logic and mocked interactions. Separate manual HTTP checks verified server health, protocol negotiation, tool/prompt/resource listing, and one resource read. It did not prove full MCP protocol compliance, performance characteristics, all tool calls, or paid-provider data correctness. See [MCP_FEATURE_STATUS.md](MCP_FEATURE_STATUS.md) and [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md).
 
 ### Project Structure
 
@@ -695,7 +686,7 @@ npm run test:postman
 ### Technology Stack
 
 - **Language**: TypeScript 5.x
-- **Protocol**: MCP 2025-03-26
+- **Protocol**: MCP `2025-11-25` negotiation verified over Streamable HTTP
 - **Framework**: Express.js 4.x
 - **Validation**: Zod schemas
 - **Testing**: Vitest + Postman
@@ -789,15 +780,16 @@ All documentation is also accessible through the MCP protocol:
 }
 ```
 
-**Available Documentation Resources:**
-- README.md - Complete project overview and feature documentation
-- Getting Started Guide - Quick setup and first-use instructions
-- Configuration Guide - Environment setup and API key management
-- Tools Reference - Complete tool documentation and usage examples
-- Prompts Guide - Business analysis prompt templates and scenarios
-- API Reference - Complete API documentation and integration guides
-- Security Policy - Security guidelines and best practices
-- Contributing Guide - Development and contribution instructions
+**Available documentation resources (9):**
+- `tam://readme`
+- `tam://contributing`
+- `tam://release-notes`
+- `tam://prompt-strategies`
+- `tam://prompt-examples`
+- `tam://prompt-reference`
+- `tam://mcp-status`
+- `tam://data-source-status`
+- `tam://api-key-setup`
 
 See [MCP feature status](MCP_FEATURE_STATUS.md), [data-source status](DATA_SOURCE_STATUS.md), and [API key setup](API_KEY_SETUP.md) for the verified current state.
 

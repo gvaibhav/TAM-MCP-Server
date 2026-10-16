@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * TAM MCP Server - Data Source Health Check
- * Validates live connectivity to all 8 external data sources.
+ * Probes 11 upstream APIs directly. This is not an end-to-end MCP tool test.
  * Usage: node scripts/validate-datasources.mjs
  *
  * Requirements: dotenv must be available (it's a prod dependency).
@@ -532,10 +532,10 @@ await check("FRED (Federal Reserve)", checkFred);
 await check("Alpha Vantage", checkAlphaVantage);
 await check("Nasdaq Data Link", checkNasdaq);
 
-console.log("\n📊 Portfolio Rebalancing APIs (v1.1):");
+console.log("\n📊 Additional public/free-tier API probes:");
 await check("Finnhub (Real-time + Sentiment)", checkFinnhub);
 await check("CoinGecko (Cryptocurrency)", checkCoinGecko);
-await check("ExchangeRate.host (Forex + Metals)", checkExchangeRate);
+await check("ExchangeRateAPI public endpoint (Forex)", checkExchangeRate);
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
@@ -543,7 +543,7 @@ const passed = results.filter((r) => r.ok);
 const failed = results.filter((r) => !r.ok);
 
 console.log("\n╔═══════════════════════════════════════════════════════════╗");
-console.log(`║  Summary: ${passed.length}/${results.length} data sources connected`.padEnd(59) + "║");
+console.log(`║  Summary: ${passed.length}/${results.length} direct API probes passed`.padEnd(59) + "║");
 console.log("╚═══════════════════════════════════════════════════════════╝");
 
 if (failed.length > 0) {
