@@ -11,12 +11,20 @@ A Model Context Protocol server exposing 28 tools, 15 business prompts, static r
 | Area | Verified | Still needs verification or implementation |
 |---|---|---|
 | Build and automated tests | Node.js 22 Docker build; 232 tests in 21 files pass | The default suite uses mocks and includes placeholder end-to-end tests; it does not exercise every tool against a live provider |
-| MCP transport | Docker `/health` returned 200; Streamable HTTP negotiated `2025-11-25`; listing returned 28 tools, 15 prompts, and 9 resources; `tam://mcp-status` was read successfully | Real-client notification delivery, legacy SSE behavior, every tool call, and MCP `2026-07-28` compatibility |
+| MCP transport | Docker `/health` returned 200; Streamable HTTP negotiated `2025-11-25`; listing returned 28 tools, 15 prompts, and 9 resources; an SDK client verified initialization guidance, tool status pointers, and all three status-resource reads | Real-client notification delivery, legacy SSE behavior, every tool call, and MCP `2026-07-28` compatibility |
 | Public and free-tier providers | Direct live API probes returned data from World Bank, FRED, Finnhub, CoinGecko, and the public ExchangeRate endpoint | These probes do not establish that every MCP tool using those providers works or that cached data is current |
 | Limited or failing providers | OECD was reachable but its dataset query/parser needs work; BLS and Census rejected the configured values; Alpha Vantage `OVERVIEW` returned a tier restriction; Nasdaq Data Link was blocked; the IMF adapter uses an obsolete endpoint | A valid key, eligible endpoint or subscription, adapter update, and an end-to-end tool call as applicable |
 | Premium market data | No licensed industry catalog or paid-provider response has been verified | IBISWorld, Statista, Grand View Research, Bloomberg, and PitchBook have placeholder key names only; no adapters or paid subscriptions are configured. Nasdaq paid datasets and Alpha Vantage paid endpoints are untested |
 
 These are results from the stated date, not an ongoing availability guarantee. A passing mock test or a successful direct API probe is not proof of live MCP tool correctness. See [provider-by-provider evidence](DATA_SOURCE_STATUS.md), [API key requirements](API_KEY_SETUP.md), and [remaining work](AUDIT_AND_UPGRADE_PLAN.md).
+
+### How a connected agent discovers this state
+
+The MCP `initialize` response includes `instructions` directing the client to read three resources: `tam://data-source-status` for provider results and untested premium sources, `tam://mcp-status` for feature/test limits, and `tam://api-key-setup` for credential setup. Every tool description also points to provider status and explains that key presence does not prove live access. Clients can discover these with `resources/list` and retrieve them with `resources/read`.
+
+The host controls whether these instructions and resources reach its model. If it only exposes tools, it must enable resource reads or supply the status documents as context. These documents are dated snapshots, not a live health feed; inspect each tool's `isError`, provenance, observation date, and cache behavior. Initialization instructions are part of the [MCP lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle), and resource inclusion is [controlled by the host](https://modelcontextprotocol.io/specification/2025-11-25/server/resources).
+
+For agents editing this repository, [AGENTS.md](AGENTS.md) captures project rules and links to [verification](.agents/skills/tam-mcp-verify/SKILL.md), [provider integration](.agents/skills/tam-mcp-provider/SKILL.md), and [runtime upgrade](.agents/skills/tam-mcp-upgrade/SKILL.md) skills. Those local files are not sent to remote MCP clients.
 
 *Previously featured in the official MCP community servers list here : https://github.com/modelcontextprotocol/servers/blob/e21dbea731f2ccddcd48525cf9a1e1e405fee12f/README.md*
 
@@ -586,6 +594,9 @@ npm run test:ci          # CI-optimized test run
 
 # Run direct provider connectivity probes from the Docker container
 docker compose exec -T tam-mcp-server node scripts/validate-datasources.mjs
+
+# Verify client-visible status instructions and resources (no provider calls)
+docker compose exec -T tam-mcp-server node scripts/verify-mcp-discovery.mjs
 ```
 
 The provider probe calls upstream APIs directly. It does not invoke MCP tools and may exit nonzero when unavailable providers are configured. The default Vitest configuration excludes legacy and live-provider test files; `npm run test:live` currently uses that same exclusion, so it is **not** evidence of live-provider coverage. The 232 passing tests from 2026-10-16 included a placeholder notification test. Notification delivery to a real MCP client and paid endpoints still need dedicated tests.

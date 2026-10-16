@@ -47,6 +47,12 @@ export async function createServer() {
         "Economic data access and transparent TAM/SAM calculation tools",
     },
     {
+      instructions: [
+        "Before relying on TAM MCP results, read tam://data-source-status for dated provider verification and untested premium sources, tam://mcp-status for feature and test limits, and tam://api-key-setup for credential setup.",
+        "These resources are verification snapshots, not live health checks. Tool listing and API-key presence do not establish successful provider access or paid entitlements.",
+        "Catalog-backed industry search, market sizing, segmentation, forecasting, and opportunities are currently unavailable. Input-based calculations use supplied or default assumptions; no licensed premium market-data integration has been verified.",
+        "Check each tool result for isError and inspect source, unit, observation date, geography, and assumptions before using a value. Cached data may be older than the response timestamp. Economic indicators and example defaults are not automatically market size or TAM.",
+      ].join(" "),
       capabilities: {
         tools: { listChanged: true },
         resources: { subscribe: false, listChanged: true },
@@ -85,7 +91,7 @@ export async function createServer() {
     const toolsWithAvailability = tools.map((tool) => {
       const status = getToolAvailabilityStatus(tool.name);
 
-      let description = tool.description;
+      let description = `${tool.description}\n\nVerification status: read tam://data-source-status before relying on provider data. API-key checks describe configuration, not live provider health or paid access.`;
 
       if (!status.available) {
         description += ` ❌ [UNAVAILABLE: Missing required API keys: ${status.missingKeys.join(", ")}]`;
@@ -100,7 +106,7 @@ export async function createServer() {
     });
 
     logger.info(
-      `Listed ${tools.length} available tools (${toolsWithAvailability.filter((t) => !t.description.includes("❌")).length} fully available)`,
+      `Listed ${tools.length} tool definitions (${toolsWithAvailability.filter((t) => !t.description.includes("❌")).length} without missing-required-key flags; provider health is not checked here)`,
     );
 
     return {
@@ -1041,13 +1047,13 @@ export async function createServer() {
         {
           uri: "tam://mcp-status",
           name: "MCP Feature Status",
-          description: "Verified MCP SDK, transport, resource, prompt, and notification status",
+          description: "Dated MCP feature/test coverage and remaining verification; read before relying on advertised capabilities",
           mimeType: "text/markdown",
         },
         {
           uri: "tam://data-source-status",
           name: "Data Source Status",
-          description: "Verified provider connectivity and semantic limitations",
+          description: "Read before provider calls: dated verification, unavailable adapters, untested paid sources, and data interpretation limits; not live health",
           mimeType: "text/markdown",
         },
         {

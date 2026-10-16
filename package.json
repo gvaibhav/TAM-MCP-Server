@@ -20,7 +20,16 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "API_KEY_SETUP.md",
+    "DATA_SOURCE_STATUS.md",
+    "MCP_FEATURE_STATUS.md",
+    "scripts/verify-mcp-discovery.mjs",
+    "doc/reference/RELEASE-NOTES.md",
+    "doc/guides/mcp-client-prompt-strategies.md",
+    "doc/consumer/mcp-prompts-examples.md",
+    "doc/consumer/mcp-prompts-guide.md"
   ],
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
@@ -47,6 +56,7 @@
     "test:vitest:ui": "vitest --ui --config config/vitest.config.ts",
     "test:live": "vitest run tests/integration/services/live --config config/vitest.config.ts",
     "test:api-health": "node scripts/api-health-check.mjs",
+    "test:mcp-discovery": "node scripts/verify-mcp-discovery.mjs",
     "test:backend-apis": "./scripts/test-backend-apis.sh",
     "test:postman": "./scripts/test-postman-api.sh",
     "test:newman": "npx newman run examples/TAM-MCP-Server-Postman-Collection.json --env-var serverUrl=http://localhost:3000",

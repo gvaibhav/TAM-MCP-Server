@@ -9,6 +9,7 @@ Last verified: 2026-10-16.
 | Tools | 28 definitions; validation and MCP `isError` signaling enabled |
 | Prompts | List/get handlers with 15 business prompt templates |
 | Resources | Nine static Markdown resources with list/read handlers |
+| Client guidance | Initialization instructions and tool descriptions point to provider status and verification limits |
 | Streamable HTTP | Primary Docker transport at `/mcp`; session resumability uses an in-memory event store |
 | STDIO | Supported for local MCP clients |
 | Legacy SSE | Retained for compatibility; not the recommended deployment transport |
@@ -17,6 +18,14 @@ Last verified: 2026-10-16.
 | Errors | Provider and handled analytical failures return `isError: true` |
 
 The server advertises tool, prompt, and resource list-change support. Resources are static, so resource subscriptions are not advertised.
+
+## How agents learn the state
+
+The standard `initialize` response includes `instructions` that identify the status resources and explain unavailable catalog operations, untested premium access, example assumptions, and cache freshness. Tool descriptions repeat the provider-status pointer because some hosts expose tool metadata more readily than resources.
+
+Read `tam://data-source-status`, `tam://mcp-status`, and `tam://api-key-setup` using `resources/read`. These are dated files, not runtime provider-health measurements. A tool listing or configured key does not prove a successful provider call. The host controls whether to load this context into its model; the server cannot force that behavior. `AGENTS.md` and `.agents/skills/` are local repository guidance, not MCP resources.
+
+`scripts/verify-mcp-discovery.mjs` uses the SDK client over Streamable HTTP to check initialization guidance, tool pointers, and all three status-resource reads, then closes the session. This check passed against the Docker service on 2026-10-16. Run it with `npm run test:mcp-discovery` or inside the Docker service. It does not call providers, validate market data, or test notification delivery. Runtime documentation resources are included in both the Docker image and the npm package allowlist.
 
 ## Notification behavior
 

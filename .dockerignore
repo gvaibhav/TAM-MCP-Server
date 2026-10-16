@@ -9,6 +9,7 @@ dist/
 .git/
 .github/
 .qodo/
+.agents/
 *.md
 !README.md
 !CONTRIBUTING.md
