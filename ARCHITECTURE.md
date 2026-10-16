@@ -169,44 +169,18 @@ Enable AI/LLM applications to access real-time market data across multiple asset
 
 ## Current Status Summary
 
-### ✅ Operational: 10/11 Sources (91%)
+See [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md) for live provider status. At the latest verification, World Bank, FRED, Finnhub, CoinGecko, and ExchangeRateAPI returned usable live data. OECD was reachable but needs query/parser modernization. BLS and Census were blocked by credential configuration, Alpha Vantage by endpoint tiering, IMF by its obsolete adapter endpoint, and Nasdaq by provider bot protection.
 
-**Economic Data (7/7)**
-- World Bank ✅
-- IMF ✅
-- OECD ✅
-- FRED ✅
-- BLS ✅
-- Census Bureau ✅
-
-**Financial Markets (2/2)**
-- Alpha Vantage ✅
-- Finnhub ✅ (NEW)
-
-**Portfolio Sources (2/3)**
-- CoinGecko ✅ (NEW)
-- ExchangeRateAPI ✅ (NEW)
-
-### ❌ Not Operational: 1/11 (9%)
-
-**Nasdaq Data Link** - Optional Premium Source
-- **Reason**: Incapsula bot protection
-- **Technical Details**: 
-  - Returns HTML instead of JSON
-  - Blocks curl, Node.js, Python requests
-  - Even with valid API keys and browser headers
-  - Requires actual browser session cookies
-- **Mitigation**: Not critical - other sources provide comprehensive coverage
-- **Future**: Could implement browser automation (Puppeteer) if needed
+The public-source adapters expose observations and proxies; they do not constitute an authoritative market catalog. Catalog-backed market size, industry, segment, forecast, comparison, and opportunity tools fail explicitly rather than returning hard-coded values.
 
 ---
 
 ## Technology Stack
 
 ### Core Framework
-- **Runtime**: Node.js v18+ (Alpine Linux in Docker)
+- **Runtime**: Node.js 20+; Node.js 22 Alpine in Docker
 - **Language**: TypeScript 5.6
-- **Protocol**: MCP (Model Context Protocol) SDK 1.12
+- **Protocol**: MCP TypeScript SDK 1.32.1 (v1 compatibility line)
 
 ### Dependencies
 - **HTTP Client**: Axios 1.9
@@ -438,8 +412,8 @@ node scripts/validate-datasources.mjs
 - ✅ Added Finnhub (real-time stocks, sentiment, ESG)
 - ✅ Added CoinGecko (cryptocurrency)
 - ✅ Added ExchangeRateAPI (forex, commodities)
-- ✅ 10/11 sources operational (91%)
-- ✅ Docker deployment validated
+- Historical validation result: 10/11 endpoints responded in that test run
+- Docker deployment was validated for that snapshot
 
 ### v1.0.1 (June 22, 2025)
 - ✅ Fixed IMF API (compression support)
@@ -454,14 +428,16 @@ node scripts/validate-datasources.mjs
 
 ---
 
-## Conclusion
+## Current operational status
 
-TAM-MCP-Server v1.1 provides **comprehensive market intelligence** across:
-- ✅ Economic indicators (7 sources)
-- ✅ Stock markets (2 sources)
-- ✅ Cryptocurrency (1 source)
-- ✅ Forex & commodities (1 source)
+The server exposes real provider adapters for economic, company, cryptocurrency,
+and foreign-exchange observations. Provider availability is dynamic and depends
+on credentials, free-tier entitlements, quotas, and upstream endpoints; a past
+endpoint check is not an availability SLA.
 
-**91% availability (10/11 sources)** with the only limitation being an optional premium source (Nasdaq Data Link) blocked by aggressive bot protection.
-
-**Production-ready** for portfolio rebalancing, business intelligence, and AI-driven market analysis applications.
+The input-based TAM/SAM arithmetic tools are usable. Catalog-driven industry
+search, segmentation, forecasting, opportunity discovery, and source-derived
+market sizing deliberately return unavailable errors until an authoritative
+market taxonomy and licensed market-data methodology are integrated. See
+[DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md) and
+[MCP_FEATURE_STATUS.md](MCP_FEATURE_STATUS.md) for the maintained status.

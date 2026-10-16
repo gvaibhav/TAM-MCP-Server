@@ -75,9 +75,11 @@ describe('Server Capabilities and Resource Support', () => {
       expect(resourceUris).toContain('tam://readme');
       expect(resourceUris).toContain('tam://contributing');
       expect(resourceUris).toContain('tam://release-notes');
+      expect(resourceUris).toContain('tam://mcp-status');
+      expect(resourceUris).toContain('tam://data-source-status');
+      expect(resourceUris).toContain('tam://api-key-setup');
       
-      // Should be exactly 6 resources as documented
-      expect(response.resources).toHaveLength(6);
+      expect(response.resources).toHaveLength(9);
     });
 
     it('should provide meaningful resource descriptions', async () => {
@@ -179,7 +181,7 @@ describe('Server Capabilities and Resource Support', () => {
       
       expect(responses).toHaveLength(10);
       responses.forEach(response => {
-        expect(response.resources).toHaveLength(6);
+        expect(response.resources).toHaveLength(9);
       });
       
       // Should complete reasonably quickly

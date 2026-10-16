@@ -1,5 +1,9 @@
 # TAM-MCP-Server v1.1.0 - Deployment Complete ✅
 
+> Historical test report from August 3, 2026. Provider results and readiness
+> claims below describe that run, not current availability. See
+> [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md) for maintained status.
+
 **Date**: August 3, 2026  
 **Status**: 🎉 **PRODUCTION READY**  
 **Availability**: **10/11 Data Sources (91%)**

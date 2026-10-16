@@ -68,6 +68,7 @@ describe('NotificationService', () => {
       notificationService.setEnabled(false);
       
       await notificationService.sendProgress({
+        progressToken: 'error-test',
         progress: 50,
         total: 100
       });
@@ -81,6 +82,7 @@ describe('NotificationService', () => {
       mockServer.notification.mockRejectedValueOnce(new Error('Network error'));
       
       await notificationService.sendProgress({
+        progressToken: 'error-test',
         progress: 50,
         total: 100
       });
@@ -107,7 +109,10 @@ describe('NotificationService', () => {
       
       expect(mockServer.notification).toHaveBeenCalledWith({
         method: 'notifications/market_analysis',
-        params: notification
+        params: {
+          ...notification,
+          data: { fields: ['marketSize'] }
+        }
       });
     });
 
@@ -139,7 +144,10 @@ describe('NotificationService', () => {
       
       expect(mockServer.notification).toHaveBeenCalledWith({
         method: 'notifications/error',
-        params: notification
+        params: {
+          ...notification,
+          details: { fields: ['reason'] }
+        }
       });
     });
 
@@ -197,7 +205,7 @@ describe('NotificationService', () => {
         params: {
           type: 'calculation',
           message: 'TAM calculation completed',
-          data: { result: 500000000 },
+          data: { fields: ['result'] },
           timestamp: expect.any(String)
         }
       });
@@ -240,7 +248,7 @@ describe('NotificationService', () => {
         params: {
           type: 'validation',
           message: 'market data validation completed',
-          data: { valid: true, issues: [] },
+          data: { fields: ['valid', 'issues'] },
           timestamp: expect.any(String)
         }
       });

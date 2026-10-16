@@ -100,14 +100,16 @@ export class FredService implements DataSourceService {
   }
 
   async searchSeries(searchText: string, params?: any): Promise<any> {
-    logger.warn(
-      "FredService.searchSeries is a placeholder and needs specific implementation.",
-      { searchText, params },
-    );
-    return {
-      message: "Search functionality not yet implemented for FRED service",
-      query: searchText,
-    };
+    if (!searchText?.trim()) {
+      throw new Error("FRED series search requires a non-empty searchText");
+    }
+
+    return this.fetchApiData("series/search", {
+      search_text: searchText.trim(),
+      ...Object.fromEntries(
+        Object.entries(params ?? {}).filter(([, value]) => value != null),
+      ) as Record<string, string>,
+    });
   }
 
   async isAvailable(): Promise<boolean> {
@@ -119,7 +121,13 @@ export class FredService implements DataSourceService {
     if (!seriesId) {
       return null;
     }
-    return new Date();
+    try {
+      const data = await this.getSeriesObservations(seriesId, { limit: 1 });
+      const date = data?.observations?.[0]?.date;
+      return date ? new Date(`${date}T00:00:00Z`) : null;
+    } catch {
+      return null;
+    }
   }
 
   async fetchIndustryData(...args: any[]): Promise<any> {

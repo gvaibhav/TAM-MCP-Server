@@ -1,5 +1,8 @@
 # Phase 2 Implementation Analysis
 
+> Historical planning document. Its source counts and completion claims are not
+> current status. See [AUDIT_AND_UPGRADE_PLAN.md](AUDIT_AND_UPGRADE_PLAN.md).
+
 **Date**: August 3, 2026  
 **Current Version**: v1.1.0-alpha  
 **Status**: Analyzing Phase 2 features for immediate implementation

@@ -2,9 +2,9 @@
 
 [![License](https://img.shields.io/github/license/gvaibhav/TAM-MCP-Server)](https://github.com/gvaibhav/TAM-MCP-Server/blob/main/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![MCP Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-brightgreen.svg)](https://modelcontextprotocol.org/)
+[![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.32.1-brightgreen.svg)](https://github.com/modelcontextprotocol/typescript-sdk)
 
-A Model Context Protocol server providing market research and business analysis capabilities through 28 tools, 15 business prompts, and integration with 8 economic data sources.
+A Model Context Protocol server exposing 28 tools, 15 business prompts, static resources, and economic/financial data adapters. Public-source observations are available where provider access succeeds; catalog-backed market sizing features fail explicitly until an authoritative catalog is configured.
 
 *Previously featured in the official MCP community servers list here : https://github.com/modelcontextprotocol/servers/blob/e21dbea731f2ccddcd48525cf9a1e1e405fee12f/README.md*
 
@@ -14,7 +14,7 @@ This MCP server provides comprehensive market research capabilities including:
 
 - **28 Tools**: Market analysis, data access, and business intelligence tools
 - **15 Prompts**: Professional business analysis templates for funding, strategy, and research
-- **Data Integration**: Alpha Vantage, BLS, Census, FRED, IMF, Nasdaq Data Link, OECD, World Bank
+- **Data Integration**: World Bank, FRED, Census, BLS, OECD, IMF, Alpha Vantage, Finnhub, Nasdaq Data Link, CoinGecko, and ExchangeRateAPI, with provider-specific availability
 - **Smart Defaults**: Pre-configured parameters for immediate use without setup
 - **Multiple Transports**: STDIO, Streamable HTTP, and SSE support
 
@@ -66,8 +66,8 @@ flowchart TD
 ### Capabilities
 
 **Market Analysis Tools**
-- Total Addressable Market (TAM) and Serviceable Addressable Market (SAM) calculations
-- Market size estimation and forecasting
+- Input-based Total Addressable Market (TAM) and Serviceable Addressable Market (SAM) calculations
+- Source-backed market size estimation and forecasting interfaces (currently unavailable without an authoritative catalog)
 - Industry analysis and competitive intelligence
 - Market segmentation and opportunity identification
 - Data validation and cross-source verification
@@ -81,20 +81,19 @@ flowchart TD
 
 **Data Access**
 - Real-time financial and economic data retrieval
-- Multi-source data aggregation and comparison
-- Intelligent routing based on data type and availability
-- Comprehensive caching for performance optimization
+- Provider-specific data access with explicit errors when a source is unavailable
+- In-memory caching for adapters that opt into the cache layer
 
 **MCP Protocol Features**
-- **Real-time Notifications**: 6 types of business-specific notifications for market intelligence, data source health, calculation milestones, and performance monitoring
-- **Multiple Transports**: Full support for STDIO, HTTP, and Server-Sent Events (SSE) protocols
+- **Notifications**: Standard MCP progress/logging notifications plus documented TAM-specific extension notifications
+- **Multiple Transports**: STDIO and Streamable HTTP; legacy SSE is retained for compatibility
 - **Resource Access**: Documentation and status information available through MCP resources
 - **Tool Discovery**: Complete tool catalog with smart defaults and validation
 
 ## Installation
 
 ### Prerequisites
-- Node.js 20.x or later
+- Node.js 20.x or later; Docker uses Node.js 22
 - npm or yarn
 - API keys for data sources (optional, see Configuration)
 
@@ -356,31 +355,35 @@ PORT=3000
 NODE_ENV=development
 LOG_LEVEL=info
 
-# API Keys (Optional - tools work without keys but with limited data)
+# API keys (requirements vary by provider)
 ALPHA_VANTAGE_API_KEY=your_key_here
 CENSUS_API_KEY=your_key_here
 FRED_API_KEY=your_key_here
 NASDAQ_DATA_LINK_API_KEY=your_key_here
 BLS_API_KEY=your_key_here
+FINNHUB_API_KEY=your_key_here
+EXCHANGE_RATE_API_KEY=your_key_here
+MCP_NOTIFICATIONS_ENABLED=true
 
-# Cache Configuration (Optional)
-CACHE_TTL_DEFAULT_MS=86400000
-CACHE_TTL_ALPHA_VANTAGE_MS=86400000
-CACHE_TTL_FRED_MS=86400000
+# Cache configuration (seconds)
+CACHE_TTL=300
+CACHE_CHECK_PERIOD=600
 ```
 
 ### Data Source Setup
 
-**Recommended Keys:**
-*(Note: Keys are optional. Without them, Tier 1 direct data access tools and higher-tier analysis tools that depend on these specific sources will degrade in functionality, relying on mock data or limited access.)*
+**Recommended keys:**
+
+The server does not fall back to mock market data. Missing, rejected, or tier-limited keys produce explicit tool errors.
 - **Alpha Vantage**: Free tier provides 25 requests/day
 - **Census Bureau**: Free API access
 - **FRED**: Free API access  
 - **Nasdaq Data Link**: Free tier available
 
-**No Key Required:**
-- World Bank, OECD, IMF (public APIs)
-- BLS (optional key for higher limits)
+**No key required:**
+- World Bank and OECD
+- CoinGecko and ExchangeRateAPI have public access paths
+- IMF does not require a key, but the current adapter endpoint needs modernization
 
 ### Tool Defaults
 
@@ -781,7 +784,7 @@ All documentation is also accessible through the MCP protocol:
 {
   "method": "resources/read", 
   "params": {
-    "uri": "file:///README.md"
+    "uri": "tam://readme"
   }
 }
 ```
@@ -795,6 +798,8 @@ All documentation is also accessible through the MCP protocol:
 - API Reference - Complete API documentation and integration guides
 - Security Policy - Security guidelines and best practices
 - Contributing Guide - Development and contribution instructions
+
+See [MCP feature status](MCP_FEATURE_STATUS.md), [data-source status](DATA_SOURCE_STATUS.md), and [API key setup](API_KEY_SETUP.md) for the verified current state.
 
 ## Contributing
 

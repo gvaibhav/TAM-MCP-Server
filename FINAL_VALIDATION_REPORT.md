@@ -1,5 +1,8 @@
 # TAM-MCP-Server v1.1 - Final Validation Report
 
+> Historical validation snapshot. Endpoint success in this report is not a
+> current availability guarantee. See [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md).
+
 **Date**: August 3, 2026  
 **Branch**: feature/portfolio-rebalancing-datasources  
 **Status**: ✅ **PHASE 1 COMPLETE - READY FOR REVIEW**

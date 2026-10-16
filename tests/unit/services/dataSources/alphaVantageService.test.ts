@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AlphaVantageService } from '../../../../src/services/datasources/AlphaVantageService';
 import { alphaVantageApi } from '../../../../src/config/apiConfig';
 import { envTestUtils } from '../../../utils/envTestHelper';
+import { cacheService } from '../../../../src/services/CacheService';
 
 vi.mock('axios');
 
@@ -15,6 +16,7 @@ describe('AlphaVantageService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     envTestUtils.setup();
+    cacheService.flush();
   });
 
   afterEach(() => {

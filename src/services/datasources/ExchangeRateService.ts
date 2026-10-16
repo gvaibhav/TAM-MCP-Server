@@ -2,13 +2,18 @@ import axios from "axios";
 import { logger } from "../../utils/index.js";
 import { DataSourceService } from "../../types/dataSources.js";
 
-// Using open.er-api.com - truly free, no key required
-const BASE_URL = "https://open.er-api.com/v6";
+const PUBLIC_BASE_URL = "https://open.er-api.com/v6";
+const AUTHENTICATED_BASE_URL = "https://v6.exchangerate-api.com/v6";
 
 export class ExchangeRateService implements DataSourceService {
+  private apiKey?: string;
+
   constructor() {
+    this.apiKey = process.env.EXCHANGE_RATE_API_KEY ?? "";
     logger.info(
-      "ℹ️  ExchangeRateAPI: Using free tier (no API key required)",
+      this.apiKey
+        ? "✅ ExchangeRateAPI: authenticated key configured"
+        : "ℹ️  ExchangeRateAPI: using public free tier (no API key required)",
     );
   }
 
@@ -17,7 +22,10 @@ export class ExchangeRateService implements DataSourceService {
     params: Record<string, any> = {},
   ): Promise<any> {
     try {
-      const response = await axios.get(`${BASE_URL}${endpoint}`, {
+      const baseUrl = this.apiKey
+        ? `${AUTHENTICATED_BASE_URL}/${this.apiKey}`
+        : PUBLIC_BASE_URL;
+      const response = await axios.get(`${baseUrl}${endpoint}`, {
         params,
       });
 
@@ -42,7 +50,7 @@ export class ExchangeRateService implements DataSourceService {
   }
 
   async isAvailable(): Promise<boolean> {
-    // No API key required, always available
+    // The public endpoint is available without a key.
     return true;
   }
 

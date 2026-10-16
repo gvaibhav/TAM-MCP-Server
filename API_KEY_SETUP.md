@@ -1,101 +1,60 @@
-# API Key Setup Guide
+# API key setup
 
-## Current Status (2026-08-03)
+Status verified on 2026-10-16. API keys belong in the local `.env` file, which is ignored by Git. Do not add real values to `.env.example`, Docker images, documentation, or issue reports.
 
-### ✅ Working APIs
-- **World Bank** - No key required ✅
-- **OECD** - No key required ✅
-- **FRED** - Key valid ✅
-- **Alpha Vantage** - Key valid ✅
+## Current providers
 
-### ❌ Failed APIs (Need New Keys)
+| Provider | Environment variable | Key requirement | Current server status |
+|---|---|---|---|
+| FRED | `FRED_API_KEY` | Free key required | Live calls verified |
+| Census Bureau | `CENSUS_API_KEY` | Free key required by current Census policy | Adapter works; configured key was rejected during the latest check |
+| BLS | `BLS_API_KEY` | Free registration key; limited public access may work without one | `.env` currently contains the example placeholder, so authenticated calls fail |
+| Alpha Vantage | `ALPHA_VANTAGE_API_KEY` | Free key available | Key is accepted, but some fundamentals endpoints used by this server now require a paid plan |
+| Finnhub | `FINNHUB_API_KEY` | Free developer tier available | Live quote check verified |
+| Nasdaq Data Link | `NASDAQ_DATA_LINK_API_KEY` | Account key; individual datasets may require subscriptions | Requests are currently blocked by provider bot protection |
+| ExchangeRateAPI | `EXCHANGE_RATE_API_KEY` | Optional | Authenticated key supported; public fallback also works |
+| CoinGecko | `COINGECKO_API_KEY` | Optional | Public endpoint verified |
+| World Bank | None | No key | Live calls verified |
+| OECD | None | No key | Reachable; dataset endpoint/parser needs modernization |
+| IMF | None | No key | Legacy adapter endpoint needs replacement; current calls are unavailable |
 
-#### 1. BLS (Bureau of Labor Statistics)
-**Error**: Invalid API key
+## Minimal `.env`
 
-**How to get a new key:**
-1. Visit: https://www.bls.gov/developers/home.htm
-2. Click "Register" or "Request API Key"
-3. Fill out the registration form
-4. You'll receive the API key via email
-5. Update `.env` file: `BLS_API_KEY=your_new_key_here`
+```dotenv
+FRED_API_KEY=
+CENSUS_API_KEY=
+BLS_API_KEY=
+ALPHA_VANTAGE_API_KEY=
+FINNHUB_API_KEY=
+NASDAQ_DATA_LINK_API_KEY=
+EXCHANGE_RATE_API_KEY=
+COINGECKO_API_KEY=
 
-**Note**: Registration is free and provides 500 daily queries (vs 25 without registration)
-
----
-
-#### 2. Census Bureau
-**Error**: Invalid API key
-
-**How to get a new key:**
-1. Visit: https://api.census.gov/data/key_signup.html
-2. Fill out the request form with your email and organization
-3. You'll receive the API key via email immediately
-4. Update `.env` file: `CENSUS_API_KEY=your_new_key_here`
-
-**Note**: Free and unlimited for reasonable use
-
----
-
-#### 3. IMF (International Monetary Fund)
-**Error**: HTTP 403 (API-side issue)
-
-**Status**: The IMF DataMapper API appears to be experiencing access restrictions. This is likely a temporary issue on their end or they've changed authentication requirements.
-
-**Workaround**: The server will continue to work with the other 6 data sources. IMF data is supplementary.
-
----
-
-#### 4. Nasdaq Data Link (Optional)
-**Status**: Currently commented out in `.env`
-
-**How to get a key:**
-1. Visit: https://data.nasdaq.com/sign-up
-2. Create a free account
-3. Go to Account Settings → API Key
-4. Copy your API key
-5. Uncomment and update in `.env`: `NASDAQ_DATA_LINK_API_KEY=your_key_here`
-
-**Note**: Free tier allows 50 calls/day. Premium datasets may require subscription.
-
----
-
-## Quick Fix Commands
-
-After obtaining new keys, update your `.env` file:
-
-```bash
-# Edit .env file
-nano .env  # or use your preferred editor
-
-# Validate the new keys
-node scripts/validate-datasources.mjs
+CENSUS_CBP_YEAR=2022
+CACHE_TTL=300
+CACHE_CHECK_PERIOD=600
+MCP_NOTIFICATIONS_ENABLED=true
+USE_MOCK_DATA=false
 ```
 
-## Docker Usage
+Blank optional values must not contain inline comments. Use this:
 
-Once keys are updated, rebuild and run the Docker container:
-
-```bash
-# Build the image
-docker-compose build
-
-# Run the container
-docker-compose up -d
-
-# Check logs
-docker-compose logs -f
-
-# Validate data sources inside container
-docker-compose exec tam-mcp-server node scripts/validate-datasources.mjs
+```dotenv
+COINGECKO_API_KEY=
 ```
 
-## Minimum Requirements
+not this:
 
-The server can run with just the **working 4 sources**:
-- World Bank ✅
-- OECD ✅  
-- FRED ✅
-- Alpha Vantage ✅
+```dotenv
+COINGECKO_API_KEY= # optional
+```
 
-For full functionality, update BLS and Census keys.
+## Validate from Docker
+
+```bash
+docker compose up -d --build
+docker compose exec -T tam-mcp-server node scripts/validate-datasources.mjs
+curl http://localhost:3000/health
+```
+
+Provider connectivity does not make the market-sizing tools authoritative. Free public APIs supply economic, employment, company, and financial observations. The industry search, market segmentation, forecasting, opportunity, and source-derived TAM tools remain unavailable until a real catalog/methodology layer is implemented. Input-based TAM and SAM arithmetic tools continue to work and identify their assumptions.

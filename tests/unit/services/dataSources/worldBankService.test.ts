@@ -213,10 +213,11 @@ describe('WorldBankService', () => {
   });
 
   describe('fetchIndustryData', () => {
-    it('should throw not implemented error', async () => {
-      await expect(worldBankService.fetchIndustryData('test')).rejects.toThrow(
-        'WorldBankService.fetchIndustryData not yet implemented'
-      );
+    it('should fetch indicator data with defaults', async () => {
+      const records = [{ date: '2025', value: 1 }];
+      mockedAxiosGet.mockResolvedValue({ data: [{}, records] });
+      const result = await worldBankService.fetchIndustryData({});
+      expect(result).toEqual(records);
     });
   });
 });

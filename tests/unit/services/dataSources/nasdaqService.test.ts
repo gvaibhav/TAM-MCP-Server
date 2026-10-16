@@ -86,6 +86,7 @@ describe('NasdaqService', () => {
     });
 
     it('should work without API key (public access)', async () => {
+      vi.stubEnv('NASDAQ_DATA_LINK_API_KEY', '');
       nasdaqService = new NasdaqService();
       const databaseCode = 'WIKI';
       const datasetCode = 'AAPL';

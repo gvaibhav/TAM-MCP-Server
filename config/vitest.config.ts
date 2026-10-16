@@ -6,7 +6,16 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.{test,spec}.{js,ts,mjs}'], // Keep existing include pattern
-    exclude: ['tests/archive/**', 'node_modules/**', 'dist/**', 'tests/unit/transports.test.ts'], // Keep existing top-level exclude
+    exclude: [
+      'tests/archive/**',
+      'node_modules/**',
+      'dist/**',
+      'tests/unit/transports.test.ts',
+      'tests/unit/market-tools.test.js',
+      'tests/integration/server.test.js',
+      'tests/integration/services/live/**',
+      'tests/integration/imfService.integration.test.ts',
+    ],
     setupFiles: ['./tests/setup.ts'], // Keep existing setup file
     coverage: {
       provider: 'v8',

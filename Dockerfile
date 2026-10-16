@@ -1,5 +1,5 @@
 # TAM MCP Server Dockerfile
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # Remove devDependencies after build for a lean image
-RUN npm prune --production
+RUN npm prune --omit=dev
 
 # Create logs directory
 RUN mkdir -p logs

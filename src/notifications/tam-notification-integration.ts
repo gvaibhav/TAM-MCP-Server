@@ -39,18 +39,21 @@ export class TamNotificationIntegration {
         worldbank: "worldbank",
       };
 
-      const mappedSource = sourceMap[source.toLowerCase()] || "alpha_vantage";
+      const mappedSource = sourceMap[source.toLowerCase()] || "unknown";
 
       const notification: Partial<DataSourceHealthNotification> = {
         source: mappedSource,
-        status: success ? "healthy" : "degraded",
+        status: success ? "healthy" : "unavailable",
         latency_ms: latency,
-        last_successful_call: new Date().toISOString(),
         message: success
           ? `${operation} completed successfully in ${latency}ms`
-          : `${operation} failed with high latency: ${latency}ms`,
+          : `${operation} failed after ${latency}ms`,
         timestamp: new Date().toISOString(),
       };
+
+      if (success) {
+        notification.last_successful_call = new Date().toISOString();
+      }
 
       if (rateLimitRemaining !== undefined) {
         notification.rate_limit_remaining = rateLimitRemaining;
@@ -84,7 +87,7 @@ export class TamNotificationIntegration {
         severity,
         insight,
         data_confidence: confidence,
-        source_count: 3,
+        source_count: 0,
         affected_metrics: affectedMetrics,
         recommendation: this.generateRecommendation(severity, insight),
         timestamp: new Date().toISOString(),

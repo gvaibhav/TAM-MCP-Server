@@ -41,6 +41,13 @@ export class BlsService implements DataSourceService {
         },
       });
 
+      if (response.data?.status !== "REQUEST_SUCCEEDED") {
+        const message = response.data?.message?.join?.("; ") ||
+          response.data?.status ||
+          "BLS request failed";
+        throw new Error(message);
+      }
+
       return response.data;
     } catch (error: any) {
       logger.error("BlsService: API call failed", {

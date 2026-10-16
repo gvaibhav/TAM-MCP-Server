@@ -35,6 +35,13 @@ export class DataService {
     this.censusService = new CensusService();
   }
 
+  private unavailable(operation: string): never {
+    throw new Error(
+      `${operation} is unavailable: no authoritative industry/market catalog is configured. ` +
+        "Use a supported data-source tool or configure a catalog.",
+    );
+  }
+
   // Alpha Vantage methods
   async getAlphaVantageData(apiFunction: string, params: any): Promise<any> {
     switch (apiFunction) {
@@ -132,8 +139,10 @@ export class DataService {
 
   // World Bank methods
   async getWorldBankData(params: any): Promise<any> {
-    return this.worldBankService.fetchMarketSize(
-      params.industryId || params.countryCode,
+    return this.worldBankService.getIndicatorData(
+      params.countryCode ?? "USA",
+      params.indicator ?? "NY.GDP.MKTP.CD",
+      params,
     );
   }
 
@@ -141,9 +150,19 @@ export class DataService {
   async getBlsData(apiFunction: string, params: any): Promise<any> {
     switch (apiFunction) {
       case "fetchSeriesData":
-        return this.blsService.fetchSeriesData(params);
+        return this.blsService.fetchSeriesData(
+          params.seriesIds,
+          params.startYear,
+          params.endYear,
+          params,
+        );
       case "fetchIndustryData":
-        return this.blsService.fetchIndustryData(params);
+        return this.blsService.fetchIndustryData(
+          params.seriesIds,
+          params.startYear,
+          params.endYear,
+          params,
+        );
       case "fetchMarketSize":
         return this.blsService.fetchMarketSize(
           params.industryId,
@@ -160,9 +179,18 @@ export class DataService {
   async getCensusData(apiFunction: string, params: any): Promise<any> {
     switch (apiFunction) {
       case "fetchIndustryData":
-        return this.censusService.fetchIndustryData(params);
+        return this.censusService.fetchIndustryData(
+          params.filterParams?.NAICS2017 ?? params.naicsCode ?? "54",
+          params.forGeography ?? params.geography ?? "us:1",
+          { ...params, year: params.year },
+        );
       case "fetchMarketSize":
-        return this.censusService.fetchMarketSize(params);
+        return this.censusService.fetchMarketSize(
+          params.naicsCode ?? "54",
+          params.geography ?? "us:1",
+          params.measure ?? "EMP",
+          params.year,
+        );
       case "getData":
         return this.censusService.getData(
           params.dataset || "pep",
@@ -238,8 +266,7 @@ export class DataService {
 
     logger.debug("SearchIndustries called", { query, limit: actualLimit });
 
-    // Mock data for compatibility
-    return [
+    /* return [
       {
         id: "tech-software",
         name: "Software & Technology",
@@ -260,7 +287,8 @@ export class DataService {
         defaultRegion: "US",
         source: "enhanced-industry-database",
       },
-    ];
+    ]; */
+    this.unavailable(`Industry search for "${query}"`);
   }
 
   // Method for tam_calculator tool
@@ -306,13 +334,7 @@ export class DataService {
     //    (e.g., searchIndustries, or direct calls to get data from Census, BLS, World Bank)
     // 3. Applying a methodology (top_down, bottom_up, auto)
     // 4. Synthesizing data and calculating market size
-    return {
-      estimatedMarketSize: 0, // Placeholder
-      currency: "USD",
-      year: params.year || new Date().getFullYear().toString(),
-      dataSourcesUsed: [],
-      confidenceScore: 0.5, // Placeholder
-    };
+    this.unavailable("Market-size calculation");
   }
 
   // Add other methods for analytical/calculation tools as needed
@@ -440,8 +462,7 @@ export class DataService {
           }
         : undefined;
 
-    // Mock data with enhanced analytics - replace with actual data source integration
-    const mockData: IndustryData = {
+    /* const mockData: IndustryData = {
       industry: {
         id: input.industry_id,
         name: "Software & Technology",
@@ -496,7 +517,10 @@ export class DataService {
       ...(enhancedESGData && { esg_data: enhancedESGData }),
     };
 
-    return mockData;
+    return mockData; */
+    void enhancedESGData;
+    void enhancedTrendData;
+    this.unavailable(`Industry data for "${input.industry_id}"`);
   }
 
   /**
@@ -505,8 +529,7 @@ export class DataService {
   async getIndustryById(industryId: string): Promise<any> {
     logger.debug("Getting industry by ID", { industryId });
 
-    // Mock industry data for compatibility
-    return {
+    /* return {
       id: industryId,
       name: "Software & Technology",
       description:
@@ -525,7 +548,8 @@ export class DataService {
       lastUpdated: new Date().toISOString(),
       defaultRegion: "US",
       source: "enhanced-industry-database",
-    };
+    }; */
+    this.unavailable(`Industry lookup for "${industryId}"`);
   }
 
   /**
@@ -534,8 +558,7 @@ export class DataService {
   async getMarketSize(industryId: string, region: string): Promise<any> {
     logger.debug("Getting market size", { industryId, region });
 
-    // Mock market size data for compatibility
-    return {
+    /* return {
       value: 650000000000,
       details: {
         year: new Date().getFullYear(),
@@ -559,7 +582,8 @@ export class DataService {
         sources: ["industry-reports", "market-analytics"],
       },
       source: "enhanced-market-database",
-    };
+    }; */
+    this.unavailable(`Market-size lookup for "${industryId}" in "${region}"`);
   }
 
   /**
@@ -567,9 +591,8 @@ export class DataService {
    */
   async getMarketSegments(industryId: string, region: string): Promise<any> {
     logger.debug("Getting market segments", { industryId, region });
-
-    // Mock segments for compatibility
-    return [
+    this.unavailable(`Market segments for "${industryId}" in "${region}"`);
+    /* return [
       {
         segmentName: "Enterprise Software",
         value: 325000000000,
@@ -588,7 +611,7 @@ export class DataService {
         percentage: 0.2,
         growthRate: 0.18,
       },
-    ];
+    ]; */
   }
 
   /**
@@ -685,8 +708,8 @@ export class DataService {
     region: string,
   ): Promise<any> {
     logger.debug("Generating market forecast", { industryId, years, region });
-
-    // Mock forecast data for compatibility
+    this.unavailable(`Market forecast for "${industryId}" in "${region}"`);
+    /*
     const currentYear = new Date().getFullYear();
     const forecasts = [];
     let baseSize = 650000000000; // $650B starting point
@@ -715,7 +738,7 @@ export class DataService {
       ],
       methodology: "trend-extrapolation",
       confidenceScore: 0.82,
-    };
+    }; */
   }
 
   /**
@@ -751,8 +774,8 @@ export class DataService {
       region,
       minMarketSize,
     });
-
-    // Mock opportunities data for compatibility
+    this.unavailable(`Market opportunities for "${industryId}" in "${region}"`);
+    /*
     return {
       industryId,
       region,
@@ -791,6 +814,6 @@ export class DataService {
       riskProfile: "medium-high",
       recommendedStrategy:
         "Focus on AI automation given higher growth potential",
-    };
+    }; */
   }
 }

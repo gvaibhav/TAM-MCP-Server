@@ -1,5 +1,8 @@
 # Tier 1 Portfolio Rebalancing - Deployment Summary
 
+> Historical deployment snapshot. Provider availability changes over time; see
+> [DATA_SOURCE_STATUS.md](DATA_SOURCE_STATUS.md) for maintained status.
+
 **Date**: August 3, 2026  
 **Version**: v1.1.0-alpha  
 **Branch**: `feature/portfolio-rebalancing-datasources`  

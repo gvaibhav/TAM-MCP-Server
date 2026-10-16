@@ -1,6 +1,6 @@
 # TAM MCP Server - Design and Architecture
 
-This document outlines the design and architecture of the Total Addressable Market (TAM) Market Context Protocol (MCP) Server.
+This document contains both implemented architecture and historical design proposals for the Total Addressable Market (TAM) Model Context Protocol (MCP) Server. For maintained operational status, see [DATA_SOURCE_STATUS.md](../DATA_SOURCE_STATUS.md) and [MCP_FEATURE_STATUS.md](../MCP_FEATURE_STATUS.md). Statements in this document about provider availability are not live health checks.
 
 ## 1. Introduction
 
@@ -633,11 +633,12 @@ sequenceDiagram
 
 The TAM MCP Server employs several strategies to ensure resilience and provide meaningful responses even when external data sources face issues.
 
-### 6.1. Mock Data Usage
-*   **Purpose:** To provide stable example responses for development, testing, and demonstrations, and as a last resort if live services are completely unavailable for critical information types.
-*   **Activation:** Mock data providers can be enabled/disabled via configuration. The `industry_search` tool and potentially other tools might be configured to consult mock sources if primary live sources fail to return data or are explicitly disabled.
-*   **Scope:** Mock data typically covers a predefined set of common queries or industry examples. It is not a comprehensive replacement for live data.
-*   **Indication:** Responses containing mock data will be clearly flagged in the `dataSources` array of the `IndustryDTO` or in a similar metadata field to ensure transparency.
+### 6.1. No production mock fallback
+Production tool handlers do not substitute dummy market records when an upstream
+provider or catalog operation is unavailable. Provider errors are returned as
+MCP errors. Tests may use fixtures and mocks, but those are not runtime data
+sources. Catalog-driven operations remain explicitly unavailable until a real
+catalog and methodology layer is implemented.
 
 ### 6.2. Error Handling
 *   **Granular Errors:** Errors originating from individual data source services (e.g., API key issues, rate limits, source-specific errors, timeouts) are caught within the respective service modules (e.g., `AlphaVantageService`).
@@ -951,11 +952,15 @@ This section provides illustrative examples of how to invoke the MCP tools. Thes
     }
     ```
 
-## 9. Enhanced Notification System Architecture
+## 9. Notification System Architecture (partially implemented design)
 
 ### 9.1. Overview
 
-The TAM MCP Server features a comprehensive, business-relevant notification system that provides real-time insights into market analysis operations, data source performance, and calculation milestones. This enhanced system goes beyond generic progress notifications to deliver actionable intelligence for business users.
+The notification types below describe the design surface. The current server
+implements lifecycle and selected TAM extension notifications, but it does not
+claim that every designed event is emitted by every tool. The authoritative
+implementation status is documented in
+[NOTIFICATIONS-IMPLEMENTATION.md](guides/NOTIFICATIONS-IMPLEMENTATION.md).
 
 **🎯 Business Value:**
 - **Real-time Market Intelligence**: Immediate alerts for significant market insights and opportunities
@@ -987,7 +992,9 @@ The TAM MCP Server features a comprehensive, business-relevant notification syst
 #### 9.2.2. Server Integration (`src/server.ts`)
 
 **Integration Points:**
-- MCP capabilities declaration: `notifications: {}` capability registered
+- Standard server capabilities declare tools, prompts, resources, and logging;
+  notifications are protocol methods and are not advertised through a
+  nonstandard top-level `notifications` capability
 - Tool execution pipeline integration with notification calls
 - Automatic notification delivery for tool lifecycle events
 - Error handling and notification escalation
@@ -1000,14 +1007,14 @@ The TAM MCP Server features a comprehensive, business-relevant notification syst
 
 #### 9.2.3. Transport Layer Support
 
-**SSE Transport (`src/sse-new.ts`):**
-- **Enterprise-Ready**: Real-time notification delivery via Server-Sent Events
+**Legacy SSE Transport (`src/sse-new.ts`):**
+- Compatibility transport retained for older clients; Streamable HTTP is preferred
 - Welcome notifications on client connection
 - Stream-based notification delivery during tool execution
 - Connection health monitoring and reconnection support
 
 **HTTP Streamable Transport (`src/http.ts`):**
-- **Enterprise-Ready**: Notification integration in streamable HTTP responses
+- Primary network transport with session-aware notification delivery
 - Session-based notification management
 - Request lifecycle notification tracking
 - Response streaming with embedded notifications

@@ -30,6 +30,15 @@ export class CensusService implements DataSourceService {
         params: apiParams,
       });
 
+      if (
+        typeof response.data === "string" &&
+        /invalid\s+key/i.test(response.data)
+      ) {
+        throw new Error(
+          "Census API rejected the configured CENSUS_API_KEY",
+        );
+      }
+
       return response.data;
     } catch (error: any) {
       logger.error("CensusService: API call failed", {
@@ -54,7 +63,7 @@ export class CensusService implements DataSourceService {
       params,
     });
 
-    const endpoint = `${censusApi.cbpYear}/${dataset}`;
+    const endpoint = `${params.year ?? censusApi.cbpYear}/${dataset}`;
     const queryParams = {
       get: variables,
       for: geography,
@@ -111,7 +120,7 @@ export class CensusService implements DataSourceService {
         naicsCode,
         geography,
       });
-      return null;
+      throw error;
     }
   }
 
@@ -119,9 +128,12 @@ export class CensusService implements DataSourceService {
     naicsCode: string,
     geography: string = "us:*",
     measure: string = "EMP",
+    year?: string,
   ): Promise<any> {
     try {
-      const data = await this.fetchIndustryData(naicsCode, geography, {});
+      const data = await this.fetchIndustryData(naicsCode, geography, {
+        year,
+      });
 
       if (!data || data.length === 0) {
         return null;
@@ -147,7 +159,7 @@ export class CensusService implements DataSourceService {
         recordCount: validRecords,
         source: "Census Bureau",
         dataset: "County Business Patterns",
-        year: censusApi.cbpYear,
+        year: year ?? censusApi.cbpYear,
       };
     } catch (error) {
       logger.error("CensusService.fetchMarketSize failed", {
@@ -156,7 +168,7 @@ export class CensusService implements DataSourceService {
         geography,
         measure,
       });
-      return null;
+      throw error;
     }
   }
 

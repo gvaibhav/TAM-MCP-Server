@@ -21,9 +21,9 @@ export const blsApi = {
 
 export const censusApi = {
   baseUrl: "https://api.census.gov/data", // Base for many Census APIs
-  // Example for County Business Patterns (CBP) - year might change
-  cbpYear: "2021", // Or make this a parameter
-  cbpDataset: "cbp", // Placeholder, may need to be more specific e.g. /timeseries/intltrade/exports/por
+  // Override this at runtime; CBP is published as annual datasets.
+  cbpYear: process.env.CENSUS_CBP_YEAR ?? "2022",
+  cbpDataset: "cbp",
 };
 
 export const oecdApi = {

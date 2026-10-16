@@ -166,34 +166,34 @@ describe('FredService', () => {
       fredService = new FredService(apiKey);
     });
 
-    it('should return placeholder message for search functionality', async () => {
+    it('should call the FRED series search endpoint', async () => {
       const searchText = 'GDP';
-      
+      const response = { seriess: [{ id: 'GDP', title: 'Gross Domestic Product' }] };
+      mockedAxiosGet.mockResolvedValue({ data: response });
       const result = await fredService.searchSeries(searchText);
-      expect(result).toEqual({
-        message: 'Search functionality not yet implemented for FRED service',
-        query: searchText
+      expect(result).toEqual(response);
+      expect(mockedAxiosGet).toHaveBeenCalledWith('https://api.stlouisfed.org/fred/series/search', {
+        params: {
+          api_key: apiKey,
+          file_type: 'json',
+          search_text: searchText,
+        },
       });
     });
 
     it('should handle search with no results', async () => {
       const searchText = 'nonexistent';
-      
+      mockedAxiosGet.mockResolvedValue({ data: { seriess: [] } });
       const result = await fredService.searchSeries(searchText);
-      expect(result).toEqual({
-        message: 'Search functionality not yet implemented for FRED service',
-        query: searchText
-      });
+      expect(result).toEqual({ seriess: [] });
     });
 
-    it('should return placeholder message if API key is not configured', async () => {
+    it('should reject search if API key is not configured', async () => {
       delete process.env.FRED_API_KEY;
       fredService = new FredService();
-      const result = await fredService.searchSeries('GDP');
-      expect(result).toEqual({
-        message: 'Search functionality not yet implemented for FRED service',
-        query: 'GDP'
-      });
+      await expect(fredService.searchSeries('GDP')).rejects.toThrow(
+        'FRED API key not configured',
+      );
     });
   });
 });

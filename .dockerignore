@@ -11,6 +11,14 @@ dist/
 .qodo/
 *.md
 !README.md
+!CONTRIBUTING.md
+!API_KEY_SETUP.md
+!DATA_SOURCE_STATUS.md
+!MCP_FEATURE_STATUS.md
+!doc/reference/RELEASE-NOTES.md
+!doc/guides/mcp-client-prompt-strategies.md
+!doc/consumer/mcp-prompts-examples.md
+!doc/consumer/mcp-prompts-guide.md
 
 # Environment files
 .env
@@ -31,8 +39,6 @@ coverage/
 *.test.js
 *.test.ts
 
-# Documentation
-doc/
 examples/
 
 # IDE files

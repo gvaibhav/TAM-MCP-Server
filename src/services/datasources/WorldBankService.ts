@@ -149,10 +149,13 @@ export class WorldBankService implements DataSourceService {
   }
 
   async fetchIndustryData(...args: any[]): Promise<any> {
-    logger.warn("WorldBankService.fetchIndustryData not yet implemented", {
-      args,
+    const [params = {}] = args;
+    const countryCode = params.countryCode ?? params.region ?? "WLD";
+    const indicatorCode = params.indicatorCode ?? "NY.GDP.MKTP.CD";
+    return this.getIndicatorData(countryCode, indicatorCode, {
+      date: params.date,
+      per_page: params.perPage ?? 100,
     });
-    throw new Error("WorldBankService.fetchIndustryData not yet implemented");
   }
 }
 

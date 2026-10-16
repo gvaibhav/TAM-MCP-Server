@@ -37,10 +37,11 @@ export interface DataSourceHealthNotification {
     | "imf"
     | "nasdaq"
     | "oecd"
-    | "worldbank";
+    | "worldbank"
+    | "unknown";
   status: "healthy" | "degraded" | "unavailable" | "rate_limited";
   latency_ms: number;
-  last_successful_call: string;
+  last_successful_call?: string;
   rate_limit_remaining?: number;
   message: string;
   timestamp: string;
@@ -118,10 +119,30 @@ export interface APIRateLimitNotification {
 
 export class NotificationService {
   private server: Server;
-  private isEnabled: boolean = true;
+  private isEnabled: boolean;
 
   constructor(server: Server) {
     this.server = server;
+    this.isEnabled = process.env.MCP_NOTIFICATIONS_ENABLED !== "false";
+  }
+
+  private summarizeDetails(details: any): any {
+    if (details == null) return undefined;
+    if (Array.isArray(details)) return { recordCount: details.length };
+    if (details instanceof Error) {
+      return { name: details.name, message: details.message };
+    }
+    if (typeof details !== "object") return details;
+
+    if (typeof details.success === "boolean") {
+      return {
+        success: details.success,
+        ...(details.error ? { error: String(details.error) } : {}),
+        ...(details.metadata ? { metadata: details.metadata } : {}),
+      };
+    }
+
+    return { fields: Object.keys(details).slice(0, 20) };
   }
 
   /**
@@ -137,6 +158,10 @@ export class NotificationService {
    */
   async sendProgress(notification: ProgressNotification): Promise<void> {
     if (!this.isEnabled) return;
+    if (notification.progressToken === undefined) {
+      logger.debug("Progress notification skipped: no client progress token");
+      return;
+    }
 
     try {
       await this.server.notification({
@@ -169,7 +194,7 @@ export class NotificationService {
         params: {
           type: notification.type,
           message: notification.message,
-          data: notification.data,
+          data: this.summarizeDetails(notification.data),
           timestamp: notification.timestamp,
         },
       });
@@ -193,7 +218,7 @@ export class NotificationService {
           error: notification.error,
           tool: notification.tool,
           timestamp: notification.timestamp,
-          details: notification.details,
+          details: this.summarizeDetails(notification.details),
         },
       });
 
@@ -462,11 +487,7 @@ export class NotificationService {
       market_size_usd: tamResult,
       confidence_level: confidence,
       methodology,
-      key_assumptions: [
-        "Current market trends maintained",
-        "No major regulatory changes",
-        "Technology adoption continues",
-      ],
+      key_assumptions: [],
       timestamp: new Date().toISOString(),
     });
   }
@@ -504,7 +525,7 @@ export class NotificationService {
       severity,
       insight,
       data_confidence: confidence,
-      source_count: 3,
+      source_count: 0,
       affected_metrics: ["market_size", "growth_rate"],
       timestamp: new Date().toISOString(),
     });
@@ -524,7 +545,7 @@ export class NotificationService {
       affected_calculations: affectedCalculations,
       quality_score: qualityScore,
       recommendation,
-      sources_checked: ["alpha_vantage", "bls", "census"],
+      sources_checked: [],
       timestamp: new Date().toISOString(),
     });
   }

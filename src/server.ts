@@ -43,15 +43,15 @@ export async function createServer() {
     {
       name: "tam-mcp-server",
       version: "1.0.0",
-      toolDefinitionPath: "./tools/tool-definitions.js", // Added: Inform SDK where to potentially load definitions if it supports it
+      description:
+        "Economic data access and transparent TAM/SAM calculation tools",
     },
     {
       capabilities: {
-        tools: {},
-        resources: {},
-        prompts: {}, // Added: Prompts capability
+        tools: { listChanged: true },
+        resources: { subscribe: false, listChanged: true },
+        prompts: { listChanged: true },
         logging: {},
-        notifications: {},
       },
     },
   );
@@ -203,16 +203,6 @@ export async function createServer() {
             executionTimeAV1,
             !!result,
             undefined, // Rate limit info would come from the API response
-          );
-
-          // Cache performance notification (simulated - would be real in production)
-          await tamNotifications.notifyCachePerformance(
-            result ? "hit" : "miss",
-            `alphavantage_overview_${(processedArgs as any)?.symbol || "unknown"}`,
-            0.75, // Simulated hit rate
-            executionTimeAV1 > 1000
-              ? Math.max(0, 2000 - executionTimeAV1)
-              : undefined,
           );
 
           await notificationService.sendDataFetchStatus(
@@ -975,6 +965,10 @@ export async function createServer() {
             text: responseText,
           },
         ],
+        isError:
+          Boolean(result) &&
+          typeof result === "object" &&
+          (result.success === false || Boolean(result.error)),
       };
     } catch (error) {
       logger.error(`Tool execution failed: ${name}`, error);
@@ -994,6 +988,7 @@ export async function createServer() {
             text: `Error executing ${name}: ${error instanceof Error ? error.message : "Unknown error"}`,
           },
         ],
+        isError: true,
       };
     }
   });
@@ -1041,6 +1036,24 @@ export async function createServer() {
           name: "MCP Prompts Complete Reference",
           description:
             "Complete reference guide for all 15 business analysis prompts",
+          mimeType: "text/markdown",
+        },
+        {
+          uri: "tam://mcp-status",
+          name: "MCP Feature Status",
+          description: "Verified MCP SDK, transport, resource, prompt, and notification status",
+          mimeType: "text/markdown",
+        },
+        {
+          uri: "tam://data-source-status",
+          name: "Data Source Status",
+          description: "Verified provider connectivity and semantic limitations",
+          mimeType: "text/markdown",
+        },
+        {
+          uri: "tam://api-key-setup",
+          name: "API Key Setup",
+          description: "Current provider credential and validation guide",
           mimeType: "text/markdown",
         },
       ],
@@ -1106,6 +1119,18 @@ export async function createServer() {
             "consumer",
             "mcp-prompts-guide.md",
           );
+          content = await fs.promises.readFile(filePath, "utf-8");
+          break;
+        case "tam://mcp-status":
+          filePath = path.join(projectRoot, "MCP_FEATURE_STATUS.md");
+          content = await fs.promises.readFile(filePath, "utf-8");
+          break;
+        case "tam://data-source-status":
+          filePath = path.join(projectRoot, "DATA_SOURCE_STATUS.md");
+          content = await fs.promises.readFile(filePath, "utf-8");
+          break;
+        case "tam://api-key-setup":
+          filePath = path.join(projectRoot, "API_KEY_SETUP.md");
           content = await fs.promises.readFile(filePath, "utf-8");
           break;
         default:
@@ -1194,7 +1219,7 @@ export async function createServer() {
     version: "1.0.0",
     tools: getAllToolDefinitions().length, // Changed: Use new function
     prompts: getAllPromptDefinitions().length, // Added: Prompts count
-    resources: 6, // README, CONTRIBUTING, Release Notes, Prompt Strategies, Prompt Examples, Prompt Reference
+    resources: 9,
     capabilities: ["tools", "prompts", "resources", "logging", "notifications"], // Added prompts capability
     rateLimit: {
       requests: RATE_LIMIT_REQUESTS,

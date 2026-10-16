@@ -76,11 +76,11 @@ describe('CensusService', () => {
       expect(mockedAxiosGet).toHaveBeenCalled();
     });
 
-    it('should return null if API call fails', async () => {
+    it('should propagate API failures', async () => {
       mockedAxiosGet.mockRejectedValue(new Error('Census API Error'));
-
-      const result = await censusService.fetchMarketSize(naicsCode, geography, measure);
-      expect(result).toBeNull();
+      await expect(
+        censusService.fetchMarketSize(naicsCode, geography, measure),
+      ).rejects.toThrow('Census API Error');
     });
 
     it('should return null if no data is available', async () => {
@@ -133,12 +133,12 @@ describe('CensusService', () => {
       expect(mockedAxiosGet).toHaveBeenCalled();
     });
 
-    it('should return null if API call fails', async () => {
+    it('should propagate API failures', async () => {
       const naicsCode = '54';
       mockedAxiosGet.mockRejectedValue(new Error('Census API Error'));
-
-      const result = await censusService.fetchIndustryData(naicsCode);
-      expect(result).toBeNull();
+      await expect(censusService.fetchIndustryData(naicsCode)).rejects.toThrow(
+        'Census API Error',
+      );
     });
 
     it('should return null if no data is available', async () => {
